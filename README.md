@@ -4,3 +4,7 @@ ARGA will allow researchers to easily discover and access genomic data for Austr
 ARGA is a collaboration between the Atlas of Living Australia (ALA), Bioplatforms Australia (BPA), Australian BioCommons and Australian Research Data Commons (ARDC) funded via the Australian Government’s National Collaborative Research Infrastructure Strategy (NCRIS) are collaborating on ARGA, the Australian Reference Genome Atlas.
 
 See https://www.ala.org.au/blogs-news/australian-reference-genome-atlas-arga/ for more information.
+
+## Issues repository
+- [List of issues](https://github.com/AtlasOfLivingAustralia/arga-issues/issues)
+- [Kanban Board]()
