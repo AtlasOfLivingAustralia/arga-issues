@@ -6,5 +6,5 @@ ARGA is a collaboration between the Atlas of Living Australia (ALA), Bioplatform
 See https://www.ala.org.au/blogs-news/australian-reference-genome-atlas-arga/ for more information.
 
 ## Issues repository
-- [List of issues](AtlasOfLivingAustralia/arga-issues/issues)
-- [Kanban Board](AtlasOfLivingAustralia/arga-issues/projects/1)
+- [List of issues](https://github.com/AtlasOfLivingAustralia/arga-issues/issues)
+- [Kanban Board](https://github.com/AtlasOfLivingAustralia/arga-issues/projects/1)
