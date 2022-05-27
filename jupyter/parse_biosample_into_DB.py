@@ -1,8 +1,13 @@
 from bigxml import Parser, xml_handle_element, xml_handle_text
 from dataclasses import dataclass, field
 from typing import Dict, List
+from datetime import datetime
 import sqlite3 as sl
 import json
+import time
+
+start = datetime.now()
+print("Start:",start)
 
 con = sl.connect('biosamples.db')
 
@@ -33,8 +38,13 @@ class Entry:
     props: Dict[str, str] = field(default_factory=dict)
 
     def __init__(self, node):
-         self.id = node.attributes['accession']
-         self.props = {}
+        if node.attributes.get('accession'):
+            self.id = node.attributes['accession']
+        elif node.attributes.get('id'):
+            self.id = "SAMN" + node.attributes['id'].zfill(8)
+        else:
+            self.id = 'none'
+        self.props = {}
 
     @xml_handle_element("Owner","Contacts","Contact")
     def handle_email(self, node):
@@ -43,7 +53,11 @@ class Entry:
 
     @xml_handle_element("Attributes","Attribute")
     def handle_attribute(self, items):
-        thisAttr = { items.attributes['attribute_name']: items.text }
+        thisAttr = {}
+        if items.attributes.get('harmonized_name'):
+            thisAttr = { items.attributes['harmonized_name']: items.text }
+        elif items.attributes.get('attribute_name'):
+            thisAttr = { items.attributes['attribute_name']: items.text }
         self.props.update(thisAttr)
     
     @xml_handle_element("Links","Link")
@@ -52,7 +66,7 @@ class Entry:
             self.url = link.text
 
 
-with open("/data/arga-data/biosample_set_medium.xml", "rb") as f:
+with open("/data/arga-data/biosample_set.xml", "rb") as f:
     for item in Parser(f).iter_from(Entry):
         #print("> ",item)
         jsonStr = json.dumps(item.props)
@@ -66,3 +80,7 @@ with con:
         print(row)
     count = con.execute("SELECT COUNT(*) FROM SAMPLE")
     print("count =", count.fetchone()[0])
+
+end = datetime.now()
+print("End:", end)
+print("The total execution time in seconds is:", str(end-start)[:9])
