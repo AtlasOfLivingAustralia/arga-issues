@@ -1,4 +1,6 @@
-from xmltodict import parse, ParsingInterrupted
+from bigxml import Parser, xml_handle_element, xml_handle_text
+from dataclasses import dataclass, field
+from typing import Dict, List
 import sqlite3 as sl
 import json
 
@@ -23,40 +25,37 @@ sql = 'INSERT INTO SAMPLE (accession, attributeJson) values(?, ?)'
 #     con.executemany(sql, data)
 #bioSampleNameList = []
 
-def handle_biosample(path, item):
-    accessionId = path[1][1]['accession']
-    atrributeList = item['Attributes']['Attribute']
-    tempAttrs = {}
-    #print("|",atrributeList)
-    for index in range(len(atrributeList)):
-        #print("#",atrributeList[index])
-        attrs = atrributeList[index]
-        key = ""
-        key1 = [v for k, v in attrs.items() if k == '@attribute_name'] # all Attribute elements should have this 
-        key2 = [v for k, v in attrs.items() if k == '@harmonized_name'] # only some elements have this but its preferable
-        if key2:
-            #tempAttrs['name'] = key2[0] 
-            key = key2[0] 
-        elif key1:
-            #tempAttrs['name'] = key1[0]
-            key = key1[0]
-        #tempAttrs['value'] = [v for k, v in attrs.items() if k == '#text'][0]
-        tempAttrs[key] = [v for k, v in attrs.items() if k == '#text'][0]
-        #     if key == '@harmonized_name':
-        #         print("1",atrributeList[index][key])
-        #     elif key == '@attribute_name':
-        #         print("1",atrributeList[index][key])
-        #     if key == '#text':
-        #         print("2", atrributeList[index][key])
-            #print(key,"||",atrributeList[index][key])
-    #values = , ]
-    # print(path[1][1]['accession'])
-    # print(item['Attributes']['Attribute'][1]['@attribute_name'])
-    jsonStr = json.dumps(tempAttrs)
-    #print(accessionId, "|", jsonStr)
-    sqlData = [(accessionId, jsonStr)]
-    with con:
-        con.executemany(sql, sqlData)
-    return True
+@xml_handle_element("BioSampleSet", "BioSample")
+@dataclass
+class Entry:
+    id: str 
+    props: List[list] = field(default_factory=list)
 
-parse(open("/data/arga-data/biosample_set.xml", "rb").read(), item_depth=2, item_callback=handle_biosample)
+    def __init__(self, node):
+         self.id = node.attributes['accession']
+         self.props = []
+         #print(node.attributes['accession'])
+
+    @xml_handle_element("Attributes","Attribute")
+    def handle_title(self, items):
+        #thisAttr = {items.attributes['attribute_name']: items.text }
+        thisAttr = items.attributes['attribute_name']
+        self.props.append(thisAttr)
+        #print(self)
+        #yield from items
+
+
+with open("/data/arga-data/biosample_set_small.xml", "rb") as f:
+    for item in Parser(f).iter_from(Entry):
+        #print("> ",item)
+        #print("item: ", item)
+        jsonStr = json.dumps(item.props)
+        #print(accessionId, "|", jsonStr)
+        sqlData = [(item.id, jsonStr)]
+        with con:
+            con.executemany(sql, sqlData)
+
+with con:
+    data = con.execute("SELECT * FROM SAMPLE LIMIT 10")
+    for row in data:
+        print(row)
