@@ -36,24 +36,23 @@ class Entry:
          self.id = node.attributes['accession']
          self.props = {}
 
+    @xml_handle_element("Owner","Contacts","Contact")
+    def handle_email(self, node):
+        if node.attributes.get('email'):
+            self.email = node.attributes['email']
+
     @xml_handle_element("Attributes","Attribute")
     def handle_attribute(self, items):
         thisAttr = { items.attributes['attribute_name']: items.text }
         self.props.update(thisAttr)
-
-
-    @xml_handle_element("Owner","Contacts","Contact")
-    def handle_email(self, node):
-        self.email = node.attributes['email']
-        #print(self.email)
     
     @xml_handle_element("Links","Link")
-    def handle_link(self, node):
-        if node.attributes['type'] == 'url':
-            self.url = node.text
+    def handle_link(self, link):
+        if link.attributes['type'] == 'url':
+            self.url = link.text
 
 
-with open("/data/arga-data/biosample_set_small.xml", "rb") as f:
+with open("/data/arga-data/biosample_set_medium.xml", "rb") as f:
     for item in Parser(f).iter_from(Entry):
         #print("> ",item)
         jsonStr = json.dumps(item.props)
@@ -66,4 +65,4 @@ with con:
     for row in data:
         print(row)
     count = con.execute("SELECT COUNT(*) FROM SAMPLE")
-    print("count = ", count.fetchone()[0])
+    print("count =", count.fetchone()[0])
