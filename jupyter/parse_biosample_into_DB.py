@@ -8,50 +8,56 @@ con = sl.connect('biosamples.db')
 
 with con:
     con.execute("""
+        DROP TABLE IF EXISTS SAMPLE;
+    """)
+
+with con:
+    con.execute("""
         CREATE TABLE IF NOT EXISTS SAMPLE (
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
             accession TEXT,
-            attributeJson TEXT
+            email TEXT,
+            link_url TEXT,
+            attribute_json TEXT
         );
     """)
 
-sql = 'INSERT INTO SAMPLE (accession, attributeJson) values(?, ?)'
-# data = [
-#     (1, 'Alice', 21),
-#     (2, 'Bob', 22),
-#     (3, 'Chris', 23)
-# ]
-# with con:
-#     con.executemany(sql, data)
-#bioSampleNameList = []
+sql = 'INSERT INTO SAMPLE (accession, email, link_url, attribute_json) values(?, ?, ?, ?)'
 
 @xml_handle_element("BioSampleSet", "BioSample")
 @dataclass
 class Entry:
     id: str 
-    props: List[list] = field(default_factory=list)
+    email: str = ''
+    url: str = ''
+    props: Dict[str, str] = field(default_factory=dict)
 
     def __init__(self, node):
          self.id = node.attributes['accession']
-         self.props = []
-         #print(node.attributes['accession'])
+         self.props = {}
 
     @xml_handle_element("Attributes","Attribute")
-    def handle_title(self, items):
-        #thisAttr = {items.attributes['attribute_name']: items.text }
-        thisAttr = items.attributes['attribute_name']
-        self.props.append(thisAttr)
-        #print(self)
-        #yield from items
+    def handle_attribute(self, items):
+        thisAttr = { items.attributes['attribute_name']: items.text }
+        self.props.update(thisAttr)
+
+
+    @xml_handle_element("Owner","Contacts","Contact")
+    def handle_email(self, node):
+        self.email = node.attributes['email']
+        #print(self.email)
+    
+    @xml_handle_element("Links","Link")
+    def handle_link(self, node):
+        if node.attributes['type'] == 'url':
+            self.url = node.text
 
 
 with open("/data/arga-data/biosample_set_small.xml", "rb") as f:
     for item in Parser(f).iter_from(Entry):
         #print("> ",item)
-        #print("item: ", item)
         jsonStr = json.dumps(item.props)
-        #print(accessionId, "|", jsonStr)
-        sqlData = [(item.id, jsonStr)]
+        sqlData = [(item.id, item.email, item.url, jsonStr)]
         with con:
             con.executemany(sql, sqlData)
 
@@ -59,3 +65,5 @@ with con:
     data = con.execute("SELECT * FROM SAMPLE LIMIT 10")
     for row in data:
         print(row)
+    count = con.execute("SELECT COUNT(*) FROM SAMPLE")
+    print("count = ", count.fetchone()[0])
