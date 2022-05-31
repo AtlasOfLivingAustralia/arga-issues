@@ -4,12 +4,11 @@ from typing import Dict, List
 from datetime import datetime
 import sqlite3 as sl
 import json
-import time
 
 start = datetime.now()
 print("Start:",start)
 
-con = sl.connect('biosamples.db')
+con = sl.connect('../data/biosamples.db')
 
 with con:
     con.execute("""
@@ -25,6 +24,7 @@ with con:
             link_url TEXT,
             attribute_json TEXT
         );
+        CREATE INDEX idx_sample_accession on SAMPLE(accession);
     """)
 
 sql = 'INSERT INTO SAMPLE (accession, email, link_url, attribute_json) values(?, ?, ?, ?)'
