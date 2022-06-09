@@ -84,8 +84,8 @@ class Entry:
             self.dwc_sex = items.text
         if (items.attributes.get('attribute_name') and items.attributes['attribute_name'] == 'developmental stage'):
             self.dwc_lifeStage = items.text
-        if (items.attributes.get('attribute_name') and items.attributes['attribute_name'] == 'sample type'):
-            self.dwc_MaterialSample = items.text
+        if (items.attributes.get('attribute_name') and items.attributes['attribute_name'] == 'tissue'):
+            self.dwc_preparations = items.text
         if (items.attributes.get('attribute_name') and items.attributes['attribute_name'] == 'isolate'):
             self.dwc_materialSampleID = items.text
 
