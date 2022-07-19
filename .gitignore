@@ -26,3 +26,6 @@ hs_err_pid*
 *.db
 *.db-journal
 */data/*.json
+*/data/*.tsv
+*/data/*.csv
+.history
