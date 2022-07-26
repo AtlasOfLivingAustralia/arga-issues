@@ -8,12 +8,14 @@ import json
 import progressBar as pgb
 
 start = datetime.now()
-print("Start:",start)
+print("Start:", start)
 # clear DB
 #_drop_table('../data/biosamples_full.db', 'Entry')
 # CREATE INDEX idx_entry_id on ENTRY(id);
 
 # See example record HTML version: https://www.ncbi.nlm.nih.gov/biosample/?term=SAMN06198159
+
+
 @xml_handle_element("BioSampleSet", "BioSample")
 @datalite(db_path="../data/biosamples_DBL.db")
 @dataclass
@@ -35,7 +37,9 @@ class Entry:
     dwc_sex: str = ''
     dwc_lifeStage: str = ''
     dwc_MaterialSample: str = ''
-    dwc_materialSampleID: str  = ''
+    dwc_materialSampleID: str = ''
+    dwc_lat_lon: str = ''
+    dwc_locality: str = ''
     attrs: str = ''
 
     def __init__(self, node):
@@ -49,13 +53,13 @@ class Entry:
         #self.attrs = {}
 
     # <Organism taxonomy_id="4932" taxonomy_name="Saccharomyces cerevisiae"/>
-    @xml_handle_element("Description","Organism")
+    @xml_handle_element("Description", "Organism")
     def handle_organism(self, node):
         if node.attributes.get('taxonomy_name'):
             self.scientificName = node.attributes['taxonomy_name']
 
     # <Contact email="shuse@mbl.edu" lab="MARBILAB">
-    @xml_handle_element("Owner","Contacts","Contact")
+    @xml_handle_element("Owner", "Contacts", "Contact")
     def handle_email(self, node):
         if node.attributes.get('email'):
             self.email = node.attributes['email']
@@ -63,18 +67,19 @@ class Entry:
             self.lab = node.attributes['lab']
 
     # <Attribute attribute_name="strain" harmonized_name="strain" display_name="strain">BY4741</Attribute>
-    @xml_handle_element("Attributes","Attribute")
+    @xml_handle_element("Attributes", "Attribute")
     def handle_attribute(self, items):
         # Attributes can have different field names - pick the "best" available
-        thisAttr = {} # use a dict to strore attribute fields
+        thisAttr = {}  # use a dict to strore attribute fields
         if self.attrs:
-            thisAttr = json.loads(self.attrs) # load any existing data from previous Attribute entries     
+            # load any existing data from previous Attribute entries
+            thisAttr = json.loads(self.attrs)
         if items.attributes.get('harmonized_name'):
-            thisAttr.update({ items.attributes['harmonized_name']: items.text })
+            thisAttr.update({items.attributes['harmonized_name']: items.text})
         elif items.attributes.get('attribute_name'):
-            thisAttr.update({ items.attributes['attribute_name']: items.text })
-        #self.attrs.update(thisAttr) # add to dataclass field (dict)
-        self.attrs = json.dumps(thisAttr) # JSON stringified
+            thisAttr.update({items.attributes['attribute_name']: items.text})
+        # self.attrs.update(thisAttr) # add to dataclass field (dict)
+        self.attrs = json.dumps(thisAttr)  # JSON stringified
         # extract any DwC fields so upstream code doesn't need to know about the XML structure
         if (items.attributes.get('attribute_name') and items.attributes['attribute_name'] == 'collection_date'):
             self.dwc_EarliestDateCollected = items.text
@@ -88,21 +93,26 @@ class Entry:
             self.dwc_preparations = items.text
         if (items.attributes.get('attribute_name') and items.attributes['attribute_name'] == 'isolate'):
             self.dwc_materialSampleID = items.text
+        if (items.attributes.get('attribute_name') and items.attributes['attribute_name'] == 'lat_lon'):
+            self.dwc_lat_lon = items.text
+        if (items.attributes.get('attribute_name') and items.attributes['attribute_name'] == 'geo_loc_name'):
+            self.dwc_locality = items.text
 
     # <Link type="url" label="GEO Web Link">http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM282598</Link>
-    @xml_handle_element("Links","Link")
+    @xml_handle_element("Links", "Link")
     def handle_link(self, link):
         if link.attributes['type'] == 'url':
             self.url = link.text
+
 
 debug = False
 totalRecords = 26497644
 count = 0
 with open("/data/arga-data/biosample_set.xml", "rb") as f:
     for item in Parser(f).iter_from(Entry):
-        count +=  1
+        count += 1
         if (debug and count % 1000 == 0):
-            print(count,item)
+            print(count, item)
         # if (not debug and count % 10000 == 0):
         #     print('.', end='', sep='')
         # if count % 800000 == 0:
@@ -116,5 +126,5 @@ with open("/data/arga-data/biosample_set.xml", "rb") as f:
 
 end = datetime.now()
 print("End:", end)
-print("Count =","{:,d}".format(count))
+print("Count =", "{:,d}".format(count))
 print("The total execution time in seconds is:", str(end-start)[:9])
