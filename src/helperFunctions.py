@@ -1,67 +1,53 @@
 import pandas as pd
 import json
 import os
+import config
 
-def getValueExamples(dataframe, examples = 10, outpath = '.', outfilename = "examples.json"):
+def loadDataSources(filepath=config.sourcesPath):
+    """
+    Parameters:
+        filepath: Path to the json containing the sources information.
+
+    Creates a dictionary of Source objects mapped to the name of the source. 
+    """
+    class Source:
+        def __init__(self, params):
+            self.downloadedFile = params.get("downloadedFile", "") # Filename for URI download to save to
+            self.processedFile = params.get("processedFile", "") # Some files need to be processed before conversion to dwc
+            self.uri = params.get("uri", "") # URI for the source
+            self.parseKwargs = params.get("parseKwargs", {}) # Kwargs for parsing into pandas dataframe
+
+        def getLoadPath(self, dir, forceuri=False):
+            if self.processedFile: # Processed file has priority
+                return os.path.join(dir, self.processedFile)
+
+            if forceuri:
+                return self.uri
+
+            return os.path.join(dir, self.downloadedFile)
+
+    with open(filepath) as fp:
+        sourceDict = json.load(fp)
+
+    return {name: Source(params) for name, params in sourceDict.items()}
+
+def loadSourceFile(filepath, kwargs={}, skipBadLines=True):
     """
     Paramters:
-        dataframe: pandas dataframe to extract examples from
-        examples: number of unique examples from each column
-        outpath: path to output folder
-        outfilename: name for the output file, should end with .json
+        filepath: Path to file to load from
+        kwargs: Optional kwargs to use when parsing
+        skipBadLines: Skips lines with errors if set, otherwise raises error.
 
-    Creates up (examples) unique examples of each column to determine what the column name should be mapped to.
+    Populates a pandas dataframe from a filepath.
     """
-    exampleDict = {}
+    df = pd.read_csv(
+        filepath,
+        dtype=str,
+        on_bad_lines='skip' if skipBadLines else 'error',
+        **kwargs
+    )
 
-    for col in dataframe.columns:
-        values = []
-        pos = 0
-        while len(values) < examples:
-            if pos >= len(dataframe):
-                break
-
-            if pd.notna(dataframe[col][pos]) and dataframe[col][pos] not in values:
-                values.append(dataframe[col][pos])
-            pos +=1
-            
-        exampleDict[col] = values
-
-    with open(os.path.join(outpath, outfilename), "w") as fp:
-        json.dump(exampleDict, fp, indent=4, default=str)
-
-def convertToDwC(inpath, outprefix, outpath = '.'):
-    """
-    Parmaters:
-        inpath: full path to file to convert to dwc
-        outprefix: prefix for both the generated file, and column names that could not be found in dwc mapping
-        outpath: location to put the output file
-
-    Converts a csv/tsv file to a darwin core csv.
-    Prints the conversions that were made to column names.
-    """
-    mappingFile = "../mapping.json"
-    with open(mappingFile) as fp:
-        lookup = json.load(fp)
-
-    reverseLookup = {oldName: dwcName for dwcName, oldNameList in lookup.items() for oldName in oldNameList}
-
-    df = pd.read_table(inpath, dtype='object', parse_dates=['last_updated'])
-
-    newNames = {}
-    for col in df.columns:
-        if col in reverseLookup:
-            newNames[col] = reverseLookup[col]
-        elif col in lookup:
-            print(f"Skipping conversion of {col}")
-            continue
-        else:
-            newNames[col] = f"{outprefix}_{col}"
-
-        print(f"Converted {col} to {newNames[col]}")
-
-    df = df.rename(newNames, axis=1)
-    df.to_csv(os.path.join(outpath, f"{outprefix}_dwc.csv"))
+    return df
 
 def latlongToDecimal(latlong):
     """

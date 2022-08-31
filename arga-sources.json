@@ -1,0 +1,31 @@
+{
+    "ENA-assembly": {
+        "downloadedFile": "ena_assembly_all_fields.tsv",
+        "uri": "https://www.ebi.ac.uk/ena/portal/api/search?result=assembly&fields=all&limit=0&format=tsv",
+        "parseKwargs": {
+            "sep": "\t"
+        }
+    },
+    "NCBI-genbank": {
+        "downloadedFile": "assembly_summary_genbank.csv",
+        "uri": "https://ftp.ncbi.nih.gov/genomes/genbank/assembly_summary_genbank.txt"
+    },
+    "NCBI-refseq": {
+        "downloadedfile": "assembly_summary_refseq.csv",
+        "uri": "https://ftp.ncbi.nih.gov/genomes/refseq/assembly_summary_refseq.txt",
+        "parseKwargs": {
+            "header": 1,
+            "sep": "\t"
+        }
+    },
+    "NCBI-bioproject": {
+        "downloadedFile": "ncbi_bioproject.xml",
+        "processedFile": "ncbi_bioproject.csv",
+        "uri": "https://ftp.ncbi.nlm.nih.gov/bioproject/bioproject.xml"
+    },
+    "ALA-specieslist": {
+        "downloadedFile": "ala_specieslist.json",
+        "processedFile": "ala_species.csv",
+        "uri": "https://lists.ala.org.au/ws/speciesList"
+    }
+}
