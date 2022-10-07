@@ -29,7 +29,11 @@ hs_err_pid*
 */data/*.json
 */data/*.tsv
 */data/*.csv
+*/data/*.xml
+*/data/*.txt
 generatedFiles/*
 .history
 env
 *__pycache__
+*.DS_Store
+*.code-workspace
