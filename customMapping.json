@@ -1,0 +1,4 @@
+{
+    "ncbi_bioproject": ["ArchiveID_accession"],
+    "ncbi_biosample": ["LocusTagPrefix_biosample_id"]
+}
