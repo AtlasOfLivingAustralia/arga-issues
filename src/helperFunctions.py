@@ -4,32 +4,25 @@ import os
 import config
 
 def loadDataSources(filepath=config.sourcesPath):
-    """
-    Parameters:
-        filepath: Path to the json containing the sources information.
-
-    Creates a dictionary of Source objects mapped to the name of the source. 
-    """
     class Source:
-        def __init__(self, params):
-            self.downloadedFile = params.get("downloadedFile", "") # Filename for URI download to save to
-            self.processedFile = params.get("processedFile", "") # Some files need to be processed before conversion to dwc
-            self.uri = params.get("uri", "") # URI for the source
-            self.parseKwargs = params.get("parseKwargs", {}) # Kwargs for parsing into pandas dataframe
+        def __init__(self, **kwargs):
+            for kwarg, value in kwargs.items():
+                setattr(self, kwarg, value)
 
-        def getLoadPath(self, dir, forceuri=False):
-            if self.processedFile: # Processed file has priority
-                return os.path.join(dir, self.processedFile)
+        def loadDataFrame(self, fromuri=False):
+            parseKwargs = getattr(self, 'parseKwargs', {})
+            if fromuri:
+                return loadSourceFile(self.uri, parseKwargs)
 
-            if forceuri:
-                return self.uri
+            if hasattr(self, 'processedFile'):
+                return loadSourceFile(os.path.join(config.dataFolder, self.processedFile), parseKwargs)
 
-            return os.path.join(dir, self.downloadedFile)
+            return loadSourceFile(os.path.join(config.dataFolder, self.downloadedFile), parseKwargs)
 
     with open(filepath) as fp:
-        sourceDict = json.load(fp)
+        sources = json.load(fp)
 
-    return {name: Source(params) for name, params in sourceDict.items()}
+    return {name: Source(**data) for name, data in sources.items()}
 
 def loadSourceFile(filepath, kwargs={}, skipBadLines=True):
     """
@@ -42,13 +35,22 @@ def loadSourceFile(filepath, kwargs={}, skipBadLines=True):
     """
     df = pd.read_csv(
         filepath,
-        dtype=str,
+        dtype=object,
         on_bad_lines='skip' if skipBadLines else 'error',
         **kwargs
     )
 
     return df
 
+def reverseLookup(lookupDict):
+    return {oldName: newName for newName, oldNameList in lookupDict.items() for oldName in oldNameList}
+
+def splitLine(line, endingDivider=True):
+    cleanLine = line.rstrip('\n').rstrip()
+    if endingDivider:
+        cleanLine = cleanLine.rstrip('|')
+    return [element.strip() for element in cleanLine.split('|')]
+    
 def latlongToDecimal(latlong):
     """
     Paramters:
