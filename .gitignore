@@ -35,3 +35,5 @@ logs
 .history
 env
 *__pycache__
+*.DS_Store
+*.code-workspace
