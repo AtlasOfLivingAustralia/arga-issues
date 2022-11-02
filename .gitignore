@@ -30,7 +30,9 @@ hs_err_pid*
 */data/*.json
 */data/*.tsv
 */data/*.csv
-generatedFiles
+*/data/*.xml
+*/data/*.txt
+generatedFiles/*
 logs
 .history
 env
