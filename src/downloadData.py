@@ -15,10 +15,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     source = sources[args.source]
-    if os.path.exists(source.downloadedFile) and not args.overwrite:
+    filePath = os.path.join(config.dataFolder, source.downloadedFile)
+    if os.path.exists(filePath) and not args.overwrite:
         print("File already exists. Try using -o to overwrite.")
         sys.exit()
 
-    outpath = os.path.join(args.dir, source.downloadedFile)
-    print(f"Downloading to {outpath}")
-    subprocess.run(f"curl {source.uri} -o {outpath}")
+    print(f"Downloading to {filePath}")
+    subprocess.run(f"curl {source.uri} -o {filePath}")
