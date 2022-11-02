@@ -26,12 +26,14 @@ hs_err_pid*
 *.csv
 *.db
 *.db-journal
+*.xml
 */data/*.json
 */data/*.tsv
 */data/*.csv
 */data/*.xml
 */data/*.txt
 generatedFiles/*
+logs
 .history
 env
 *__pycache__
