@@ -1,6 +1,6 @@
 This directory contains backup files (JSON) for datasets in the ALA TEST Collectory (https://collections-test.ala.org.au). 
 
-DR      | Name   |  New DR (ALA prod)
+collections-test DR      | Name   |  New DR (collections prod)
 --------|--------|---------
 [dr18509](https://raw.githubusercontent.com/ARGA-Genomes/arga-data/master/metadata/dr18509.json) | NCBI Genome Refseq | [dr20468](https://collections.ala.org.au/public/show/dr20468)
 [dr18541](https://raw.githubusercontent.com/ARGA-Genomes/arga-data/master/metadata/dr18541.json) | NCBI Genbank Genome | [dr20471](https://collections.ala.org.au/public/show/dr20471)
