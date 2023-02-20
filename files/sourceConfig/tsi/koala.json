@@ -1,0 +1,10 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://koalagenomes.s3.ap-southeast-2.amazonaws.com/Koala_Metadata-19-10-2022.csv",
+            "downloadedFile": "Koala_Metadata.csv"
+        }
+    ]
+}

@@ -1,0 +1,25 @@
+{
+    "dbType": "location",
+    "dataType": "<SOURCE/ENRICH>",
+    "dataLocation": "<URL OF ROOT DIR>",
+    "subDirectoryDepth": 1,
+    "regexMatch": "metadata\\.yaml",
+    "globalProcessing": [
+        {
+            "script": "<PATH TO SCRIPT TO USE>",
+            "args": [
+                "<ARGS>",
+                "<TO>",
+                "<PASS>"
+            ],
+            "kwargs": {
+                "kw": "<KWARGS>",
+                "t": "<TO>",
+                "ps": "<PASS>"
+            },
+            "outputs": [
+                "<EXPECTED OUTPUT FILES>"
+            ]
+        }
+    ]
+}

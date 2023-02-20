@@ -1,0 +1,30 @@
+{
+    "dataType": "enrich",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip",
+            "downloadedFile": "taxdump.zip",
+            "processing": [
+                {
+                    "script": "tools/processing/extract.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "outputs": [
+                        "taxdump"
+                    ]
+                },
+                {
+                    "script": "sourceProcessing/ncbi/buildTaxonomyTree.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "outputs": [
+                        "ncbiTaxonomy.csv"
+                    ]
+                }
+            ]
+        }
+    ]
+}

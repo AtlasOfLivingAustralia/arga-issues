@@ -1,0 +1,19 @@
+{
+    "dataType": "source",
+    "dbType": "location",
+    "dataLocation": "https://42basepairs.com/browse/s3/genomeark/species/",
+    "subDirectoryDepth": 1,
+    "regexMatch": "metadata\\.yaml",
+    "processing": [
+        {
+            "script": "tools/processing/flattenYaml.py",
+            "args": [
+                "{0}",
+                "{0, PARENT_STEM, _metadata.yaml}"
+            ],
+            "outputs": [
+                "{0, PARENT_STEM, _metadata.yaml}"
+            ]
+        }
+    ]
+}

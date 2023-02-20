@@ -1,0 +1,54 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://ftp.ncbi.nlm.nih.gov/tpa/release/con_tpa_cu.gbff.gz",
+            "downloadedFile": "con_tpa_cu.gbff.gz",
+            "processing": [
+                {
+                    "script": "tools/processingl/extract.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "outputs": [
+                        "con_tpa_cu.gbff"
+                    ]
+                },
+                {
+                    "script": "sourceProcessing/ncbi/flatfileParser.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "outputs": [
+                        "con_tpa_cu.csv"
+                    ]
+                }
+            ]
+        },
+        {
+            "url": "https://ftp.ncbi.nlm.nih.gov/tpa/release/tpa_cu.gbff.gz",
+            "downloadedFile": "tpa_cu.gbff.gz",
+            "processing": [
+                {
+                    "script": "processing/general/extract.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "outputs": [
+                        "tpa_cu.gbff"
+                    ]
+                },
+                {
+                    "script": "processing/ncbi/flatfileParser.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "outputs": [
+                        "tpa_cu.csv"
+                    ]
+                }
+            ]
+        }
+    ]
+}

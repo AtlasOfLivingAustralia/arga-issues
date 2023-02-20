@@ -1,0 +1,26 @@
+{
+    "dataType": "enrich",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://ftp.ncbi.nlm.nih.gov/bioproject/bioproject.xml",    
+            "downloadedFile": "bioproject.xml",
+            "processing": [
+                {
+                    "script": "tools/processing/xmlProcess.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "kwargs": {
+                        "subfileRows": 100000,
+                        "onefile": "bioproject",
+                        "limitDuplicates": 1
+                    },
+                    "outputs": [
+                        "bioproject.csv"
+                    ]
+                }
+            ]
+        }
+    ]
+}

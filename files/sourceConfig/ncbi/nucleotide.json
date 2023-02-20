@@ -1,0 +1,27 @@
+{
+    "dataType": "source",
+    "dbType": "location",
+    "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
+    "subDirectoryDepth": 0,
+    "regexMatch": "gb[a-z]{3}\\d+\\.seq\\.gz",
+    "processing": [
+        {
+            "script": "tools/processing/extract.py",
+            "args": [
+                "{0}"
+            ],
+            "outputs": [
+                "{0, STEM}"
+            ]
+        },
+        {
+            "script": "sourceProcessing/ncbi/flatfileParser.py",
+            "args": [
+                "{0}"
+            ],
+            "outputs": [
+                "{0, STEM, .csv}"
+            ]
+        }
+    ]
+}

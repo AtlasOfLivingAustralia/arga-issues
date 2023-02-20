@@ -1,0 +1,34 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://ftp.ebi.ac.uk/pub/databases/ena/taxonomy/taxonomy.xml.gz",
+            "downloadedFile": "taxonomy.xml.gz",
+            "processing": [
+                {
+                    "script": "tools/processing/extract.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "outputs": [
+                        "taxonomy.xml"
+                    ]
+                },
+                {
+                    "script": "tools/processing/xmlProcess.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "kwargs": {
+                        "subfileRows": 1000000,
+                        "onefile": "taxonomy"
+                    },
+                    "outputs": [
+                        "taxonomy.csv"
+                    ]
+                }
+            ]
+        }
+    ]
+}

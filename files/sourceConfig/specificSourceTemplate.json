@@ -1,0 +1,46 @@
+{
+    "dbType": "specific",
+    "dataType": "<sOURCE/ENRICH>",
+    "files": [
+        {
+            "url": "<URL FOR FILE>",
+            "downloadedFile": "<FILENAME AFTER DOWNLOAD>",
+            "processing": [
+                {
+                    "script": "<PATH TO SCRIPT TO USE>",
+                    "args": [
+                        "<ARGS>",
+                        "<TO>",
+                        "<PASS>"
+                    ],
+                    "kwargs": {
+                        "kw": "<KWARGS>",
+                        "t": "<TO>",
+                        "ps": "<PASS>"
+                    },
+                    "outputs": [
+                        "<EXPECTED OUTPUT FILES>"
+                    ]
+                }
+            ]
+        }
+    ],
+    "globalProcessing": [
+        {
+            "script": "<PATH TO SCRIPT TO USE>",
+            "args": [
+                "<ARGS>",
+                "<TO>",
+                "<PASS>"
+            ],
+            "kwargs": {
+                "kw": "<KWARGS>",
+                "t": "<TO>",
+                "ps": "<PASS>"
+            },
+            "outputs": [
+                "<EXPECTED OUTPUT FILES>"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,24 @@
+{
+    "dataType": "source",
+    "dbType": "location",
+    "dataLocation": "https://db.anemone.bio/dist/",
+    "auth": "auth.txt",
+    "regexMatch": ".*\\.tsv\\.xz",
+    "processing": [
+        {
+            "script": "tools/processing/extract.py",
+            "args": [
+                "{0}"
+            ],
+            "outputs": [
+                "{0, STEM}"
+            ]
+        }
+    ],
+    "fileProperties": {
+        "separator": "\t"
+    },
+    "dwcProperties": {
+        "augmentScript": "sourceProcessing/anemone/postDWC.py"
+    }
+}

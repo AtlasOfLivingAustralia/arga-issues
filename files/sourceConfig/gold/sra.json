@@ -1,0 +1,21 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://gold.jgi.doe.gov/download?mode=sra_biome_img_excel",
+            "downloadedFile": "sraBiomeImg.xlsx",
+            "processing": [
+                {
+                    "script": "tools/processing/excelProcess.py",
+                    "args": [
+                        "{0}"
+                    ], 
+                    "outputs": [
+                        "{SCRIPT}"
+                    ]
+                }
+            ]
+        }
+    ]
+}

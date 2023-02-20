@@ -1,0 +1,24 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/All_Data.gene_info.gz",
+            "downloadedFile": "All_data_gene_info.gz",
+            "processing": [
+                {
+                    "script": "tools/processing/extract.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "outputs": [
+                        "All_data_gene_info.csv"
+                    ]
+                }
+            ],
+            "fileProperties": {
+                "separator": "\t"
+            }
+        }
+    ]
+}
