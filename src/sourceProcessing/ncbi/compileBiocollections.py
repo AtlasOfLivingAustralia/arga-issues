@@ -1,13 +1,17 @@
-import config
-import os
+import lib.config as cfg
 import pandas as pd
-from helperFunctions import splitLine
 
-if __name__ == '__main__':
-    biocolls = os.path.join(config.dataFolder, "biocollections")
-    collCodes = os.path.join(biocolls, "Collection_codes.txt")
-    instCodes = os.path.join(biocolls, "Institution_codes.txt")
-    uInstCodes = os.path.join(biocolls, "Unique_institution_codes.txt")
+def splitLine(line, endingDivider=True):
+    cleanLine = line.rstrip('\n').rstrip()
+    if endingDivider:
+        cleanLine = cleanLine.rstrip('|')
+    return [element.strip() for element in cleanLine.split('|')]
+
+def process(outputFile):
+    biocolls = cfg.folderPaths.data / "ncbi" / "biocollections"
+    collCodes = biocolls / "Collection_codes.txt"
+    instCodes = biocolls /"Institution_codes.txt"
+    uInstCodes = biocolls / "Unique_institution_codes.txt"
 
     for ref, file in enumerate((collCodes, instCodes, uInstCodes)):
         data = []
@@ -29,4 +33,7 @@ if __name__ == '__main__':
             output = pd.merge(output, df, 'left')
 
     output.dropna(how='all', axis=1, inplace=True)
-    output.to_csv(os.path.join(config.dataFolder, "biocollections.csv"), index=False)
+    output.to_csv(biocolls / outputFile, index=False)
+
+if __name__ == '__main__':
+    process("biocollections.csv")

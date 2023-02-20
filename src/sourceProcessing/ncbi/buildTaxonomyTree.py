@@ -1,6 +1,6 @@
 import pickle
-from xml.etree.ElementInclude import include
 import pandas as pd
+import lib.config as cfg
 
 class Tree:
     class Node:
@@ -64,9 +64,9 @@ class Tree:
             dataDict[taxID]["taxonRank"] = node.rank
             dataDict[taxID]["higherClassification"] = ';'.join(taxInfo.values())
 
-        df = pd.DataFrame.from_dict(dataDict, orient='index')
+        df =  pd.DataFrame.from_dict(dataDict, orient='index')
         df.index.name = "taxonID"
-        df.to_csv("../data/ncbiTaxonomy.csv")
+        return df
 
 def splitLine(line):
     return [element.strip('\t') for element in line.rstrip('|\n').split('|')]
@@ -102,4 +102,5 @@ if __name__ == '__main__':
 
     print("Creating Dataframe")
     rankColumns = ["kingdom", "phylum", "class", "order", "family", "subfamily", "genus", "subgenus", "species"]
-    tree.toDataframe(rankColumns)
+    df = tree.toDataframe(rankColumns)
+    df.to_csv("../data/ncbiTaxonomy.csv")

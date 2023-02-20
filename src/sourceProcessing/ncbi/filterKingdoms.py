@@ -1,5 +1,5 @@
 import json
-import config
+from ...lib.config import folderPaths, filePaths
 
 if __name__ == '__main__':
     exclude = {
@@ -13,7 +13,7 @@ if __name__ == '__main__':
         }
     }
 
-    with open('../data/categories.dmp') as fp:
+    with open(folderPaths.rawData / "categories.dmp") as fp:
         data = fp.readline()
         while data:
             category, speciesID, taxonID = data.split()
@@ -22,5 +22,5 @@ if __name__ == '__main__':
                 exclude["speciesID"]["data"].append(speciesID)
             data = fp.readline()
 
-    with open(config.excludePath, 'w') as fp:
+    with open(filePaths.excludedEntries, 'w') as fp:
         json.dump(exclude, fp, indent=4)
