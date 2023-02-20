@@ -1,5 +1,4 @@
 import argparse
-from ncbiBuildTree import Tree
 import pickle
 
 if __name__ == '__main__':
