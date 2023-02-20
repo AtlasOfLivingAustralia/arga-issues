@@ -1,0 +1,21 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://gold.jgi.doe.gov/download?mode=site_excel",
+            "downloadedFile": "goldData.xlsx",
+            "processing": [
+                {
+                    "script": "tools/processing/excelProcess.py",
+                    "args": [
+                        "{0}"
+                    ], 
+                    "outputs": [
+                        "{SCRIPT}"
+                    ]
+                }
+            ]
+        }
+    ]
+}

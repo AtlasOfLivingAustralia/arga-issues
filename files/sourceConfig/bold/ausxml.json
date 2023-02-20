@@ -1,0 +1,10 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "http://v4.boldsystems.org/index.php/API_Public/combined?geo=Australia&format=xml",
+            "downloadedFile": "bold_data.xml"
+        }
+    ]
+}

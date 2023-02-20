@@ -1,0 +1,19 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files" : [
+        {
+            "url": "https://ftp.ncbi.nih.gov/genomes/genbank/assembly_summary_genbank.txt",
+            "downloadedFile": "assembly_summary_genbank.tsv",
+            "fileProperties": {
+                "separator": "\t",
+                "firstrow": 1
+            }
+        }
+    ],
+    "enrich": {
+        "biosample": "ncbi_biosample",
+        "bioproject": "ncbi_bioproject",
+        "taxonomy": "taxonID"
+    }
+}

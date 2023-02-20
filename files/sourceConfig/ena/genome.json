@@ -1,0 +1,25 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://ftp.ebi.ac.uk/pub/databases/ena/genome_collections/gc.xml",
+            "downloadedFile": "genomeCollections.xml",
+            "processing": [
+                {
+                    "script": "tools/processing/xmlProcess.py",
+                    "args": [
+                        "{0}"
+                    ],
+                    "kwargs": {
+                        "subfileRows": 100000,
+                        "onefile": "genomeCollections"
+                    },
+                    "outputs": [
+                        "genomeCollections.csv"
+                    ]
+                }
+            ]
+        }
+    ]
+}

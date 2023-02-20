@@ -1,0 +1,21 @@
+{
+    "dataType": "source",
+    "dbType": "location",
+    "dataLocation": "https://ftp.ebi.ac.uk/pub/databases/eva/rs_releases/release_4/by_species/",
+    "subDirectoryDepth": -1,
+    "regexMatch": ".*\\.txt\\.gz",
+    "processing": [
+        {
+            "script": "tools/processing/extract.py",
+            "args": [
+                "{0}"
+            ],
+            "outputs": [
+                "{0, STEM}"
+            ]
+        }
+    ],
+    "fileProperties": {
+        "separator": "\t"
+    }
+}

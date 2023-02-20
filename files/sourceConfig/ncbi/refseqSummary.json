@@ -1,0 +1,19 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://ftp.ncbi.nih.gov/genomes/refseq/assembly_summary_refseq.txt",
+            "downloadedFile": "assembly_summary_refseq.tsv",
+            "fileProperties": {
+                "separator": "\t",
+                "firstrow": 1
+            }
+        }
+    ],
+    "enrich": {
+        "biosample": "ncbi_biosample",
+        "bioproject": "ncbi_bioproject",
+        "taxonomy": "taxonID"
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Collection_codes.txt",
+            "downloadedFile": "Collection_codes.txt"
+        },
+        {
+            "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Institution_codes.txt",
+            "downloadedFile": "Institution_codes.txt"
+        },
+        {
+            "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Unique_institution_codes.txt",
+            "downloadedFile": "Unique_institution_codes.txt"
+        } 
+    ],
+    "combineProcessing": {
+        "script": "sourceProcessing/ncbi/compileBiocollections.py",
+        "args": [
+            "biocollections.csv"
+        ],
+        "outputs": [
+            "biocollections.csv"
+        ]
+    }
+}
