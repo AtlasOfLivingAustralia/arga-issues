@@ -1,9 +1,9 @@
 import json
 import argparse
-import config
+import lib.config
 import os
 import pandas as pd
-from helperFunctions import loadSourceFile
+from lib.commonFuncs import loadSourceFile
 
 # Generate examples from all DwC files for each field found
 

@@ -2,14 +2,13 @@ import requests
 import json
 import xmltodict
 import os
-import config
+from lib.config import folderPaths, filePaths
 
 if __name__ == '__main__':
     # Generate mapping json from all dwc extensions
     # Additionally, generate a helpful collation of all dwc extensions available
 
     dwcExtensions = "https://rs.gbif.org/extensions.json"
-    outputFolder = config.genFolder
 
     response = requests.get(dwcExtensions)
     extensionMap = response.json()
@@ -36,12 +35,17 @@ if __name__ == '__main__':
 
             conversionMap[prop["@name"]] = []
 
-    with open(os.path.join(outputFolder, "rawDwCExtensions.json"), "w") as fp:
+    with open(folderPaths.genFiles / "rawDwCExtensions.json", "w") as fp:
         json.dump(rawOutput, fp, indent=4)
+    print("Created raw dwc file")
 
-    with open(os.path.join(outputFolder, "DwCExtensionCollation.json"), "w") as fp:
+    with open(folderPaths.genFiles / "DwCExtensionCollation.json", "w") as fp:
         json.dump(dwcCollation, fp, indent=4)
+    print("Created extensions collation file")
 
-    if not os.path.exists(config.mappingPath):
-        with open(config.mappingPath, "w") as fp:
+    if not filePaths.dwcMapping.exists():
+        with open(filePaths.dwcMapping, "w") as fp:
             json.dump(conversionMap, fp, indent=4)
+        print("Created empty dwc map")
+    else:
+        print("dwc map file already exists")
