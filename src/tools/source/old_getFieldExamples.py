@@ -1,28 +1,27 @@
 import argparse
 import json
-import os
 import pandas as pd
-import config
-from helperFunctions import loadDataSources
+from lib.config import folderPaths
+from lib.sourceManager import SourceManager
 
 # Generate examples from a table before conversion to DwC to help match column names to DwC fields
 
 if __name__ == '__main__':
-    sources = loadDataSources()
+    sources = SourceManager()
 
     parser = argparse.ArgumentParser(description="Generate examples of column values")
-    parser.add_argument('source', choices=sources.keys())
+    parser.add_argument('source', choices=sources.choices())
     parser.add_argument('-f', '--format', choices=['json', 'csv'], default='json', help="Output file format")
     parser.add_argument('-e', '--examples', type=int, default=10, help="Maximum examples to generate.")
     args = parser.parse_args()
 
-    source = sources[args.source]
+    source = sources.getSource(args.source)
     df = source.loadDataFrame()
     exampleDict = {}
 
-    for ref, colname in enumerate(df.columns):
-        print(f"Completed %: {100*ref/len(df.columns):3.02f}", end='\r')
+    print(df.head())
 
+    for ref, colname in enumerate(df.columns, start=1):
         values = []
         pos = 0
         col = df[colname]
@@ -36,16 +35,15 @@ if __name__ == '__main__':
             
         exampleDict[colname] = values
 
-    print("Completed %: 100.00")
+        print(f"Completed %: {100*ref/len(df.columns):3.02f}", end='\r')
 
-    path = os.path.join(config.examplesFolder, f"{args.source}_examples.{args.format}")
+    path = folderPaths.genFiles / f"{args.source}_examples.{args.format}"
     if args.format == 'json':
         with open(path, "w") as fp:
             json.dump(exampleDict, fp, indent=4, default=str)
-        
 
     elif args.format == 'csv':
         df = pd.DataFrame.from_dict(exampleDict, orient='index').transpose()
         df.to_csv(path, index=False)
     
-    print(f"Written to file at {path}")
+    print(f"\nWritten to file at {path}")
