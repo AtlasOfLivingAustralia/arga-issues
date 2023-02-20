@@ -1,0 +1,17 @@
+[default.files]
+sources = "./arga-sources.json" # Location of sources and relevant information for sources
+dwcMapping = "./files/mapping/dwc.json" # Mapping from non DwC fields to DwC
+otherMapping = "./files/mapping/custom.json" # Additionally mapping to other fields
+excludedEntries = "./files/mapping/exclude.json" # Exclude entries by a DwC field
+
+[default.folders]
+src = "./src" # Source folder for all python code
+sources = "./files/sourceConfig" # Location of data source config
+data = "./data" # Base location for data
+results = "./data/results" # Location to store smaller files from processing larger files
+genFiles = "./files/generated" # Base location of any generated files
+logs = "./logs" # Location of all logging files
+
+[custom.files]
+
+[custom.folders]
