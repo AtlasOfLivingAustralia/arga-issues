@@ -5,7 +5,7 @@ from abc import ABC, abstractclassmethod
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
 from lib.sourceObjs.files import DBFile, PreDWCFile
-from lib.sourceObjs.processing import Processor
+from lib.processing.processor import Processor
 
 class Database(ABC):
 
@@ -73,7 +73,7 @@ class Database(ABC):
         print(f"Creating directory for data: {str(self.databaseDir)}")
         self.databaseDir.mkdir(parents=True, exist_ok=True)
 
-    def checkLeftovers(self, properties: list[dict]):
+    def checkLeftovers(self, properties: dict):
         for property in properties:
             print(f"{self.location}-{self.database} unknown property: {property}")
 

@@ -1,5 +1,7 @@
-from lib.sourceObjs.processing import Processor, importModuleFromPath
-from lib.sourceObjs.dwcConverter import DWCConverter
+from lib.processing.processor import Processor
+from lib.processing.augmentor import Augmentor
+from lib.processing.dwcConverter import DWCConverter
+import lib.processing.processingFuncs as pFuncs
 import subprocess
 from pathlib import Path
 
@@ -39,7 +41,7 @@ class DBFile(File):
         self.processor.process()
 
     def getOutputs(self) -> list[Path]:
-        return self.processor.getOutputFiles()
+        return self.processor.getOutputFilePaths()
 
 class PreDWCFile(File):
     def __init__(self, directoryPath: Path, fileName: Path, location: str, fileProperties: dict = {}, dwcProperties: dict = {}, enrichDBs: dict= []):
@@ -55,17 +57,13 @@ class PreDWCFile(File):
         self.separator = fileProperties.get("separator", ",")
         self.firstRow = fileProperties.get("firstrow", 0)
 
-        augScript = dwcProperties.get("augmentScript", None)
-        if augScript is not None:
-            module = importModuleFromPath(augScript)
-            self.augFunc = module.augment
-        else:
-            self.augFunc = None
-
         self.converter = DWCConverter(directoryPath, self.dwcFileName, self.separator, self.firstRow)
 
+        augmentSteps = dwcProperties.get("augment", None)
+        self.augmentor = None if augmentSteps is None else Augmentor(augmentSteps)
+
     def convert(self):
-        self.converter.applyTo(self.filePath, self.location, enrichDBs=self.enrichDBs, augFunc=self.augFunc)
+        self.converter.applyTo(self.filePath, self.location, enrichDBs=self.enrichDBs, augmentor=self.augmentor)
 
     def getOutput(self):
         return self.dwcFileName
