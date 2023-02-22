@@ -27,7 +27,7 @@ class Augmentor:
         self.steps = []
 
         for step in augmentSteps:
-            self.steps.append(AugmentStep(step))
+            self.steps.append(AugmentStep(step.copy()))
 
     def augment(self, df: pd.DataFrame) -> pd.DataFrame:
         for step in self.steps:

@@ -59,9 +59,9 @@ class Step:
 
         self.script = stepInfo.pop("script", None)
         self.func = stepInfo.pop("function", None)
-        self.args = stepInfo.get("args", [])
-        self.kwargs = stepInfo.get("kwargs", {})
-        self.outputFiles = stepInfo.get("outputs", [])
+        self.args = stepInfo.pop("args", [])
+        self.kwargs = stepInfo.pop("kwargs", {})
+        self.outputFiles = stepInfo.pop("outputs", [])
 
         if self.script is None:
             raise Exception("No script specified") from AttributeError
@@ -112,7 +112,7 @@ class Processor:
 
         inputs = self.inputPaths
         for stepInfo in processingSteps:
-            step = Step(stepInfo, inputs)
+            step = Step(stepInfo.copy(), inputs)
             self.steps.append(step)
             self.outputFiles.extend(step.outputFiles)
             inputs = [directoryPath / file for file in step.outputFiles]
