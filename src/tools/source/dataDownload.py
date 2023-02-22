@@ -10,7 +10,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--filenumbers', type=int, default=None, nargs='+', help="Choose which files to download by number")
     args = parser.parse_args()
 
-    source = sources.getDB(args.source)
+    source = sources.getDB(args.source, False)
 
     if args.filenumbers is None:
         source.downloadAllFiles()

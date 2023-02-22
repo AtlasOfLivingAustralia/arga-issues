@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--entries', type=int, default=10, help="Number of unique entries to get")
     args = parser.parse_args()
 
-    source = sourceManager.getDB(args.source)
+    source = sourceManager.getDB(args.source, False)
     entryLimit = args.entries
 
     preDwCFile = source.getPreDWCFile(args.filenum)

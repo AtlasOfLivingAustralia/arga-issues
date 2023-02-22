@@ -16,7 +16,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    db = sources.getDB(args.source)
+    db = sources.getDB(args.source, False)
     dbType = db.getDBType()
 
     if dbType == DBType.SPECIFIC:

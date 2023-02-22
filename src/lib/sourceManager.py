@@ -29,11 +29,11 @@ class SourceManager:
 
         return output
 
-    def getDB(self, source: str) -> Database:
+    def getDB(self, source: str, enrich: bool = True) -> Database:
         location, database = source.split('-')
         location = self.locations.get(location, None)
 
         if location is None:
             raise Exception(f"Invalid location: {location}")
 
-        return location.loadDB(database)
+        return location.loadDB(database, enrich)
