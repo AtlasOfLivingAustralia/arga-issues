@@ -8,6 +8,7 @@
             "processing": [
                 {
                     "script": "tools/processing/excelProcess.py",
+                    "function": "process",
                     "args": [
                         "{0}"
                     ], 

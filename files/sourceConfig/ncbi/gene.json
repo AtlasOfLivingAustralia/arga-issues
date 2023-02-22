@@ -8,6 +8,7 @@
             "processing": [
                 {
                     "script": "tools/processing/extract.py",
+                    "function": "process",
                     "args": [
                         "{0}"
                     ],

@@ -7,6 +7,7 @@
     "processing": [
         {
             "script": "tools/processing/extract.py",
+            "function": "process",
             "args": [
                 "{0}"
             ],
@@ -19,6 +20,11 @@
         "separator": "\t"
     },
     "dwcProperties": {
-        "augmentScript": "sourceProcessing/anemone/postDWC.py"
+        "augment": [
+            {
+                "script": "sourceProcessing/anemone/postDWC.py",
+                "function": "augment"
+            }
+        ]
     }
 }

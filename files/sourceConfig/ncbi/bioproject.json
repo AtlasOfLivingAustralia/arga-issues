@@ -8,6 +8,7 @@
             "processing": [
                 {
                     "script": "tools/processing/xmlProcess.py",
+                    "function": "process",
                     "args": [
                         "{0}"
                     ],

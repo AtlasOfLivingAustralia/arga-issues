@@ -7,6 +7,7 @@
     "processing": [
         {
             "script": "tools/processing/extract.py",
+            "function": "process",
             "args": [
                 "{0}"
             ],
@@ -16,6 +17,7 @@
         },
         {
             "script": "sourceProcessing/ncbi/flatfileParser.py",
+            "function": "process",
             "args": [
                 "{0}"
             ],

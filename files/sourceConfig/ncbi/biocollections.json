@@ -17,6 +17,7 @@
     ],
     "combineProcessing": {
         "script": "sourceProcessing/ncbi/compileBiocollections.py",
+        "function": "process",
         "args": [
             "biocollections.csv"
         ],
