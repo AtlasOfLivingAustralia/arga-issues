@@ -1,18 +1,19 @@
 {
     "dataType": "source",
-    "dbType": "location",
-    "dataLocation": "https://42basepairs.com/browse/s3/genomeark/species/",
-    "subDirectoryDepth": 1,
-    "regexMatch": "metadata\\.yaml",
-    "processing": [
+    "dbType": "script",
+    "script": "sourceProcessing/42bp/genomeArk.py",
+    "function": "build",
+    "folderPrefix": true,
+    "combineProcessing": [
         {
-            "script": "tools/processing/flattenYaml.py",
+            "script": "sourceProcessing/42bp/genomeArk.py",
+            "function": "combine",
             "args": [
-                "{0}",
-                "{0, PARENT_STEM, _metadata.yaml}"
+                "{0, PARENT}",
+                "genomeArk"
             ],
             "outputs": [
-                "{0, PARENT_STEM, _metadata.yaml}"
+                "{0, PARENT, /genomeArk.csv}"
             ]
         }
     ]
