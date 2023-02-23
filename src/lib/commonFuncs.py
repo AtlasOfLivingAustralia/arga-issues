@@ -41,20 +41,22 @@ def loadLogger(filename):
 
     return logging.getLogger(__name__)
 
-def flatten(d):
+def flatten(d, parent=""):
     res = {}
     
     for key, value in d.items():
+        addKey = key if not parent else f"{parent}_{key}"
+
         if isinstance(value, dict):
-            res.update(flatten(value))
+            res.update(flatten(value, parent=key))
         elif isinstance(value, list) or isinstance(value, tuple):
             for item in value:
                 if isinstance(item, dict):
-                    res.update(flatten(item))
+                    res.update(flatten(item, parent=key))
                 else:
-                    res[key] = item
+                    res[addKey] = item
         else:
-            res[key] = value
+            res[addKey] = value
 
     return res
 

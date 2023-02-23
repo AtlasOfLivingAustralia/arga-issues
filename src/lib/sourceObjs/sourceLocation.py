@@ -1,4 +1,4 @@
-from lib.sourceObjs.sourceDatabase import Database, SpecificDB, LocationDB
+from lib.sourceObjs.sourceDatabase import Database, SpecificDB, LocationDB, ScriptDB
 import json
 from pathlib import Path
 
@@ -24,6 +24,9 @@ class SourceLocation:
         
         if dbType == "location":
             return LocationDB(dataType, self.location, database, databaseInfo, enrichDBs)
+        
+        if dbType == "script":
+            return ScriptDB(dataType, self.location, database, databaseInfo, enrichDBs)
 
     def loadDB(self, database: str, enrich: bool = True) -> Database:
         databasePath = self.databaseItems.get(database, None)

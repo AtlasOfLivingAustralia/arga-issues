@@ -1,11 +1,11 @@
 import lib.config as cfg
 import lib.commonFuncs as cmn
-import importlib
 from abc import ABC, abstractclassmethod
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
 from lib.sourceObjs.files import DBFile, PreDWCFile
 from lib.processing.processor import Processor
+import lib.processing.processingFuncs as pFuncs
 
 class Database(ABC):
 
@@ -18,8 +18,8 @@ class Database(ABC):
 
         # Standard properties
         self.authFile = properties.pop("auth", None)
-        self.globalProcessing = properties.pop("globalProcessing", {})
-        self.combineProcessing = properties.pop("combineProcessing", {})
+        self.globalProcessing = properties.pop("globalProcessing", [])
+        self.combineProcessing = properties.pop("combineProcessing", [])
         self.fileProperties = properties.pop("fileProperties", {})
         self.dwcProperties = properties.pop("dwcProperties", {})
         self.enrichDict = properties.pop("enrich", {}) # Dict to store enrich info
@@ -252,12 +252,52 @@ class ScriptDB(Database):
     def postInit(self, properties):
         self.dbType = DBType.SCRIPT
         self.script = properties.pop("script", None)
+        self.func = properties.pop("function", None)
+        self.folderPrefix = properties.pop("folderPrefix", False)
 
         if self.script is None:
-            raise Exception("No provided files for source") from AttributeError
+            raise Exception("No script specified") from AttributeError
+        
+        if self.func is None:
+            raise Exception("No function specified") from AttributeError
 
     def prepare(self):
-        scriptPath = Path(self.script)
-        pathString = str(scriptPath.parent / scriptPath.stem)
-        pathString = pathString.replace("\\", ".")
-        module = importlib.import_module(pathString)
+        function = pFuncs.importFunction(self.script, self.func)
+        urls = function()
+
+        outputs = []
+        for url in urls:
+            urlParts = url.split('/')
+            fileName = urlParts[-1]
+
+            if self.folderPrefix:
+                folderName = urlParts[-2]
+                fileName = f"{folderName}_{fileName}"
+
+            out = self.addDBFile(url, Path(fileName), self.globalProcessing)
+            outputs.extend(out)
+
+        if not self.combineProcessing:
+            for outputFile in out:
+                self.addPreDWCFile(outputFile, self.fileProperties)
+            return
+        
+        self.processor = Processor(self.databaseDir, outputs, self.combineProcessing)
+        for file in self.processor.getOutputFiles():
+            self.addPreDWCFile(file, self.fileProperties)
+
+    def createPreDwC(self, firstFile, fileAmount):
+        if self.combineProcessing:
+            self.downloadAllFiles()
+            self.processAllFiles()
+            self.combine()
+            return
+        
+        for idx in range(firstFile, firstFile + fileAmount):
+            self.downloadFile(idx)
+            self.processFile(idx)
+
+    def createDwC(self, firstFile, fileAmount):
+        self.createPreDwC(firstFile, fileAmount)
+        for idx in range(firstFile, firstFile + fileAmount):
+            self.convertDwC(idx)

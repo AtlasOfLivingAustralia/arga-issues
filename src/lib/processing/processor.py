@@ -41,7 +41,7 @@ class SelectorParser:
         if modifier == "STEM":
             selected = selected.stem
         elif modifier == "PARENT":
-            selected = selected.parent
+            selected = str(selected.parent)
         elif modifier == "PARENT_STEM":
             selected = selected.parent.stem
 
@@ -79,7 +79,7 @@ class Step:
             print(f"Unknown step property: {info}")
 
     def process(self, overwrite=False):
-        if self.outputs and not overwrite and all(output.exists() for output in self.outputFiles):
+        if self.outputFiles and not overwrite and all(output.exists() for output in self.outputFiles):
             print("Outputs already exist, not overwriting")
             return
 
