@@ -134,3 +134,11 @@ def crawl(url, regexMatch, maxDepth=0, user="", password=""):
         subDirDepth += 1
 
     return matchingFiles
+
+def dictListToCSV(dictList, columns, filePath):
+    with open(filePath, 'w', newline='', encoding='utf-8') as fp:
+        writer = csv.DictWriter(fp, columns)
+        writer.writeheader()
+
+        for d in dictList:
+            writer.writerow(d)
