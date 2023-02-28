@@ -1,6 +1,6 @@
 {
     "dataType": "source",
-    "dbType": "script",
+    "dbType": "scriptdata",
     "script": "sourceProcessing/reefGenomics/processing.py",
     "function": "build",
     "args": [
@@ -8,7 +8,7 @@
         ["project", "organism"]
     ],
     "outputs": [
-        "project.csv",
-        "organism.csv"
+        "{PATH, project.csv}",
+        "{PATH, organism.csv}"
     ]
 }

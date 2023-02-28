@@ -4,7 +4,7 @@ from abc import ABC, abstractclassmethod
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
 from lib.sourceObjs.files import DBFile, PreDWCFile
-from lib.processing.processor import Processor
+from lib.processing.processor import Processor, Step, SelectorParser
 import lib.processing.processingFuncs as pFuncs
 
 class Database(ABC):
@@ -251,23 +251,12 @@ class ScriptUrlDB(Database):
     
     def postInit(self, properties):
         self.dbType = DBType.SCRIPTURL
-        self.script = properties.pop("script", None)
-        self.func = properties.pop("function", None)
-        self.args = properties.pop("args", [])
-        self.kwargs = properties.pop("kwargs", {})
-        self.outputs = properties.pop("outputs", [])
+        self.step = Step(properties, SelectorParser(self.databaseDir, []))
         self.folderPrefix = properties.pop("folderPrefix", False)
-
-        if self.script is None:
-            raise Exception("No script specified") from AttributeError
-        
-        if self.func is None:
-            raise Exception("No function specified") from AttributeError
         
     def prepare(self):
         outputs = []
-        function = pFuncs.importFunction(self.script, self.func)
-        urls = function(*self.args, **self.kwargs)
+        urls = self.step.process()
 
         for url in urls:
             urlParts = url.split('/')
@@ -309,22 +298,12 @@ class ScriptDataDB(Database):
 
     def postInit(self, properties):
         self.dbType = DBType.SCRIPTDATA
-        self.script = properties.pop("script", None)
-        self.func = properties.pop("function", None)
-        self.args = properties.pop("args", [])
-        self.kwargs = properties.pop("kwargs", {})
-        self.outputs = properties.pop("outputs", [])
+        self.step = Step(properties, SelectorParser(self.databaseDir, []))
         self.folderPrefix = properties.pop("folderPrefix", False)
-
-        if self.script is None:
-            raise Exception("No script specified") from AttributeError
-        
-        if self.func is None:
-            raise Exception("No function specified") from AttributeError
         
     def prepare(self):
         outputs = []
-        for file in self.outputs:
+        for file in self.step.outputFiles:
             out = self.addDBFile("", Path(file), self.globalProcessing)
             outputs.extend(out)
 
@@ -338,8 +317,7 @@ class ScriptDataDB(Database):
             self.addPreDWCFile(file, self.fileProperties)
 
     def createPreDwC(self, firstFile, fileAmount):
-        function = pFuncs.importFunction(self.script, self.func)
-        function(*self.args, **self.kwargs)
+        self.step.process()
 
     def createDwC(self, firstFile, fileAmount):
         self.createPreDwC(firstFile, fileAmount)

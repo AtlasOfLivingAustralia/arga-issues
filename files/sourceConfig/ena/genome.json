@@ -10,14 +10,14 @@
                     "script": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "kwargs": {
                         "subfileRows": 100000,
                         "onefile": "genomeCollections"
                     },
                     "outputs": [
-                        "genomeCollections.csv"
+                        "{PATH, genomeCollections.csv}"
                     ]
                 }
             ]

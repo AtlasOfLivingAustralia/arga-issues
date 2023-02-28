@@ -10,17 +10,17 @@
                     "script": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "biosample_set.xml"
+                        "{PATH, biosample_set.xml}"
                     ]
                 },
                 {
                     "script": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "kwargs": {
                         "subfileRows": 1000000,
@@ -43,7 +43,7 @@
                         }
                     },
                     "outputs": [
-                        "biosample.csv"
+                        "{PATH, biosample.csv}"
                     ]
                 }
             ]

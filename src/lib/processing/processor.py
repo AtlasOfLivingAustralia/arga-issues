@@ -60,8 +60,7 @@ class SelectorParser:
     
     def pathSelector(self, fileName=None):
         if fileName is None:
-            raise Exception(f"FileName for path not provided") from AttributeError
-        
+            return self.baseDirectory
         return self.baseDirectory / fileName
 
 class Step:
@@ -104,7 +103,7 @@ class Step:
             msg += f" with kwargs {self.kwargs}"
         print(msg)
         
-        processFunction(*self.args, **self.kwargs)
+        return processFunction(*self.args, **self.kwargs)
 
 class Processor:
     def __init__(self, directoryPath: Path, inputFiles: list[Path], processingSteps: list[dict]):

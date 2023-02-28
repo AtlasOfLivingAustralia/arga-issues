@@ -10,20 +10,20 @@
                     "script": "tools/processingl/extract.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "con_tpa_cu.gbff"
+                        "{PATH, con_tpa_cu.gbff}"
                     ]
                 },
                 {
                     "script": "sourceProcessing/ncbi/flatfileParser.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "con_tpa_cu.csv"
+                        "{PATH, con_tpa_cu.csv}"
                     ]
                 }
             ]
@@ -36,20 +36,20 @@
                     "script": "processing/general/extract.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "tpa_cu.gbff"
+                        "{PATH, tpa_cu.gbff}"
                     ]
                 },
                 {
                     "script": "processing/ncbi/flatfileParser.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "tpa_cu.csv"
+                        "{PATH, tpa_cu.csv}"
                     ]
                 }
             ]

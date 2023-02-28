@@ -1,6 +1,6 @@
 {
     "dataType": "source",
-    "dbType": "script",
+    "dbType": "scripturl",
     "script": "sourceProcessing/42bp/genomeArk.py",
     "function": "build",
     "folderPrefix": true,
@@ -9,11 +9,11 @@
             "script": "sourceProcessing/42bp/genomeArk.py",
             "function": "combine",
             "args": [
-                "{0, PARENT}",
+                "{PATH}",
                 "genomeArk"
             ],
             "outputs": [
-                "{0, PARENT, /genomeArk.csv}"
+                "{PATH, genomeArk.csv}"
             ]
         }
     ]

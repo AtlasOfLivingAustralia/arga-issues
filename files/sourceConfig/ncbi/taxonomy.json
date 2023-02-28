@@ -10,7 +10,7 @@
                     "script": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "outputs": [
                         "taxdump"
@@ -20,10 +20,10 @@
                     "script": "sourceProcessing/ncbi/buildTaxonomyTree.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "ncbiTaxonomy.csv"
+                        "{PATH, ncbiTaxonomy.csv}"
                     ]
                 }
             ]

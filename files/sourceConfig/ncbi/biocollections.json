@@ -22,7 +22,7 @@
             "biocollections.csv"
         ],
         "outputs": [
-            "biocollections.csv"
+            "{PATH, biocollections.csv}"
         ]
     }
 }

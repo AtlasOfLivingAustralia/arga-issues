@@ -21,6 +21,5 @@ if __name__ == '__main__':
 
     if dbType == DBType.SPECIFIC:
         db.createDwC()
-
-    elif dbType == DBType.LOCATION or dbType == DBType.SCRIPT:
+    else:
         db.createDwC(args.start, args.quantity)

@@ -9,20 +9,20 @@
             "script": "tools/processing/extract.py",
             "function": "process",
             "args": [
-                "{0}"
+                "{INPUT, 0}"
             ],
             "outputs": [
-                "{0, STEM}"
+                "{INPUT, 0, STEM}"
             ]
         },
         {
             "script": "sourceProcessing/ncbi/flatfileParser.py",
             "function": "process",
             "args": [
-                "{0}"
+                "{INPUT, 0}"
             ],
             "outputs": [
-                "{0, STEM, .csv}"
+                "{INPUT, 0, STEM, .csv}"
             ]
         }
     ]
