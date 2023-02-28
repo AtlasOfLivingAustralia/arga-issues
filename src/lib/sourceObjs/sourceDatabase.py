@@ -247,10 +247,10 @@ class LocationDB(Database):
         for idx in range(firstFile, firstFile + fileAmount):
             self.convertDwC(idx)
 
-class ScriptDB(Database):
-
+class ScriptUrlDB(Database):
+    
     def postInit(self, properties):
-        self.dbType = DBType.SCRIPT
+        self.dbType = DBType.SCRIPTURL
         self.script = properties.pop("script", None)
         self.func = properties.pop("function", None)
         self.args = properties.pop("args", [])
@@ -263,28 +263,22 @@ class ScriptDB(Database):
         
         if self.func is None:
             raise Exception("No function specified") from AttributeError
-
+        
     def prepare(self):
         outputs = []
+        function = pFuncs.importFunction(self.script, self.func)
+        urls = function(*self.args, **self.kwargs)
 
-        if self.outputs: # Script gives output not URLs
-            for file in self.outputs:
-                out = self.addDBFile("", Path(file), self.globalProcessing)
-                outputs.extend(out)
-        else:
-            function = pFuncs.importFunction(self.script, self.func)
-            urls = function(*self.args, **self.kwargs)
+        for url in urls:
+            urlParts = url.split('/')
+            fileName = urlParts[-1]
 
-            for url in urls:
-                urlParts = url.split('/')
-                fileName = urlParts[-1]
+            if self.folderPrefix:
+                folderName = urlParts[-2]
+                fileName = f"{folderName}_{fileName}"
 
-                if self.folderPrefix:
-                    folderName = urlParts[-2]
-                    fileName = f"{folderName}_{fileName}"
-
-                out = self.addDBFile(url, Path(fileName), self.globalProcessing)
-                outputs.extend(out)
+            out = self.addDBFile(url, Path(fileName), self.globalProcessing)
+            outputs.extend(out)
 
         if not self.combineProcessing:
             for outputFile in outputs:
@@ -296,17 +290,56 @@ class ScriptDB(Database):
             self.addPreDWCFile(file, self.fileProperties)
 
     def createPreDwC(self, firstFile, fileAmount):
-        if self.outputs:
-            function = pFuncs.importFunction(self.script, self.func)
-            function(*self.args, **self.kwargs)
-        elif self.combineProcessing:
+        if self.combineProcessing:
             self.downloadAllFiles()
             self.processAllFiles()
             self.combine()
-        else:
-            for idx in range(firstFile, firstFile + fileAmount):
-                self.downloadFile(idx)
-                self.processFile(idx)
+            return
+        
+        for idx in range(firstFile, firstFile + fileAmount):
+            self.downloadFile(idx)
+            self.processFile(idx)
+
+    def createDwC(self, firstFile, fileAmount):
+        self.createPreDwC(firstFile, fileAmount)
+        for idx in range(firstFile, firstFile + fileAmount):
+            self.convertDwC(idx)
+
+class ScriptDataDB(Database):
+
+    def postInit(self, properties):
+        self.dbType = DBType.SCRIPTDATA
+        self.script = properties.pop("script", None)
+        self.func = properties.pop("function", None)
+        self.args = properties.pop("args", [])
+        self.kwargs = properties.pop("kwargs", {})
+        self.outputs = properties.pop("outputs", [])
+        self.folderPrefix = properties.pop("folderPrefix", False)
+
+        if self.script is None:
+            raise Exception("No script specified") from AttributeError
+        
+        if self.func is None:
+            raise Exception("No function specified") from AttributeError
+        
+    def prepare(self):
+        outputs = []
+        for file in self.outputs:
+            out = self.addDBFile("", Path(file), self.globalProcessing)
+            outputs.extend(out)
+
+        if not self.combineProcessing:
+            for outputFile in outputs:
+                self.addPreDWCFile(outputFile, self.fileProperties)
+            return
+        
+        self.processor = Processor(self.databaseDir, outputs, self.combineProcessing)
+        for file in self.processor.getOutputFiles():
+            self.addPreDWCFile(file, self.fileProperties)
+
+    def createPreDwC(self, firstFile, fileAmount):
+        function = pFuncs.importFunction(self.script, self.func)
+        function(*self.args, **self.kwargs)
 
     def createDwC(self, firstFile, fileAmount):
         self.createPreDwC(firstFile, fileAmount)

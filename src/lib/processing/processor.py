@@ -2,12 +2,13 @@ from pathlib import Path
 import lib.processing.processingFuncs as pFuncs
 
 class SelectorParser:
-    def __init__(self, inputPaths):
+    def __init__(self, baseDirectory: Path, inputPaths: list[Path]):
+        self.baseDirectory = baseDirectory
         self.inputPaths = inputPaths
 
     def parseArg(self, arg: str) -> Path|str:
         if self.validSelector(arg):
-            return self.parseSelector(arg, self.inputPaths)
+            return self.parseSelector(arg)
         return arg
 
     def parseMultipleArgs(self, args: list[str]) -> list[Path|str]:
@@ -16,46 +17,57 @@ class SelectorParser:
     def validSelector(self, string: str) -> bool:
         return isinstance(string, str) and string[0] == "{" and string[-1] == "}" # Output hasn't got a complete selector
     
-    def parseSelector(self, arg: str, inputs: list[Path]) -> str:
+    def parseSelector(self, arg: str) -> str:
         selector = arg[1:-1] # Strip off braces
 
         attrs = [attr.strip() for attr in selector.split(',')]
-        selected = attrs[0]
+        selectType = attrs.pop(0)
 
-        if not selected.isdigit():
+        if selectType == "INPUT": # Input selector
+            return self.inputSelector(*attrs)
+        
+        if selectType == "PATH": # Path creator
+            return self.pathSelector(*attrs)
+    
+    def inputSelector(self, selected=None, modifier=None, suffix=None):
+        if selected is None or not selected.isdigit():
             raise Exception(f"Invalid input value for input selection: {selected}")
 
-        selected = int(selected)
+        selectInt = int(selected)
 
-        if selected < 0 or selected >= len(inputs):
+        if selectInt < 0 or selectInt >= len(self.inputPaths):
             raise Exception(f"Invalid input selection: {selected}")
         
-        selected = inputs[selected]
+        selectedPath = self.inputPaths[selectInt]
 
-        if len(attrs) == 1: # Selector only
-            return selected
-
-        modifier = attrs[1]
+        if modifier is None: # Selector only
+            return selectedPath
 
         # Apply modifier
         if modifier == "STEM":
-            selected = selected.stem
+            selectedPathStr = selected.stem
         elif modifier == "PARENT":
-            selected = str(selected.parent)
+            selectedPathStr = str(selected.parent)
         elif modifier == "PARENT_STEM":
-            selected = selected.parent.stem
+            selectedPathStr = selected.parent.stem
+        else:
+            raise Exception(f"Invalid modifer: {modifier}") from AttributeError
+        
+        if suffix is None: # No suffix addition
+            return Path(selectedPathStr)
 
-        # No suffix addition if only 2 attributes
-        if len(attrs) == 2:
-            return Path(selected)
-
-        # Apply suffix from last attribute
-        return Path(selected + attrs[2])
+        return Path(selected + suffix) # Apply suffix
+    
+    def pathSelector(self, fileName=None):
+        if fileName is None:
+            raise Exception(f"FileName for path not provided") from AttributeError
+        
+        return self.baseDirectory / fileName
 
 class Step:
-    def __init__(self, stepInfo: dict, inputPaths: list):
+    def __init__(self, stepInfo: dict, parser: SelectorParser):
         self.stepInfo = stepInfo
-        self.inputPaths = inputPaths
+        self.parser = parser
 
         self.script = stepInfo.pop("script", None)
         self.func = stepInfo.pop("function", None)
@@ -68,12 +80,10 @@ class Step:
         
         if self.func is None:
             raise Exception("No function specified") from AttributeError
-
-        self.selectorParser = SelectorParser(self.inputPaths)
         
-        self.outputFiles = self.selectorParser.parseMultipleArgs(self.outputFiles)
-        self.args = self.selectorParser.parseMultipleArgs(self.args)
-        self.kwargs = {key: self.selectorParser.parseArg(value) for key, value in self.kwargs.items()}
+        self.outputFiles = self.parser.parseMultipleArgs(self.outputFiles)
+        self.args = self.parser.parseMultipleArgs(self.args)
+        self.kwargs = {key: self.parser.parseArg(value) for key, value in self.kwargs.items()}
 
         for info in stepInfo:
             print(f"Unknown step property: {info}")
@@ -112,7 +122,7 @@ class Processor:
 
         inputs = self.inputPaths
         for stepInfo in processingSteps:
-            step = Step(stepInfo.copy(), inputs)
+            step = Step(stepInfo.copy(), SelectorParser(self.directoryPath, inputs))
             self.steps.append(step)
             self.outputFiles.extend(step.outputFiles)
             inputs = [directoryPath / file for file in step.outputFiles]

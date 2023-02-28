@@ -67,7 +67,3 @@ class PreDWCFile(File):
 
     def getOutput(self):
         return self.dwcFileName
-
-class OutputFile(File):
-    def __init__(self, directoryPath, fileName):
-        super().__init__(directoryPath, fileName)
