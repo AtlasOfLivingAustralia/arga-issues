@@ -1,7 +1,6 @@
-from lib.processing.processor import Processor
+from lib.processing.processor import FileProcessor
 from lib.processing.augmentor import Augmentor
 from lib.processing.dwcConverter import DWCConverter
-import lib.processing.processingFuncs as pFuncs
 import subprocess
 from pathlib import Path
 
@@ -13,7 +12,7 @@ class File:
         self.filePath = directoryPath / fileName
 
 class DBFile(File):
-    def __init__(self, url: str, directoryPath: Path, fileName: Path, processor: Processor):
+    def __init__(self, url: str, directoryPath: Path, fileName: Path, processor: FileProcessor):
         super().__init__(directoryPath, fileName)
         
         self.url = url
@@ -41,7 +40,7 @@ class DBFile(File):
         self.processor.process()
 
     def getOutputs(self) -> list[Path]:
-        return self.processor.getOutputFilePaths()
+        return self.processor.getOutputs()
 
 class PreDWCFile(File):
     def __init__(self, directoryPath: Path, fileName: Path, location: str, fileProperties: dict = {}, dwcProperties: dict = {}, enrichDBs: dict= []):

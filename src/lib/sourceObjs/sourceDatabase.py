@@ -4,8 +4,9 @@ from abc import ABC, abstractclassmethod
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
 from lib.sourceObjs.files import DBFile, PreDWCFile
-from lib.processing.processor import Processor, Step, SelectorParser
-import lib.processing.processingFuncs as pFuncs
+from lib.processing.processor import FileProcessor
+from lib.processing.steps import ScriptStep, FileStep
+from lib.processing.parser import SelectorParser
 
 class Database(ABC):
 
@@ -33,6 +34,8 @@ class Database(ABC):
 
         self.locationDir = cfg.folderPaths.data / location
         self.databaseDir = self.locationDir / database
+        self.downloadDir = self.databaseDir / "raw"
+        self.processingDir = self.databaseDir / "processing"
 
         self.user = ""
         self.password = ""
@@ -78,12 +81,14 @@ class Database(ABC):
             print(f"{self.location}-{self.database} unknown property: {property}")
 
     def addDBFile(self, url: str, fileName: Path, processingSteps: list[dict]) -> list[Path]:
-        processor = Processor(self.databaseDir, [fileName], processingSteps)
-        dbFile = DBFile(url, self.databaseDir, fileName, processor)
+        print(f"ADDING DB FILE: {fileName}")
+        processor = FileProcessor([fileName], processingSteps, self.processingDir)
+        dbFile = DBFile(url, self.downloadDir, fileName, processor)
         self.dbFiles.append(dbFile)
         return dbFile.getOutputs()
 
     def addPreDWCFile(self, fileName: Path, properties: dict):
+        print(f"ADDING PRE-DWC FILE: {fileName}")
         preDWCFile = PreDWCFile(self.databaseDir, fileName, self.location, properties, self.dwcProperties, self.enrichDBs)
         self.preDWCFiles.append(preDWCFile)
         self.outputs.append(self.databaseDir / preDWCFile.getOutput())
@@ -177,8 +182,8 @@ class SpecificDB(Database):
             return
 
         # Outputs require combining, so preDWC files are a result of combining
-        self.processor = Processor(self.databaseDir, outputs, self.combineProcessing)
-        for file in self.processor.getOutputFiles():
+        self.processor = FileProcessor(outputs, self.combineProcessing, self.processingDir)
+        for file in self.processor.getOutputs():
             self.addPreDWCFile(file, self.fileProperties)
 
     def createPreDwC(self):
@@ -251,7 +256,7 @@ class ScriptUrlDB(Database):
     
     def postInit(self, properties):
         self.dbType = DBType.SCRIPTURL
-        self.step = Step(properties, SelectorParser(self.databaseDir, []))
+        self.step = ScriptStep(properties)
         self.folderPrefix = properties.pop("folderPrefix", False)
         
     def prepare(self):
@@ -274,7 +279,7 @@ class ScriptUrlDB(Database):
                 self.addPreDWCFile(outputFile, self.fileProperties)
             return
         
-        self.processor = Processor(self.databaseDir, outputs, self.combineProcessing)
+        self.processor = FileProcessor(outputs, self.combineProcessing, self.processingDir)
         for file in self.processor.getOutputFiles():
             self.addPreDWCFile(file, self.fileProperties)
 
@@ -298,12 +303,12 @@ class ScriptDataDB(Database):
 
     def postInit(self, properties):
         self.dbType = DBType.SCRIPTDATA
-        self.step = Step(properties, SelectorParser(self.databaseDir, []))
+        self.step = FileStep(properties, SelectorParser(self.downloadDir, []))
         self.folderPrefix = properties.pop("folderPrefix", False)
         
     def prepare(self):
         outputs = []
-        for file in self.step.outputFiles:
+        for file in self.step.getOutputs():
             out = self.addDBFile("", Path(file), self.globalProcessing)
             outputs.extend(out)
 
@@ -312,7 +317,7 @@ class ScriptDataDB(Database):
                 self.addPreDWCFile(outputFile, self.fileProperties)
             return
         
-        self.processor = Processor(self.databaseDir, outputs, self.combineProcessing)
+        self.processor = FileProcessor(outputs, self.combineProcessing, self.processingDir)
         for file in self.processor.getOutputFiles():
             self.addPreDWCFile(file, self.fileProperties)
 
