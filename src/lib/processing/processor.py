@@ -1,17 +1,14 @@
 from pathlib import Path
 from lib.processing.parser import SelectorParser
-from lib.processing.steps import FileStep
+from lib.processing.steps import FileStep, DownloadStep
 
 class FileProcessor:
     def __init__(self, inputPaths: list[Path], processingSteps: list[dict], processingDirectory: Path, outputDirectory: Path = None):
         self.inputPaths = inputPaths
         self.steps = []
 
-        print("SETTING UP PROCESSOR")
-
         if not processingSteps:
             self.outputPaths = self.inputPaths
-            print("BREAKING EARLY")
             return
         
         if outputDirectory is None:
@@ -24,11 +21,22 @@ class FileProcessor:
                 directory = outputDirectory
 
             parser = SelectorParser(directory, nextInputs)
-            fileStep = FileStep(step, parser)
-            self.steps.append(fileStep)
-            nextInputs = fileStep.getOutputs()
+
+            if "download" in step:
+                stepObject = DownloadStep(step, parser)
+            else:
+                stepObject = FileStep(step, parser)
+            self.steps.append(stepObject)
+            nextInputs = stepObject.getOutputs()
 
         self.outputPaths = nextInputs
+
+    @classmethod
+    def fromSteps(cls, inputPaths, steps, processingDirectory, outputDirectory=None):
+        obj = cls(inputPaths, {}, processingDirectory, outputDirectory)
+        obj.steps = steps
+        obj.outputPaths = steps[-1].getOutputs()
+        return obj
 
     def process(self, overwrite=False):
         for step in self.steps:

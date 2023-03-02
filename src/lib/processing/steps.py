@@ -1,6 +1,7 @@
 from lib.processing.parser import SelectorParser
 import lib.processing.processingFuncs as pFuncs
 from pathlib import Path
+import subprocess
 
 class ScriptStep:
     def __init__(self, stepParamters: dict):
@@ -59,3 +60,35 @@ class FileStep(ScriptStep):
             if isinstance(output, Path) and not output.exists():
                 return False
         return True
+
+class DownloadStep:
+    def __init__(self, stepParameters: dict, parser: SelectorParser):
+        self.parser = parser
+
+        self.url = stepParameters.pop("download", None)
+        self.filePath = stepParameters.pop("filePath", None)
+        self.user = stepParameters.pop("user", "")
+        self.password = stepParameters.pop("pass", "")
+
+        if self.url is None:
+            raise Exception("No url specified") from AttributeError
+        
+        if self.filePath is None:
+            raise Exception("No file path specified") from AttributeError
+        
+        self.filePath = self.parser.parseArg(self.filePath)
+        
+    def getOutputs(self):
+        return [self.filePath]
+    
+    def process(self, overwrite=False):
+        if self.filePath.exists() and not overwrite:
+            return
+        
+        print(f"Downloading from {self.url} to file {str(self.filePath)}")
+        
+        call = f"curl.exe {self.url} -o {self.filePath}"
+        if self.user:
+            call += f" --user {self.user}:{self.password}"
+        
+        subprocess.run(call)

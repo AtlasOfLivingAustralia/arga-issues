@@ -19,13 +19,14 @@ if __name__ == '__main__':
     source = sourceManager.getDB(args.source, False)
     entryLimit = args.entries
 
-    preDwCFile = source.getPreDWCFile(args.filenum)
+    stageFile = source.getPreDWCFile(args.filenum)
+    outputDir = source.getBaseDir()
 
     dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
     customLookup = cmn.loadFromJson(cfg.filePaths.otherMapping)
 
     data = {}
-    with pd.read_csv(preDwCFile.filePath, on_bad_lines="skip", chunksize=1024, delimiter=preDwCFile.separator, header=preDwCFile.firstRow, dtype=object) as reader:
+    with pd.read_csv(stageFile.filePath, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
         for chunk in reader:
 
             if not data: # Empty data dict, initial pass
@@ -54,5 +55,5 @@ if __name__ == '__main__':
             if all(len(info["values"]) >= entryLimit for _, info in data.items()):
                 break
 
-    with open(preDwCFile.directoryPath / "fieldExamples.json", 'w') as fp:
+    with open(outputDir / "fieldExamples.json", 'w') as fp:
         json.dump(data, fp, indent=4)
