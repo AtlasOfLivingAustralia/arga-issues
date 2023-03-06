@@ -53,7 +53,7 @@ class FileStep(ScriptStep):
             print("Outputs already exist, not overwriting")
             return
         
-        super().process(verbose)
+        return super().process(verbose)
 
     def checkOutputsExist(self):
         for output in self.outputs:

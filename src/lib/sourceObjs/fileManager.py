@@ -24,6 +24,7 @@ class StageFile:
     
     def create(self):
         if self.filePath.exists():
+            print(f"{str(self.filePath)} already exists, skipping creation")
             return
         
         for parent in self.parents:
@@ -42,7 +43,6 @@ class FileManager:
         self.stages = {stage: [] for stage in FileStage}
 
     def getFile(self, stage: FileStage, idx: int):
-        print(self.stages)
         return self.stages[stage][idx]
     
     def createAll(self, stage: FileStage):
