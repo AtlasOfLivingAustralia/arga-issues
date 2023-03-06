@@ -22,7 +22,7 @@ def cleanColName(colName):
         colName = colName.strip(c)
     return colName
 
-def createMappings(columns, dwcLookup, customLookup, prefix, preserveDwCMatch=False, keepMapFields=[], skipRemap=[]):
+def createMappings(columns, dwcLookup, customLookup, prefix, preserveDwCMatch=False, keepMapFields=[], skipRemap=[], prefixMissing=True):
     newColumns = {}
     copyColumns = {}
 
@@ -49,8 +49,11 @@ def createMappings(columns, dwcLookup, customLookup, prefix, preserveDwCMatch=Fa
             elif currentCol in dwcLookup or currentCol in customLookup: # If it exists in either set of keys
                 newColumns[currentCol] = currentCol # Don't remap, it's a field we want
 
-            else: # Column isn't in either map
+            elif prefixMissing: # Column isn't in either map and we want to prefix
                 newColumns[currentCol] = prefixedCleanColName # Prefix columns that have no available mapping
+
+            else: # Column isn't in either map and we don't want to prefix
+                newColumns[currentCol] = None
 
         if currentCol in newColumns and newColumns[currentCol] in keepMapFields: # If the original column of a mapped field should be kept
             copyColumns[currentCol] = prefixedCleanColName

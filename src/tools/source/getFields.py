@@ -34,7 +34,7 @@ if __name__ == '__main__':
         for chunk in reader:
 
             if not data: # Empty data dict, initial pass
-                newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, customLookup, source.location)
+                newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, customLookup, source.location, prefixMissing=False)
                 for column in chunk.columns:
                     values = chunk[column].tolist()
                     values = [v for idx, v in enumerate(values, start=1) if v not in values[idx:] and v != 'nan']
