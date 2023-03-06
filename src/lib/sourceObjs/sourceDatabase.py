@@ -164,7 +164,7 @@ class ScriptUrlDB(Database):
     def postInit(self, properties):
         self.dbType = DBType.SCRIPTURL
         self.folderPrefix = properties.pop("folderPrefix", False)
-        self.step = FileStep(properties, SelectorParser(self.databaseDir, []))
+        self.step = FileStep(properties, SelectorParser(self.databaseDir, self.downloadDir, self.processingDir, []))
         
     def prepare(self):
         urls = self.step.process()

@@ -3,17 +3,20 @@
     "dbType": "scripturl",
     "script": "sourceProcessing/42bp/genomeArk.py",
     "function": "build",
+    "args": [
+        "{PATH, ROOT, species.json}"
+    ],
     "folderPrefix": true,
     "combineProcessing": [
         {
             "script": "sourceProcessing/42bp/genomeArk.py",
             "function": "combine",
             "args": [
-                "{PATH}",
-                "genomeArk"
+                "{PATH, DOWNLOAD}",
+                "{PATH, ROOT, genomeArk.csv}"
             ],
             "outputs": [
-                "{PATH, genomeArk.csv}"
+                "{PATH, ROOT, genomeArk.csv}"
             ]
         }
     ]

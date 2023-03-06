@@ -1,8 +1,10 @@
 from pathlib import Path
 
 class SelectorParser:
-    def __init__(self, baseDirectory: Path, inputPaths: list[Path]):
-        self.baseDirectory = baseDirectory
+    def __init__(self, rootDir: Path, downloadDir: Path, processingDir: Path, inputPaths: list[Path]):
+        self.rootDir = rootDir
+        self.downloadDir = downloadDir
+        self.processingDir = processingDir
         self.inputPaths = inputPaths
 
     def parseArg(self, arg: str) -> Path|str:
@@ -57,7 +59,20 @@ class SelectorParser:
 
         return Path(selected + suffix) # Apply suffix
     
-    def pathSelector(self, fileName=None):
+    def pathSelector(self, directory=None, fileName=None):
+        if directory is None:
+            raise Exception("No directory specified") from AttributeError
+        
+        selectedDir = None
+        if directory == "ROOT":
+            selectedDir = self.rootDir
+        elif directory == "DOWNLOAD":
+            selectedDir = self.downloadDir
+        elif directory == "PROCESSING":
+            selectedDir = self.processingDir
+        else:
+            raise Exception(f"Invalid directory selected: {directory}") from AttributeError
+
         if fileName is None:
-            return self.baseDirectory
-        return self.baseDirectory / fileName
+            return selectedDir
+        return selectedDir / fileName

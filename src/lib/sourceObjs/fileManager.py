@@ -50,8 +50,8 @@ class FileManager:
             file.create()
 
     def addDownloadURLStage(self, url, fileName, processing, fileProperties={}):
-        downloadedFile = self.downloadDir / fileName
-        downloadProcessor = FileProcessor([], [{"download": url, "filePath": downloadedFile}], Path(), self.downloadDir)
+        downloadedFile = self.downloadDir / fileName # downloaded files go into download directory
+        downloadProcessor = FileProcessor([], [{"download": url, "filePath": downloadedFile}], self.rootDir, self.downloadDir, self.processingDir)
         rawFile = StageFile(downloadedFile, fileProperties, downloadProcessor)
         self.stages[FileStage.RAW].append(rawFile)
 
@@ -59,20 +59,20 @@ class FileManager:
             self.stages[FileStage.PROCESSED].append(rawFile)
             return
         
-        processor = FileProcessor([rawFile.getFilePath()], processing, self.processingDir)
+        processor = FileProcessor([rawFile.getFilePath()], processing, self.rootDir, self.downloadDir, self.processingDir)
         for outputPath in processor.getOutputs():
             processedFile = StageFile(outputPath, {}, processor, [rawFile])
             self.stages[FileStage.PROCESSED].append(processedFile)
 
     def addRetrieveScriptStage(self, scriptStep, fileProperties):
-        downloadProcessor = FileProcessor.fromSteps([], [scriptStep], self.downloadDir)
+        downloadProcessor = FileProcessor.fromSteps([], [scriptStep], self.rootDir, self.downloadDir, self.processingDir)
         for filePath in downloadProcessor.getOutputs():
             processedFile = StageFile(filePath, fileProperties, downloadProcessor)
             self.stages[FileStage.PROCESSED].append(processedFile)
     
     def addCombineStage(self, processing):
         parentFiles = self.stages[FileStage.PROCESSED]
-        combineProcessor = FileProcessor(parentFiles, processing, self.processingDir)
+        combineProcessor = FileProcessor(parentFiles, processing, self.rootDir, self.downloadDir, self.processingDir)
         for outputPath in combineProcessor.getOutputs():
             combinedFile = StageFile(outputPath, {}, combineProcessor, parentFiles)
             self.stages[FileStage.COMBINED].append(combinedFile)
