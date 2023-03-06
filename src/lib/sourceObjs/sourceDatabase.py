@@ -174,7 +174,7 @@ class ScriptUrlDB(Database):
         if self.script is None:
             raise Exception("No script specified") from AttributeError
 
-        self.scriptStep = FileStep(self.script, SelectorParser(self.databaseDir, self.downloadDir, self.processingDir, []))
+        self.scriptStep = FileStep(self.script, SelectorParser(self.sourceDirectories, []))
         
     def prepare(self):
         urls = self.scriptStep.process()
