@@ -4,7 +4,23 @@
     "files": [
         {
             "url": "http://v4.boldsystems.org/index.php/API_Public/combined?geo=Australia&format=xml",
-            "downloadedFile": "bold_data.xml"
+            "downloadedFile": "bold_data.xml",
+            "processing": [
+                {
+                    "path": "tools/processing/xmlProcess.py",
+                    "function": "process",
+                    "args": [
+                        "{INPUT, 0}"
+                    ],
+                    "kwargs": {
+                        "subfileRows": 1000000,
+                        "onefile": "bold_xml"
+                    },
+                    "outputs": [
+                        "{PATH, ROOT, bold_xml.csv}"
+                    ]
+                }
+            ]
         }
     ]
 }

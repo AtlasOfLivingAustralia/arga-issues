@@ -6,7 +6,8 @@
             "url": "http://v4.boldsystems.org/index.php/API_Public/combined?geo=Australia&format=tsv",
             "downloadedFile": "bold_data.tsv",
             "fileProperties": {
-                "separator": "\t"
+                "separator": "\t",
+                "encoding": "cp1252"
             }
         }
     ]
