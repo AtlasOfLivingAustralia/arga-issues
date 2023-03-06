@@ -1,15 +1,17 @@
 {
     "dataType": "source",
     "dbType": "scripturl",
-    "script": "sourceProcessing/42bp/genomeArk.py",
-    "function": "build",
-    "args": [
-        "{PATH, ROOT, species.json}"
-    ],
+    "script": {
+        "path": "sourceProcessing/42bp/genomeArk.py",
+        "function": "build",
+        "args": [
+            "{PATH, ROOT, species.json}"
+        ]
+    },
     "folderPrefix": true,
     "combineProcessing": [
         {
-            "script": "sourceProcessing/42bp/genomeArk.py",
+            "path": "sourceProcessing/42bp/genomeArk.py",
             "function": "combine",
             "args": [
                 "{PATH, DOWNLOAD}",
