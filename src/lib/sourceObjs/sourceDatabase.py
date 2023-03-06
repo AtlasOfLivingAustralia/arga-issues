@@ -164,10 +164,15 @@ class ScriptUrlDB(Database):
     def postInit(self, properties):
         self.dbType = DBType.SCRIPTURL
         self.folderPrefix = properties.pop("folderPrefix", False)
-        self.step = FileStep(properties, SelectorParser(self.databaseDir, self.downloadDir, self.processingDir, []))
+        self.script = properties.pop("script", None)
+        
+        if self.script is None:
+            raise Exception("No script specified") from AttributeError
+
+        self.scriptStep = FileStep(self.script, SelectorParser(self.databaseDir, self.downloadDir, self.processingDir, []))
         
     def prepare(self):
-        urls = self.step.process()
+        urls = self.scriptStep.process()
 
         for url in urls:
             urlParts = url.split('/')
@@ -188,7 +193,12 @@ class ScriptDataDB(Database):
 
     def postInit(self, properties):
         self.dbType = DBType.SCRIPTDATA
-        self.scriptStep = FileStep(properties, SelectorParser(self.downloadDir, []))
+        self.script = properties.pop("script", None)
+
+        if self.script is None:
+            raise Exception("No script specified") from AttributeError
+
+        self.scriptStep = FileStep(self.script, SelectorParser(self.downloadDir, []))
         
     def prepare(self):
         self.fileManager.addRetrieveScriptStage(self.scriptStep, self.fileProperties)

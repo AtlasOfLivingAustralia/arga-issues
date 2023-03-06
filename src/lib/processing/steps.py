@@ -5,17 +5,17 @@ import subprocess
 
 class ScriptStep:
     def __init__(self, stepParamters: dict):
-        self.script = stepParamters.pop("script", None)
+        self.path = stepParamters.pop("path", None)
         self.function = stepParamters.pop("function", None)
         self.args = stepParamters.pop("args", [])
         self.kwargs = stepParamters.pop("kwargs", {})
         self.outputs = stepParamters.pop("outputs", [])
 
-        if self.script is None:
-            raise Exception("No script specified") from AttributeError
+        if self.path is None:
+            raise Exception("No script path specified") from AttributeError
         
         if self.function is None:
-            raise Exception("No function specified") from AttributeError
+            raise Exception("No script function specified") from AttributeError
 
         for parameter in stepParamters:
             print(f"Unknown step parameter: {parameter}")
@@ -24,10 +24,10 @@ class ScriptStep:
         return self.outputs
 
     def process(self, verbose=True):
-        processFunction = pFuncs.importFunction(self.script, self.function)
+        processFunction = pFuncs.importFunction(self.path, self.function)
 
         if verbose:
-            msg = f"Running {self.script} function '{self.function}'"
+            msg = f"Running {self.path} function '{self.function}'"
             if self.args:
                 msg += f" with args {self.args}"
             if self.kwargs:
