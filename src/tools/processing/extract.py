@@ -11,14 +11,17 @@ class ExtractTypes(Enum):
     GZIP = ".gz"
     XZ = ".xz"
 
-def process(filePath):
+def process(filePath, outputDir=None):
     if not isinstance(filePath, Path):
         filePath = Path(filePath)
+
+    if outputDir is None:
+        outputDir = filePath.parent
 
     extensions = [e.value for e in ExtractTypes]
     while filePath.suffix in extensions:
         extractType = ExtractTypes(filePath.suffix)
-        outputFile = filePath.parent / filePath.stem
+        outputFile = outputDir / filePath.stem
         
         if extractType == ExtractTypes.ZIP:
             with zipfile.ZipFile(filePath, 'r') as zip:
@@ -36,26 +39,6 @@ def process(filePath):
         filePath = outputFile
 
     return filePath
-
-    # # while filePath.suffix in 
-    # if filePath.suffix == '.gz':
-    #     if Path(filePath.stem).suffix: # If there is a suffix on file after un-gzipping
-    #         newFilename = filePath.stem
-    #     else:
-    #         newFilename = f"{filePath.stem}.csv"
-
-    #     newfilePath = filePath.parent / newFilename
-
-    #     with gzip.open(filePath, 'rb') as gz, open(newfilePath, 'wb') as fp:
-    #         shutil.copyfileobj(gz, fp)
-
-    #     filePath = newfilePath
-
-    # if filePath.suffix == '.zip':
-    #     with zipfile.ZipFile(filePath, 'r') as zip:
-    #         zip.extractall(extractLocation)
-
-    # return filePath
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Extract file or folder")

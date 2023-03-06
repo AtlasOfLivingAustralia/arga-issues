@@ -5,7 +5,7 @@ from lib.sourceObjs.dbTypes import DBType
 from lib.processing.processor import FileProcessor
 from lib.processing.steps import ScriptStep, FileStep
 from lib.processing.parser import SelectorParser
-from lib.sourceObjs.fileManager import FileManager, FileStage
+from lib.sourceObjs.fileManager import FileManager, FileStage, StageFile
 
 class Database:
 
@@ -17,6 +17,7 @@ class Database:
         self.dbType = DBType.UNKNOWN
 
         # Standard properties
+        self.folderPrefix = properties.pop("folderPrefix", False)
         self.authFile = properties.pop("auth", None)
         self.globalProcessing = properties.pop("globalProcessing", [])
         self.combineProcessing = properties.pop("combineProcessing", [])
@@ -28,19 +29,13 @@ class Database:
         self.databaseDir = self.locationDir / database
         self.downloadDir = self.databaseDir / "raw"
         self.processingDir = self.databaseDir / "processing"
+        self.preConversionDir = self.databaseDir / "preConversion"
+        self.dwcDir = self.databaseDir / "dwc"
 
-        self.fileManager = FileManager(self.databaseDir, self.downloadDir, self.processingDir)
+        self.sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
+
+        self.fileManager = FileManager(self.sourceDirectories, self.authFile)
         self.enrichDBs = {} # Dict to store references to enrich dbs
-
-        self.user = ""
-        self.password = ""
-
-        if self.authFile is not None:
-            with open(self.databaseDir / self.authFile) as fp:
-                data = fp.read().splitlines()
-
-            self.user = data[0].split('=')[1]
-            self.password = data[1].split('=')[1]
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -56,6 +51,16 @@ class Database:
 
     def prepare(self):
         raise NotImplementedError
+    
+    def getFileNameFromURL(self, url: str) -> str:
+        urlParts = url.split('/')
+        fileName = urlParts[-1]
+
+        if not self.folderPrefix:
+            return fileName
+
+        folderName = urlParts[-2]
+        return f"{folderName}_{fileName}"
     
     def download(self):
         self.fileManager.createAll(FileStage.RAW)
@@ -83,7 +88,7 @@ class Database:
     def getBaseDir(self):
         return self.databaseDir
     
-    def getPreDWCFile(self, idx):
+    def getPreDWCFile(self, idx) -> StageFile:
         return self.fileManager.getFile(FileStage.PRE_DWC, idx)
 
 class SpecificDB(Database):
@@ -151,7 +156,7 @@ class LocationDB(Database):
                 fp.writelines(urls)
 
         for url in urls:
-            fileName = url.rsplit('/', 1)[1]
+            fileName = self.getFileNameFromURL(url)
             self.fileManager.addDownloadURLStage(url, fileName, self.globalProcessing, self.fileProperties)
 
         if self.combineProcessing:
@@ -175,13 +180,7 @@ class ScriptUrlDB(Database):
         urls = self.scriptStep.process()
 
         for url in urls:
-            urlParts = url.split('/')
-            fileName = urlParts[-1]
-
-            if self.folderPrefix:
-                folderName = urlParts[-2]
-                fileName = f"{folderName}_{fileName}"
-
+            fileName = self.getFileNameFromURL(url)
             self.fileManager.addDownloadURLStage(url, fileName, self.globalProcessing)
 
         if self.combineProcessing:

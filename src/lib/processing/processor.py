@@ -3,7 +3,7 @@ from lib.processing.parser import SelectorParser
 from lib.processing.steps import FileStep, DownloadStep
 
 class FileProcessor:
-    def __init__(self, inputPaths: list[Path], processingSteps: list[dict], rootDir: Path, downloadDir: Path, processingDir: Path):
+    def __init__(self, inputPaths: list[Path], processingSteps: list[dict], sourceDirectories: tuple):
         self.inputPaths = inputPaths
         self.steps = []
 
@@ -13,20 +13,20 @@ class FileProcessor:
 
         nextInputs = inputPaths
         for step in processingSteps:
-            parser = SelectorParser(rootDir, downloadDir, processingDir, nextInputs)
+            parser = SelectorParser(sourceDirectories, nextInputs)
 
             if "download" in step:
-                stepObject = DownloadStep(step, parser)
+                stepObject = DownloadStep(step.copy(), parser)
             else:
-                stepObject = FileStep(step, parser)
+                stepObject = FileStep(step.copy(), parser)
             self.steps.append(stepObject)
             nextInputs = stepObject.getOutputs()
 
         self.outputPaths = nextInputs
 
     @classmethod
-    def fromSteps(cls, inputPaths, steps, rootDir, downloadDir, processingDir):
-        obj = cls(inputPaths, {}, rootDir, downloadDir, processingDir)
+    def fromSteps(cls, inputPaths, steps, sourceDirectories):
+        obj = cls(inputPaths, {}, sourceDirectories)
         obj.steps = steps
         obj.outputPaths = steps[-1].getOutputs()
         return obj

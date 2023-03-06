@@ -35,10 +35,19 @@ class StageFile:
         self.processor.process()
 
 class FileManager:
-    def __init__(self, rootDir: Path, downloadDir: Path, processingDir: Path):
-        self.rootDir = rootDir
-        self.downloadDir = downloadDir
-        self.processingDir = processingDir
+    def __init__(self, sourceDirectories: tuple, authFile: str = None):
+        self.sourceDirectories = sourceDirectories
+        self.authFile = authFile
+
+        self.user = ""
+        self.password = ""
+
+        if self.authFile is not None:
+            with open(self.sourceDirectories[0] / self.authFile) as fp:
+                data = fp.read().splitlines()
+
+            self.user = data[0].split('=')[1]
+            self.password = data[1].split('=')[1]
 
         self.stages = {stage: [] for stage in FileStage}
 
@@ -49,30 +58,31 @@ class FileManager:
         for file in self.stages[stage]:
             file.create()
 
-    def addDownloadURLStage(self, url, fileName, processing, fileProperties={}):
-        downloadedFile = self.downloadDir / fileName # downloaded files go into download directory
-        downloadProcessor = FileProcessor([], [{"download": url, "filePath": downloadedFile}], self.rootDir, self.downloadDir, self.processingDir)
-        rawFile = StageFile(downloadedFile, fileProperties, downloadProcessor)
+    def addDownloadURLStage(self, url: str, fileName: str, processing: list[dict], fileProperties: dict = {}):
+        downloadedFile = self.sourceDirectories[1] / fileName # downloaded files go into download directory
+        downloadProcessor = FileProcessor([], [{"download": url, "filePath": downloadedFile, "user": self.user, "pass": self.password}], self.sourceDirectories)
+        
+        rawFile = StageFile(downloadedFile, {} if processing else fileProperties, downloadProcessor)
         self.stages[FileStage.RAW].append(rawFile)
 
         if not processing:
             self.stages[FileStage.PROCESSED].append(rawFile)
             return
         
-        processor = FileProcessor([rawFile.getFilePath()], processing, self.rootDir, self.downloadDir, self.processingDir)
+        processor = FileProcessor([rawFile.getFilePath()], processing, self.sourceDirectories)
         for outputPath in processor.getOutputs():
-            processedFile = StageFile(outputPath, {}, processor, [rawFile])
+            processedFile = StageFile(outputPath, fileProperties, processor, [rawFile])
             self.stages[FileStage.PROCESSED].append(processedFile)
 
     def addRetrieveScriptStage(self, scriptStep, fileProperties):
-        downloadProcessor = FileProcessor.fromSteps([], [scriptStep], self.rootDir, self.downloadDir, self.processingDir)
+        downloadProcessor = FileProcessor.fromSteps([], [scriptStep], self.sourceDirectories)
         for filePath in downloadProcessor.getOutputs():
             processedFile = StageFile(filePath, fileProperties, downloadProcessor)
             self.stages[FileStage.PROCESSED].append(processedFile)
     
     def addCombineStage(self, processing):
         parentFiles = self.stages[FileStage.PROCESSED]
-        combineProcessor = FileProcessor(parentFiles, processing, self.rootDir, self.downloadDir, self.processingDir)
+        combineProcessor = FileProcessor(parentFiles, processing, self.sourceDirectories)
         for outputPath in combineProcessor.getOutputs():
             combinedFile = StageFile(outputPath, {}, combineProcessor, parentFiles)
             self.stages[FileStage.COMBINED].append(combinedFile)

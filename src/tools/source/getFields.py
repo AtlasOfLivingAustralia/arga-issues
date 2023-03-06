@@ -25,6 +25,10 @@ if __name__ == '__main__':
     dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
     customLookup = cmn.loadFromJson(cfg.filePaths.otherMapping)
 
+    if not stageFile.filePath.exists():
+        print(f"File {str(stageFile.filePath)} does not exist, have you run preDwCCreate.py yet?")
+        exit()
+
     data = {}
     with pd.read_csv(stageFile.filePath, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
         for chunk in reader:

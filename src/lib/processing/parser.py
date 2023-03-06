@@ -1,10 +1,8 @@
 from pathlib import Path
 
 class SelectorParser:
-    def __init__(self, rootDir: Path, downloadDir: Path, processingDir: Path, inputPaths: list[Path]):
-        self.rootDir = rootDir
-        self.downloadDir = downloadDir
-        self.processingDir = processingDir
+    def __init__(self, sourceDirectories: tuple, inputPaths: list[Path]):
+        self.sourceDirectories = sourceDirectories
         self.inputPaths = inputPaths
 
     def parseArg(self, arg: str) -> Path|str:
@@ -29,6 +27,9 @@ class SelectorParser:
         
         if selectType == "PATH": # Path creator
             return self.pathSelector(*attrs)
+        
+        if selectType == "INPUTPATH":
+            return self.inputPathSelector(*attrs)
     
     def inputSelector(self, selected=None, modifier=None, suffix=None):
         if selected is None or not selected.isdigit():
@@ -46,11 +47,11 @@ class SelectorParser:
 
         # Apply modifier
         if modifier == "STEM":
-            selectedPathStr = selected.stem
+            selectedPathStr = selectedPath.stem
         elif modifier == "PARENT":
-            selectedPathStr = str(selected.parent)
+            selectedPathStr = str(selectedPath.parent)
         elif modifier == "PARENT_STEM":
-            selectedPathStr = selected.parent.stem
+            selectedPathStr = selectedPath.parent.stem
         else:
             raise Exception(f"Invalid modifer: {modifier}") from AttributeError
         
@@ -59,20 +60,19 @@ class SelectorParser:
 
         return Path(selected + suffix) # Apply suffix
     
-    def pathSelector(self, directory=None, fileName=None):
+    def pathSelector(self, directory=None, fileName=None) -> Path:
         if directory is None:
             raise Exception("No directory specified") from AttributeError
         
-        selectedDir = None
-        if directory == "ROOT":
-            selectedDir = self.rootDir
-        elif directory == "DOWNLOAD":
-            selectedDir = self.downloadDir
-        elif directory == "PROCESSING":
-            selectedDir = self.processingDir
-        else:
+        directories = ("ROOT", "DOWNLOAD", "PROCESSING", "PREDWC", "DWC")
+        if directory not in directories:
             raise Exception(f"Invalid directory selected: {directory}") from AttributeError
+        
+        selectedDir = self.sourceDirectories[directories.index(directory)]
 
         if fileName is None:
             return selectedDir
         return selectedDir / fileName
+
+    def inputPathSelector(self, directory=None, selected=None, modifier=None, suffix=None):
+        return self.pathSelector(directory) / self.inputSelector(selected, modifier, suffix)
