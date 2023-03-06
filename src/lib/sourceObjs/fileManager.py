@@ -18,6 +18,7 @@ class StageFile:
 
         self.separator = fileProperties.pop("separator", ",")
         self.firstRow = fileProperties.pop("firstrow", 0)
+        self.encoding = fileProperties.pop("encoding", "utf-8")
 
     def getFilePath(self):
         return self.filePath

@@ -30,7 +30,7 @@ if __name__ == '__main__':
         exit()
 
     data = {}
-    with pd.read_csv(stageFile.filePath, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
+    with pd.read_csv(stageFile.filePath, encoding=stageFile.encoding, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
         for chunk in reader:
 
             if not data: # Empty data dict, initial pass
