@@ -3,16 +3,18 @@
     "dbType": "location",
     "dataLocation": "https://db.anemone.bio/dist/",
     "auth": "auth.txt",
+    "folderPrefix": true,
     "regexMatch": ".*\\.tsv\\.xz",
-    "processing": [
+    "globalProcessing": [
         {
-            "script": "tools/processing/extract.py",
+            "path": "tools/processing/extract.py",
             "function": "process",
             "args": [
-                "{INPUT, 0}"
+                "{INPUT, 0}",
+                "{PATH, PROCESSING}"
             ],
             "outputs": [
-                "{INPUT, 0, STEM}"
+                "{INPUTPATH, PROCESSING, 0, STEM}"
             ]
         }
     ],
