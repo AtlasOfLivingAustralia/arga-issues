@@ -32,6 +32,7 @@ data/*
 generatedFiles/*
 logs
 .history
+.env
 env
 *__pycache__
 *.DS_Store
