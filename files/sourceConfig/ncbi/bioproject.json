@@ -10,12 +10,11 @@
                     "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, bioproject.csv}"
                     ],
                     "kwargs": {
                         "subfileRows": 100000,
-                        "onefile": "bioproject",
-                        "limitDuplicates": 1
                     },
                     "outputs": [
                         "{PATH, PROCESSING, bioproject.csv}"

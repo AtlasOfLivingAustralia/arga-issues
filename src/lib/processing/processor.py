@@ -5,7 +5,7 @@ from lib.processing.parser import SelectorParser
 from lib.processing.steps import FileStep, DownloadStep, AugmentStep
 import lib.dataframeFuncs as dff
 import pandas as pd
-from lib.processing.subfileWriter import Writer
+from lib.subfileWriter import Writer
 
 class FileProcessor:
     def __init__(self, inputPaths: list[Path], processingSteps: list[dict], sourceDirectories: tuple):
