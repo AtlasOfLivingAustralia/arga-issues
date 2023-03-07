@@ -7,7 +7,7 @@
             "downloadedFile": "bioproject.xml",
             "processing": [
                 {
-                    "script": "tools/processing/xmlProcess.py",
+                    "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
@@ -18,7 +18,7 @@
                         "limitDuplicates": 1
                     },
                     "outputs": [
-                        "{PATH, bioproject.csv}"
+                        "{PATH, PROCESSING, bioproject.csv}"
                     ]
                 }
             ]

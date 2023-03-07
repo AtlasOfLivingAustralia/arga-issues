@@ -13,7 +13,7 @@
                         "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "{PATH, con_tpa_cu.gbff}"
+                        "{PATH, PROCESSING, con_tpa_cu.gbff}"
                     ]
                 },
                 {
@@ -23,7 +23,7 @@
                         "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "{PATH, con_tpa_cu.csv}"
+                        "{PATH, PROCESSING, con_tpa_cu.csv}"
                     ]
                 }
             ]
@@ -33,23 +33,23 @@
             "downloadedFile": "tpa_cu.gbff.gz",
             "processing": [
                 {
-                    "script": "processing/general/extract.py",
+                    "path": "processing/general/extract.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "{PATH, tpa_cu.gbff}"
+                        "{PATH, PROCESSING, tpa_cu.gbff}"
                     ]
                 },
                 {
-                    "script": "processing/ncbi/flatfileParser.py",
+                    "path": "processing/ncbi/flatfileParser.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "{PATH, tpa_cu.csv}"
+                        "{PATH, PROCESSING, tpa_cu.csv}"
                     ]
                 }
             ]

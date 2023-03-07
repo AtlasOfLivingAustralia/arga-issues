@@ -6,23 +6,23 @@
     "regexMatch": "gb[a-z]{3}\\d+\\.seq\\.gz",
     "processing": [
         {
-            "script": "tools/processing/extract.py",
+            "path": "tools/processing/extract.py",
             "function": "process",
             "args": [
                 "{INPUT, 0}"
             ],
             "outputs": [
-                "{INPUT, 0, STEM}"
+                "{INPUTPATH, PROCESSING, 0, STEM}"
             ]
         },
         {
-            "script": "sourceProcessing/ncbi/flatfileParser.py",
+            "path": "sourceProcessing/ncbi/flatfileParser.py",
             "function": "process",
             "args": [
                 "{INPUT, 0}"
             ],
             "outputs": [
-                "{INPUT, 0, STEM, .csv}"
+                "{INPUTPATH, PROCESSING, 0, STEM, .csv}"
             ]
         }
     ]

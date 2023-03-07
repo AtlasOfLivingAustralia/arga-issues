@@ -16,13 +16,13 @@
         } 
     ],
     "combineProcessing": {
-        "script": "sourceProcessing/ncbi/compileBiocollections.py",
+        "path": "sourceProcessing/ncbi/compileBiocollections.py",
         "function": "process",
         "args": [
             "biocollections.csv"
         ],
         "outputs": [
-            "{PATH, biocollections.csv}"
+            "{PATH, PROCESSING, biocollections.csv}"
         ]
     }
 }

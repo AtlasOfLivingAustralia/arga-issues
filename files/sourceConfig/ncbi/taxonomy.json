@@ -7,23 +7,23 @@
             "downloadedFile": "taxdump.zip",
             "processing": [
                 {
-                    "script": "tools/processing/extract.py",
+                    "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "taxdump"
+                        "{PATH, PROCESSING, taxdump}"
                     ]
                 },
                 {
-                    "script": "sourceProcessing/ncbi/buildTaxonomyTree.py",
+                    "path": "sourceProcessing/ncbi/buildTaxonomyTree.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "{PATH, ncbiTaxonomy.csv}"
+                        "{PATH, PROCESSING, ncbiTaxonomy.csv}"
                     ]
                 }
             ]

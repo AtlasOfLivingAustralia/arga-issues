@@ -7,17 +7,17 @@
             "downloadedFile": "biosample_set.xml.gz",
             "processing": [
                 {
-                    "script": "tools/processing/extract.py",
+                    "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "{PATH, biosample_set.xml}"
+                        "{PATH, PROCESSING, biosample_set.xml}"
                     ]
                 },
                 {
-                    "script": "tools/processing/xmlProcess.py",
+                    "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
@@ -26,24 +26,26 @@
                         "subfileRows": 1000000,
                         "onefile": "biosample",
                         "onlyTags": {
-                            "BioSample": ["accession"],
-                            "Organism": ["taxonomy_id"],
-                            "Contact": ["email", "lab"],
-                            "Link": ["type=url"],
-                            "Attribute": [
-                                "attribute_name=collection date",
-                                "attribute_name=speciment_voucher",
-                                "attribute_name=sex",
-                                "attribute_name=development stage",
-                                "attribute_name=tissue",
-                                "attribute_name=isolate",
-                                "attribute_name=lat_long",
-                                "attribute_name=geo_loc_name"
-                            ]
+                            "BioSample": {"accession": []},
+                            "Organism": {"taxonomy_id": []},
+                            "Contact": {"email": [], "lab": []},
+                            "Link": {"type": ["url"]},
+                            "Attribute": {
+                                "attribute_name": [
+                                    "collection date",
+                                    "speciment_voucher",
+                                    "sex",
+                                    "development stage",
+                                    "tissue",
+                                    "isolate",
+                                    "lat_long",
+                                    "geo_loc_name"
+                                ]
+                            }
                         }
                     },
                     "outputs": [
-                        "{PATH, biosample.csv}"
+                        "{PATH, PROCESSING, biosample.csv}"
                     ]
                 }
             ]
@@ -52,7 +54,7 @@
     "dwcProperties": {
         "augment": [
             {
-                "script": "sourceProcessing/ncbi/bioSamplePostDWC.py",
+                "path": "sourceProcessing/ncbi/bioSamplePostDWC.py",
                 "function": "augment"
             }
         ]
