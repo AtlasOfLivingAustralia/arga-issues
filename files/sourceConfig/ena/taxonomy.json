@@ -7,17 +7,17 @@
             "downloadedFile": "taxonomy.xml.gz",
             "processing": [
                 {
-                    "script": "tools/processing/extract.py",
+                    "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
                     ],
                     "outputs": [
-                        "{PATH, taxonomy.xml}"
+                        "{PATH, PROCESSING, taxonomy.xml}"
                     ]
                 },
                 {
-                    "script": "tools/processing/xmlProcess.py",
+                    "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
                         "{0}"
@@ -27,7 +27,7 @@
                         "onefile": "taxonomy"
                     },
                     "outputs": [
-                        "taxonomy.csv"
+                        "{PATH, PREDWC, taxonomy.csv}"
                     ]
                 }
             ]

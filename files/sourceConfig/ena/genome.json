@@ -7,7 +7,7 @@
             "downloadedFile": "genomeCollections.xml",
             "processing": [
                 {
-                    "script": "tools/processing/xmlProcess.py",
+                    "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
@@ -17,7 +17,7 @@
                         "onefile": "genomeCollections"
                     },
                     "outputs": [
-                        "{PATH, genomeCollections.csv}"
+                        "{PATH, ROOT, genomeCollections.csv}"
                     ]
                 }
             ]

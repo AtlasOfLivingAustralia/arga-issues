@@ -12,7 +12,7 @@
                 "{INPUT, 0}"
             ],
             "outputs": [
-                "{INPUT, 0, STEM}"
+                "{INPUTPATH, PROCESSING, 0, STEM}"
             ]
         }
     ],
