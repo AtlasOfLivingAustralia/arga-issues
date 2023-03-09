@@ -87,8 +87,8 @@ class DWCProcessor:
     def checkPreparedEnrichment(self):
         for database in self.enrichDBs.values():
             for enrichFile in database.getDWCFiles():
-                if not enrichFile.filePath.exists:
-                    print(f"Database {database.database} file {enrichFile.filePath} not prepared for enrichment")
+                if not enrichFile.filePath.exists():
+                    print(f"Database {database.database} file {enrichFile.filePath} not prepared for enrichment, cancelling DWC conversion")
                     return False
         return True
 

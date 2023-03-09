@@ -6,7 +6,6 @@ from lib.processing.processor import DWCProcessor
 from lib.processing.steps import FileStep
 from lib.processing.parser import SelectorParser
 from lib.sourceObjs.fileManager import FileManager, FileStage, StageFile
-from lib.sourceObjs.dwcManager import DWCManager
 
 class Database:
 
@@ -87,11 +86,11 @@ class Database:
     def getBaseDir(self):
         return self.databaseDir
     
-    def getPreDWCFile(self, idx) -> StageFile:
-        return self.fileManager.getFiles(FileStage.PRE_DWC)[idx]
+    def getPreDWCFiles(self) -> StageFile:
+        return self.fileManager.getFiles(FileStage.PRE_DWC)
     
     def getDWCFiles(self) -> list[StageFile]:
-        return self.dwcManager.getFiles()
+        return self.fileManager.getFiles(FileStage.DWC)
 
 class SpecificDB(Database):
 

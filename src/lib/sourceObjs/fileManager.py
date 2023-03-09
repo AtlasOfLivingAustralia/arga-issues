@@ -38,6 +38,10 @@ class StageFile:
 class DWCStageFile:
     def __init__(self, preDwCFile: StageFile, processor: DWCProcessor):
         self.parent = preDwCFile
+        self.separator = preDwCFile.separator
+        self.firstRow = preDwCFile.firstRow
+        self.encoding = preDwCFile.encoding
+
         self.processor = processor
         self.filePath = processor.outputDir / f"{self.parent.filePath.stem}-dwc.csv"
 
