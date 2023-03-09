@@ -48,7 +48,7 @@ class Writer:
             outputFilePath.unlink()
 
         if len(self.writtenFiles) == 1:
-            print(f"Only single subfire, moving {self.writtenFiles[0]} to {outputFilePath}")
+            print(f"Only single subfile, moving {self.writtenFiles[0]} to {outputFilePath}")
             self.writtenFiles[0].rename(outputFilePath)
             self.subfileDir.rmdir()
             return
@@ -65,4 +65,4 @@ class Writer:
                         writer.writerow(row)
 
                 file.unlink()
-        self.writtenFiles = [self.outputFilePath]
+        self.writtenFiles = [outputFilePath]

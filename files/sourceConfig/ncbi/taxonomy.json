@@ -10,7 +10,8 @@
                     "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING}"
                     ],
                     "outputs": [
                         "{PATH, PROCESSING, taxdump}"
@@ -20,7 +21,8 @@
                     "path": "sourceProcessing/ncbi/buildTaxonomyTree.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, ncbiTaxonomy.csv}"
                     ],
                     "outputs": [
                         "{PATH, PROCESSING, ncbiTaxonomy.csv}"

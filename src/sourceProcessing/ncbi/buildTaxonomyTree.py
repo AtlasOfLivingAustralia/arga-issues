@@ -1,6 +1,6 @@
 import pickle
 import pandas as pd
-import lib.config as cfg
+from pathlib import Path
 
 class Tree:
     class Node:
@@ -71,13 +71,12 @@ class Tree:
 def splitLine(line):
     return [element.strip('\t') for element in line.rstrip('|\n').split('|')]
 
-if __name__ == '__main__':
-    # Loading node data
+def process(folderPath: Path, outputFilePath: Path):
     tree = Tree()
-
+    
     print("Adding nodes")
     nodeData = {}
-    with open("../data/taxdump/nodes.dmp") as fp:
+    with open(folderPath / "nodes.dmp") as fp:
         line = fp.readline()
 
         while line:
@@ -87,7 +86,7 @@ if __name__ == '__main__':
 
     print("Adding names")
     # Adding names
-    with open("../data/taxdump/names.dmp") as fp:
+    with open(folderPath / "names.dmp") as fp:
         line = fp.readline()
         while line:
             taxID, name, uniqueName, nameClass = splitLine(line)
@@ -96,11 +95,14 @@ if __name__ == '__main__':
 
             line = fp.readline()
 
-    print("Dumping tree")
-    with open("../generatedFiles/taxonTree", "wb") as fp:
-        pickle.dump(tree, fp)
+    # print("Dumping tree")
+    # with open("../generatedFiles/taxonTree", "wb") as fp:
+    #     pickle.dump(tree, fp)
 
     print("Creating Dataframe")
     rankColumns = ["kingdom", "phylum", "class", "order", "family", "subfamily", "genus", "subgenus", "species"]
     df = tree.toDataframe(rankColumns)
-    df.to_csv("../data/ncbiTaxonomy.csv")
+    
+    print(f"Writing to file {outputFilePath}")
+    outputFilePath.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(outputFilePath)

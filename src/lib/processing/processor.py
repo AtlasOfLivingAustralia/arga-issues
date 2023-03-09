@@ -69,8 +69,11 @@ class DWCProcessor:
     def process(self, inputPath, outputFilePath, sep, header, encoding):
         if not self.checkPreparedEnrichment():
             return
+        
+        print(f"Creating DWC from preDWC file {inputPath}")
 
         for idx, df in enumerate(self.chunkGen(inputPath, sep, header, encoding)):
+            print(f"At chunk: {idx}", end='\r')
             if idx == 0:
                 newColMap, copyColMap = dff.createMappings(df.columns, self.dwcLookup, self.customLookup, self.prefix)
              

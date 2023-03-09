@@ -25,7 +25,7 @@ def process(filePath, outputDir=None):
         
         if extractType == ExtractTypes.ZIP:
             with zipfile.ZipFile(filePath, 'r') as zip:
-                zip.extractall()
+                zip.extractall(outputFile)
 
         if extractType == ExtractTypes.GZIP:
             with gzip.open(filePath, 'rb') as gz, open(outputFile, 'wb') as fp:
