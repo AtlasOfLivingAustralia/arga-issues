@@ -52,6 +52,7 @@ class DWCProcessor:
         self.prefix = prefix
         self.dwcProperties = dwcProperties
         self.enrichDBs = enrichDBs
+        self.outputDir = outputDir
 
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 1024*1024)
@@ -80,7 +81,7 @@ class DWCProcessor:
             df = dff.dropEmptyColumns(df)
 
             self.writer.writeDF(df)
-            
+
         self.writer.oneFile(outputFilePath)
 
     def checkPreparedEnrichment(self):

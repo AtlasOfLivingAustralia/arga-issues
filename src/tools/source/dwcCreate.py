@@ -18,8 +18,4 @@ if __name__ == '__main__':
 
     db = sources.getDB(args.source)
     dbType = db.getDBType()
-
-    if dbType == DBType.SPECIFIC:
-        db.createDwC()
-    else:
-        db.createDwC(args.start, args.quantity)
+    db.createDwC()

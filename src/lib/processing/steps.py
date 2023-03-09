@@ -96,5 +96,5 @@ class DownloadStep:
 class AugmentStep(ScriptStep):
 
     def process(self, df, verbose=False):
-        self.args.insert(df, 0)
+        self.args.insert(0, df)
         return super().process(verbose)

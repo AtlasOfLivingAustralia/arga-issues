@@ -9,11 +9,19 @@ class Writer:
         self.subfileDir = outputDir / subDirName
         self.sectionPrefix = sectionPrefix
 
-        self.subfileDir.mkdir(parents=True, exist_ok=True)
-
         self.writtenFiles = []
         self.globalColumns = []
 
+    def writing(func):
+        def wrapper(self, *args):
+            if not self.writtenFiles:
+                self.subfileDir.mkdir(parents=True, exist_ok=True)
+
+            func(self, *args)
+            
+        return wrapper
+
+    @writing
     def writeCSV(self, columns: list, entryData: list) -> None:
         filePath = self.subfileDir / f"{self.sectionPrefix}_{len(self.writtenFiles)}.csv"
 
@@ -27,6 +35,7 @@ class Writer:
         self.writtenFiles.append(filePath)
         self.globalColumns = cmn.extendUnique(self.globalColumns, columns)
 
+    @writing
     def writeDF(self, df: pd.DataFrame) -> None:
         filePath = self.subfileDir / f"{self.sectionPrefix}_{len(self.writtenFiles)}.csv"
         df.to_csv(filePath, index=False)

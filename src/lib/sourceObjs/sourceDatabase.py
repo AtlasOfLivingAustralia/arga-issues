@@ -2,8 +2,8 @@ import lib.config as cfg
 import lib.commonFuncs as cmn
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
-from lib.processing.processor import FileProcessor
-from lib.processing.steps import ScriptStep, FileStep
+from lib.processing.processor import DWCProcessor
+from lib.processing.steps import FileStep
 from lib.processing.parser import SelectorParser
 from lib.sourceObjs.fileManager import FileManager, FileStage, StageFile
 from lib.sourceObjs.dwcManager import DWCManager
@@ -32,9 +32,9 @@ class Database:
         self.preConversionDir = self.databaseDir / "preConversion"
         self.dwcDir = self.databaseDir / "dwc"
 
-        self.sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir)
-        self.fileManager = FileManager(self.sourceDirectories, self.authFile)
-        self.dwcManager = DWCManager(self.location, self.dwcProperties, self.enrichDBs, self.dwcDir)
+        sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir)
+        dwcProcessor = DWCProcessor(self.database, self.dwcProperties, self.enrichDBs, self.dwcDir)
+        self.fileManager = FileManager(sourceDirectories, self.authFile, dwcProcessor)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -68,7 +68,7 @@ class Database:
         self.fileManager.createAll(FileStage.PRE_DWC)
 
     def createDwC(self):
-        self.dwcManager.createAll()
+        self.fileManager.createAll(FileStage.DWC)
 
     def createDirectory(self):
         print(f"Creating directory for data: {str(self.databaseDir)}")

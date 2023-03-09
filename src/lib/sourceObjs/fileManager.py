@@ -35,10 +35,30 @@ class StageFile:
 
         self.processor.process()
 
+class DWCStageFile:
+    def __init__(self, preDwCFile: StageFile, processor: DWCProcessor):
+        self.parent = preDwCFile
+        self.processor = processor
+        self.filePath = processor.outputDir / f"{self.parent.filePath.stem}-dwc.csv"
+
+    def getFilePath(self):
+        return self.filePath
+
+    def create(self):
+        if self.filePath.exists():
+            print(f"{str(self.filePath)} already exists, skipping creation")
+            return
+        
+        self.parent.create()
+        self.filePath.parent.mkdir(parents=True, exist_ok=True)
+
+        self.processor.process(self.parent.filePath, self.filePath, self.parent.separator, self.parent.firstRow, self.parent.encoding)
+
 class FileManager:
-    def __init__(self, sourceDirectories: tuple, authFile: str):
+    def __init__(self, sourceDirectories: tuple, authFile: str, dwcProcessor: DWCProcessor):
         self.sourceDirectories = sourceDirectories
         self.authFile = authFile
+        self.dwcProcessor = dwcProcessor
 
         self.user = ""
         self.password = ""
@@ -92,5 +112,8 @@ class FileManager:
         for stage in (FileStage.COMBINED, FileStage.PROCESSED, FileStage.RAW):
             if self.stages[stage]: # If the stage has files
                 self.stages[FileStage.PRE_DWC] = self.stages[stage].copy()
+                for file in self.stages[FileStage.PRE_DWC]:
+                    stageFile = DWCStageFile(file, self.dwcProcessor)
+                    self.stages[FileStage.DWC].append(stageFile)
                 return True
         return False
