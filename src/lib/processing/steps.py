@@ -92,3 +92,9 @@ class DownloadStep:
             call += f" --user {self.user}:{self.password}"
         
         subprocess.run(call)
+
+class AugmentStep(ScriptStep):
+
+    def process(self, df, verbose=False):
+        self.args.insert(df, 0)
+        return super().process(verbose)

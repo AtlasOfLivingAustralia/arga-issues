@@ -1,6 +1,5 @@
 from lib.sourceObjs.sourceDatabase import Database, SpecificDB, LocationDB, ScriptDataDB, ScriptUrlDB
 import json
-from pathlib import Path
 
 class SourceLocation:
     def __init__(self, location: str, databaseItems: dict):

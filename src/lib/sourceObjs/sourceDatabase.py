@@ -6,6 +6,7 @@ from lib.processing.processor import FileProcessor
 from lib.processing.steps import ScriptStep, FileStep
 from lib.processing.parser import SelectorParser
 from lib.sourceObjs.fileManager import FileManager, FileStage, StageFile
+from lib.sourceObjs.dwcManager import DWCManager
 
 class Database:
 
@@ -23,7 +24,6 @@ class Database:
         self.combineProcessing = properties.pop("combineProcessing", [])
         self.fileProperties = properties.pop("fileProperties", {})
         self.dwcProperties = properties.pop("dwcProperties", {})
-        self.enrichDict = properties.pop("enrich", {}) # Dict to store enrich info
 
         self.locationDir = cfg.folderPaths.data / location
         self.databaseDir = self.locationDir / database
@@ -32,10 +32,9 @@ class Database:
         self.preConversionDir = self.databaseDir / "preConversion"
         self.dwcDir = self.databaseDir / "dwc"
 
-        self.sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
-
+        self.sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir)
         self.fileManager = FileManager(self.sourceDirectories, self.authFile)
-        self.enrichDBs = {} # Dict to store references to enrich dbs
+        self.dwcManager = DWCManager(self.location, self.dwcProperties, self.enrichDBs, self.dwcDir)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -69,7 +68,7 @@ class Database:
         self.fileManager.createAll(FileStage.PRE_DWC)
 
     def createDwC(self):
-        self.fileManager.createAll(FileStage.DWC)
+        self.dwcManager.createAll()
 
     def createDirectory(self):
         print(f"Creating directory for data: {str(self.databaseDir)}")
@@ -89,7 +88,10 @@ class Database:
         return self.databaseDir
     
     def getPreDWCFile(self, idx) -> StageFile:
-        return self.fileManager.getFile(FileStage.PRE_DWC, idx)
+        return self.fileManager.getFiles(FileStage.PRE_DWC)[idx]
+    
+    def getDWCFiles(self) -> list[StageFile]:
+        return self.dwcManager.getFiles()
 
 class SpecificDB(Database):
 

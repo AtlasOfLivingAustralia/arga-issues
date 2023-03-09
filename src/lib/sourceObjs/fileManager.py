@@ -1,6 +1,6 @@
 from pathlib import Path
 from enum import Enum
-from lib.processing.processor import FileProcessor
+from lib.processing.processor import FileProcessor, DWCProcessor
 
 class FileStage(Enum):
     RAW       = 0
@@ -36,7 +36,7 @@ class StageFile:
         self.processor.process()
 
 class FileManager:
-    def __init__(self, sourceDirectories: tuple, authFile: str = None):
+    def __init__(self, sourceDirectories: tuple, authFile: str):
         self.sourceDirectories = sourceDirectories
         self.authFile = authFile
 
@@ -52,8 +52,8 @@ class FileManager:
 
         self.stages = {stage: [] for stage in FileStage}
 
-    def getFile(self, stage: FileStage, idx: int):
-        return self.stages[stage][idx]
+    def getFiles(self, stage: FileStage):
+        return self.stages[stage]
     
     def createAll(self, stage: FileStage):
         for file in self.stages[stage]:
