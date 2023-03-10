@@ -31,9 +31,9 @@ class Database:
         self.preConversionDir = self.databaseDir / "preConversion"
         self.dwcDir = self.databaseDir / "dwc"
 
-        sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir)
+        self.sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir)
         dwcProcessor = DWCProcessor(self.database, self.dwcProperties, self.enrichDBs, self.dwcDir)
-        self.fileManager = FileManager(sourceDirectories, self.authFile, dwcProcessor)
+        self.fileManager = FileManager(self.sourceDirectories, self.authFile, dwcProcessor)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -198,7 +198,7 @@ class ScriptDataDB(Database):
         if self.script is None:
             raise Exception("No script specified") from AttributeError
 
-        self.scriptStep = FileStep(self.script, SelectorParser(self.downloadDir, []))
+        self.scriptStep = FileStep(self.script, SelectorParser(self.sourceDirectories, []))
         
     def prepare(self):
         self.fileManager.addRetrieveScriptStage(self.scriptStep, self.fileProperties)

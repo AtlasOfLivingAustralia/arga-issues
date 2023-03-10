@@ -11,9 +11,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     source = sources.getDB(args.source, False)
-
-    if args.filenumbers is None:
-        source.downloadAllFiles()
-    else:
-        for file in args.filenumbers:
-            source.downloadFile(args.filenumbers)
+    source.download()
