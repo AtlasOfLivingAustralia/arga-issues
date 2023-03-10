@@ -1,14 +1,16 @@
 {
     "dataType": "source",
     "dbType": "scriptdata",
-    "script": "sourceProcessing/reefGenomics/processing.py",
-    "function": "build",
-    "args": [
-        "C:/Users/admin/Documents/arga-data/data/reefGenomics/db",
-        ["project", "organism"]
-    ],
-    "outputs": [
-        "{PATH, project.csv}",
-        "{PATH, organism.csv}"
-    ]
+    "script": {
+        "path": "sourceProcessing/reefGenomics/processing.py",
+        "function": "build",
+        "args": [
+            "{PATH, DOWNLOAD}",
+            ["project", "organism"]
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, project.csv}",
+            "{PATH, DOWNLOAD, organism.csv}"
+        ]
+    }
 }

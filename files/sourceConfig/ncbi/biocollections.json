@@ -15,14 +15,16 @@
             "downloadedFile": "Unique_institution_codes.txt"
         } 
     ],
-    "combineProcessing": {
-        "path": "sourceProcessing/ncbi/compileBiocollections.py",
-        "function": "process",
-        "args": [
-            "biocollections.csv"
-        ],
-        "outputs": [
-            "{PATH, PROCESSING, biocollections.csv}"
-        ]
-    }
+    "combineProcessing": [
+        {
+            "path": "sourceProcessing/ncbi/compileBiocollections.py",
+            "function": "process",
+            "args": [
+                "biocollections.csv"
+            ],
+            "outputs": [
+                "{PATH, PROCESSING, biocollections.csv}"
+            ]
+        }
+    ]
 }
