@@ -19,14 +19,19 @@ if __name__ == '__main__':
     source = sourceManager.getDB(args.source, False)
     entryLimit = args.entries
 
-    stageFile = source.getPreDWCFile(args.filenum)
+    preDwCFiles = source.getPreDWCFiles()
+    if args.filenum < 0 or args.filenum >= len(preDwCFiles):
+        print(f"Invalid preDWC file selected. Valid value is between 0 and {len(preDwCFiles) - 1} inclusive")
+        exit()
+
+    stageFile = preDwCFiles[args.filenum]
     outputDir = source.getBaseDir()
 
     dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
     customLookup = cmn.loadFromJson(cfg.filePaths.otherMapping)
 
     if not stageFile.filePath.exists():
-        print(f"File {str(stageFile.filePath)} does not exist, have you run preDwCCreate.py yet?")
+        print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
         exit()
 
     data = {}

@@ -18,8 +18,4 @@ if __name__ == '__main__':
 
     db = sources.getDB(args.source, False)
     dbType = db.getDBType()
-
-    # if dbType == DBType.SPECIFIC:
     db.createPreDwC()
-    # else:
-    #     db.createPreDwC(args.start, args.quantity)

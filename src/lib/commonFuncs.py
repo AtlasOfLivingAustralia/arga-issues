@@ -120,10 +120,10 @@ def crawl(url, regexMatch, maxDepth=0, user="", password=""):
     matchingFiles = []
 
     while len(folders):
-        print(f"At depth: {subDirDepth}", end="\r")
         newFolders = []
 
-        for folder in folders:
+        for idx, folder in enumerate(folders):
+            print(f"At depth: {subDirDepth}, folder: {idx}", end="\r")
             newSubFolders, newFiles = getMatches(folder, regexMatch, user, password)
             matchingFiles.extend(newFiles)
 
