@@ -15,17 +15,16 @@ if __name__ == "__main__":
         envPath / "lib" / f"python{pythonVersion}" / "site-packages"
     ]
 
-    if not envPath.exists():
-        print("Creating virual environment")
-        envPath.mkdir(parents=True, exist_ok=True)
-        venv.create(envPath)
+    if envPath.exists():
+        envPath.unlink()
+
+    print("Creating virual environment")
+    envPath.mkdir(parents=True, exist_ok=True)
+    venv.create(envPath, with_pip=True)
 
     for path in sitePackagesPaths:
         if path.exists():
             savePath = path / "srcPath.pth"
-            if savePath.exists():
-                break
-
             print("Adding src path to site-packages")
             with open(savePath, 'w') as fp:
                 fp.write(str(srcPath))
@@ -36,7 +35,7 @@ if __name__ == "__main__":
     
     print("-" * 40)
     print("Virtual environment has been set up!\n")
-    print("To enter virtual environment:\n\t- Windows: env/Scipts/activate\n\t- MacOS/Linux: source env/bin/activate\n")
+    print("To enter virtual environment run:\n\t- Windows: env/Scipts/activate\n\t- MacOS/Linux: source env/bin/activate\n")
     print("To install required modules run:\n\tpip install -r reqs.txt\n")
     print("Call `deactivate` to leave the virtual environment")
     print("-" * 40)
