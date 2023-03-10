@@ -103,7 +103,7 @@ class FileManager:
         downloadProcessor = FileProcessor.fromSteps([], [scriptStep], self.sourceDirectories)
         for filePath in downloadProcessor.getOutputs():
             processedFile = StageFile(filePath, fileProperties, downloadProcessor)
-            self.stages[FileStage.PROCESSED].append(processedFile)
+            self.stages[FileStage.RAW].append(processedFile)
     
     def addCombineStage(self, processing):
         parentFiles = self.stages[FileStage.PROCESSED]
@@ -113,11 +113,12 @@ class FileManager:
             self.stages[FileStage.COMBINED].append(combinedFile)
     
     def pushPreDwC(self):
-        for stage in (FileStage.COMBINED, FileStage.PROCESSED, FileStage.RAW):
-            if self.stages[stage]: # If the stage has files
-                self.stages[FileStage.PRE_DWC] = self.stages[stage].copy()
-                for file in self.stages[FileStage.PRE_DWC]:
-                    stageFile = DWCStageFile(file, self.dwcProcessor)
-                    self.stages[FileStage.DWC].append(stageFile)
-                return True
-        return False
+        fileStages = (FileStage.RAW, FileStage.PROCESSED, FileStage.COMBINED, FileStage.PRE_DWC)
+        for idx, stage in enumerate(fileStages[:-1], start=1):
+            nextStage = fileStages[idx]
+            if self.stages[stage] and not self.stages[nextStage]: # If this stage has files and next doesn't
+                self.stages[nextStage] = self.stages[stage].copy()
+
+        for file in self.stages[FileStage.PRE_DWC]:
+            stageFile = DWCStageFile(file, self.dwcProcessor)
+            self.stages[FileStage.DWC].append(stageFile)
