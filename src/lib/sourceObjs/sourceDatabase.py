@@ -86,7 +86,7 @@ class Database:
     def getBaseDir(self):
         return self.databaseDir
     
-    def getPreDWCFiles(self) -> StageFile:
+    def getPreDWCFiles(self) -> list[StageFile]:
         return self.fileManager.getFiles(FileStage.PRE_DWC)
     
     def getDWCFiles(self) -> list[StageFile]:
