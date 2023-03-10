@@ -16,7 +16,11 @@ if __name__ == "__main__":
     ]
 
     if envPath.exists():
-        envPath.unlink()
+        try:
+            envPath.unlink()
+        except PermissionError:
+            print("Unable to delete old `env` folder, please remove manually and try again.")
+            exit()
 
     print("Creating virual environment")
     envPath.mkdir(parents=True, exist_ok=True)

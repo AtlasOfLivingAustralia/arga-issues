@@ -2,6 +2,7 @@ from lib.processing.parser import SelectorParser
 import lib.processing.processingFuncs as pFuncs
 from pathlib import Path
 import subprocess
+import platform
 
 class ScriptStep:
     def __init__(self, stepParamters: dict):
@@ -85,13 +86,17 @@ class DownloadStep:
         if self.filePath.exists() and not overwrite:
             return
         
-        print(f"Downloading from {self.url} to file {str(self.filePath)}")
-        
-        call = f"curl.exe {self.url} -o {self.filePath}"
+        print(f"Downloading from {self.url} to file {self.filePath}")
+
+        curl = "curl"
+        if platform.system() == 'Windows':
+            curl = "curl.exe"
+
+        args = [curl, self.url, "-o", self.filePath]
         if self.user:
-            call += f" --user {self.user}:{self.password}"
-        
-        subprocess.run(call)
+            args.extend(["--user", f"{self.user}:{self.password}"])
+
+        subprocess.run(args)
 
 class AugmentStep(ScriptStep):
 
