@@ -20,7 +20,8 @@
             "path": "sourceProcessing/ncbi/compileBiocollections.py",
             "function": "process",
             "args": [
-                "biocollections.csv"
+                "{PATH, DOWNLOAD}",
+                "{PATH, PROCESSING, biocollections.csv}"
             ],
             "outputs": [
                 "{PATH, PROCESSING, biocollections.csv}"
