@@ -14,7 +14,7 @@
                         "{PATH, PROCESSING, bioproject.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 100000,
+                        "subfileRows": 100000
                     },
                     "outputs": [
                         "{PATH, PROCESSING, bioproject.csv}"

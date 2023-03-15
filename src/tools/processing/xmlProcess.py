@@ -53,24 +53,25 @@ class ElementContainer:
                 flat |= children[0].flatten()
                 continue
 
-            if not children[0].attributes: # Children have no attributes
-                flat |= {tag: [child.text for child in children]}
-                continue
+            flat |= {tag: [child.flatten() for child in children]}
+            # if not children[0].attributes: # Children have no attributes
+            #     flat |= {tag: [child.text for child in children]}
+            #     continue
 
-            sharedKey = None
-            for key in children[0].attributes.keys():
-                if all([key in child.attributes.keys() for child in children[1:]]):
-                    sharedKey = key
-                    break
+            # sharedKey = None
+            # for key in children[0].attributes.keys():
+            #     if all([key in child.attributes.keys() for child in children[1:]]):
+            #         sharedKey = key
+            #         break
 
-            if sharedKey is not None:
-                childProperties = {}
-                for child in children:
-                    value = child.attributes.pop(sharedKey)
-                    childProperties[self.compileName(self.tag, value)] = child.flatten(tag)
-                flat |= childProperties
-            else:
-                flat |= {tag: [child.flatten() for child in children]}
+            # if sharedKey is not None:
+            #     childProperties = {}
+            #     for child in children:
+            #         value = child.attributes.pop(sharedKey)
+            #         childProperties[self.compileName(self.tag, value)] = child.flatten(tag)
+            #     flat |= childProperties
+            # else:
+            #     flat |= {tag: [child.flatten() for child in children]}
 
         return flat
 
@@ -109,6 +110,9 @@ def process(filePath, outputFilePath, entryCount=0, firstEntry=0, subfileRows=0,
                 print(f'At entry: {currentEntry+1:,}', end='\r')
 
         elif event == 'end':
+            if element == root:
+                break
+            
             elementContainer = path.pop()
 
             if onlyIncludeTags and element.tag not in onlyIncludeTags:

@@ -10,7 +10,8 @@
                     "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING}"
                     ],
                     "outputs": [
                         "{PATH, PROCESSING, biosample_set.xml}"
@@ -20,29 +21,11 @@
                     "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, biosample.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 1000000,
-                        "onefile": "biosample",
-                        "onlyTags": {
-                            "BioSample": {"accession": []},
-                            "Organism": {"taxonomy_id": []},
-                            "Contact": {"email": [], "lab": []},
-                            "Link": {"type": ["url"]},
-                            "Attribute": {
-                                "attribute_name": [
-                                    "collection date",
-                                    "speciment_voucher",
-                                    "sex",
-                                    "development stage",
-                                    "tissue",
-                                    "isolate",
-                                    "lat_long",
-                                    "geo_loc_name"
-                                ]
-                            }
-                        }
+                        "subfileRows": 200000
                     },
                     "outputs": [
                         "{PATH, PROCESSING, biosample.csv}"

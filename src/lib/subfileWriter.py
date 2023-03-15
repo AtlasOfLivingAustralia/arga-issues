@@ -2,6 +2,7 @@ import csv
 from pathlib import Path
 import lib.commonFuncs as cmn
 import pandas as pd
+import sys
 
 class Writer:
     def __init__(self, outputDir: Path, subDirName: str, sectionPrefix: str) -> 'Writer':
@@ -11,6 +12,15 @@ class Writer:
 
         self.writtenFiles = []
         self.globalColumns = []
+
+        maxInt = sys.maxsize
+
+        while True:
+            try:
+                csv.field_size_limit(maxInt)
+                return
+            except OverflowError:
+                maxInt = int(maxInt/10)
 
     def writing(func):
         def wrapper(self, *args):
