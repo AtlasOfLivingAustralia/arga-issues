@@ -37,6 +37,32 @@
                     "outputs": [
                         "{PATH, PROCESSING, biosample.csv}"
                     ]
+                },
+                {
+                    "path": "tools/processing/columnSplit.py",
+                    "function": "process",
+                    "args": [
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, cleanedBiosample.csv}",
+                        {
+                            "Attributes": {
+                                "collection date": ["Attribute_attribute_name", "collection date"],
+                                "specimen voucher": ["Attribute_attribute_name", "specimen_voucher"],
+                                "sex": ["Attribute_attribute_name", "sex"],
+                                "developmental stage": ["Attribute_attribute_name", "developmental stage"],
+                                "tissue": ["Attribute_attribute_name", "tissue"],
+                                "isolate": ["Attribute_attribute_name", "isolate"],
+                                "lat long": ["Attribute_attribute_name", "lat_lon"],
+                                "geo loc name": ["Attribute_attribute_name", "geo_loc_name"]
+                            }
+                        }
+                    ],
+                    "kwargs": {
+                        "chunkSize": 200000
+                    },
+                    "outputs": [
+                        "{PATH, PROCESSING, cleanedBiosample.csv}"
+                    ]
                 }
             ]
         }
