@@ -63,16 +63,20 @@ class Writer:
             self.subfileDir.rmdir()
             return
 
-        print(f"Combining into one file at {outputFilePath}")
+        print("Combining into one file")
         with open(outputFilePath, 'w', newline='', encoding='utf-8') as fp:
             writer = csv.DictWriter(fp, self.globalColumns)
             writer.writeheader()
 
-            for file in self.writtenFiles:
+            fileCount = len(self.writtenFiles)
+            for idx, file in enumerate(self.writtenFiles, start=1):
+                print(f"At file: {idx} / {fileCount}", end='\r')
+
                 with open(file, encoding='utf-8') as fp:
                     reader = csv.DictReader(fp)
                     for row in reader:
                         writer.writerow(row)
 
                 file.unlink()
+        print(f"\nCreated a single file at {outputFilePath}")
         self.writtenFiles = [outputFilePath]

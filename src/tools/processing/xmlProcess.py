@@ -7,7 +7,7 @@ import lib.commonFuncs as cmn
 import gc
 
 class ElementContainer:
-    def __init__(self, element):
+    def __init__(self, element: ET.Element):
         self.element = element
         self.tag = element.tag
         self.children = {}
@@ -15,7 +15,7 @@ class ElementContainer:
         self.text = self.cleanText(element.text) if element.text else ""
         self.attributes = element.attrib.copy()
 
-    def cleanText(self, text: str):
+    def cleanText(self, text: str) -> str:
         if text is None:
             return
 
@@ -34,48 +34,24 @@ class ElementContainer:
         
         self.children[element.tag].append(element)
 
-    def compileName(self, *args):
-        return '_'.join([arg for arg in args if arg])
-
-    def flatten(self, prefix=""):
+    def flatten(self, compressChildren: list = []) -> dict:
         flat = {}
 
         if self.text:
-            flat[self.tag] = self.text
-            for attr, value in self.attributes.items():
-                flat[self.compileName(self.tag, attr)] = value
-        else:
-            for attr, value in self.attributes.items():
-                flat[self.compileName(self.tag, attr)] = value
+            flat[f"{self.tag}_text"] = self.text
+
+        for attr, value in self.attributes.items():
+            flat[f"{self.tag}_{attr}"] = value
 
         for tag, children in self.children.items():
-            if len(children) == 1: # if Child is unique
-                flat |= children[0].flatten()
-                continue
-
-            flat |= {tag: [child.flatten() for child in children]}
-            # if not children[0].attributes: # Children have no attributes
-            #     flat |= {tag: [child.text for child in children]}
-            #     continue
-
-            # sharedKey = None
-            # for key in children[0].attributes.keys():
-            #     if all([key in child.attributes.keys() for child in children[1:]]):
-            #         sharedKey = key
-            #         break
-
-            # if sharedKey is not None:
-            #     childProperties = {}
-            #     for child in children:
-            #         value = child.attributes.pop(sharedKey)
-            #         childProperties[self.compileName(self.tag, value)] = child.flatten(tag)
-            #     flat |= childProperties
-            # else:
-            #     flat |= {tag: [child.flatten() for child in children]}
+            if len(children) > 1 or tag in compressChildren:
+                flat |= {self.tag: [child.flatten(compressChildren) for child in children]}
+            else:
+                flat |= children[0].flatten(compressChildren) 
 
         return flat
 
-def process(filePath, outputFilePath, entryCount=0, firstEntry=0, subfileRows=0, onlyIncludeTags=[]):
+def process(filePath: Path, outputFilePath: Path, entryCount: int = 0, firstEntry: int = 0, subfileRows: int = 0, onlyIncludeTags: list = [], compressChild: list = []):
     writer = Writer(outputFilePath.parent, "xmlProcessing", "xmlSection")
 
     if entryCount < 0:
@@ -112,7 +88,7 @@ def process(filePath, outputFilePath, entryCount=0, firstEntry=0, subfileRows=0,
         elif event == 'end':
             if element == root:
                 break
-            
+
             elementContainer = path.pop()
 
             if onlyIncludeTags and element.tag not in onlyIncludeTags:
@@ -127,7 +103,7 @@ def process(filePath, outputFilePath, entryCount=0, firstEntry=0, subfileRows=0,
                 continue
 
             if currentEntry >= firstEntry: # Only add data if it is within data entry range
-                flatContainer = elementContainer.flatten()
+                flatContainer = elementContainer.flatten(compressChild)
                 data.append(flatContainer)
                 columns = cmn.extendUnique(columns, flatContainer.keys())
                 if currentEntry == lastEntry: # Exit if last entry reached
@@ -147,10 +123,8 @@ def process(filePath, outputFilePath, entryCount=0, firstEntry=0, subfileRows=0,
     if data:
         writer.writeCSV(columns, data)
 
+    print()
     writer.oneFile(outputFilePath) # Compress to one file
-
-    # print(data[0].flatten())
-    # print(xmltodict.parse(data[0].element.text))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Convert xml to csv")
