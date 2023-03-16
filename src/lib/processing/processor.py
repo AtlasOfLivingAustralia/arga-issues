@@ -61,18 +61,13 @@ class DWCProcessor:
 
         self.writer = Writer(outputDir, "dwcConversion", "dwcChunk")
 
-    def chunkGen(self, filePath, sep, header, encoding):
-        with pd.read_csv(filePath, on_bad_lines="skip", chunksize=self.chunkSize, sep=sep, header=header, encoding=encoding, dtype=object) as reader:
-            for chunk in reader:
-                yield chunk
-
     def process(self, inputPath, outputFilePath, sep, header, encoding):
         if not self.checkPreparedEnrichment():
             return
         
         print(f"Creating DWC from preDWC file {inputPath}")
 
-        for idx, df in enumerate(self.chunkGen(inputPath, sep, header, encoding)):
+        for idx, df in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             print(f"At chunk: {idx}", end='\r')
             if idx == 0:
                 newColMap, copyColMap = dff.createMappings(df.columns, self.dwcLookup, self.customLookup, self.prefix)

@@ -111,3 +111,8 @@ def applyExclusions(df, exclusionMap):
             df = df.drop(df[df[dwcName].isin(exclusions)].index)
     
     return df
+
+def chunkGenerator(filePath, chunkSize, sep=",", header=0, encoding="utf-8"):
+    with pd.read_csv(filePath, on_bad_lines="skip", chunksize=chunkSize, sep=sep, header=header, encoding=encoding, dtype=object) as reader:
+        for chunk in reader:
+            yield chunk
