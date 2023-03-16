@@ -25,7 +25,14 @@
                         "{PATH, PROCESSING, biosample.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 200000
+                        "subfileRows": 200000,
+                        "compressChild": [
+                            "Paragraph",
+                            "Attribute",
+                            "Model",
+                            "Id",
+                            "Link"
+                        ]
                     },
                     "outputs": [
                         "{PATH, PROCESSING, biosample.csv}"
