@@ -25,9 +25,14 @@ def extractAttr(listOfDicts, attrTuples):
 
 def process(filePath: Path, outputFilePath: Path, splitInfo: dict, chunkSize: int = 1024*1024):
     writer = Writer(outputFilePath.parent, "columnSplit", "split")
+    chunkGen = dff.chunkGenerator(filePath, chunkSize)
 
-    for df in dff.chunkGenerator(filePath, chunkSize):
+    for idx, df in enumerate(chunkGen, start=1):
+        print(f"Splitting chunk: {idx}", end='\r')
         for column, conversions in splitInfo.items():
+            if column not in df.columns:
+                continue
+            
             df[list(conversions.keys())] = df[column].apply(lambda x: pd.Series(extractAttr(x, conversions.values())))
         
         writer.writeDF(df)
