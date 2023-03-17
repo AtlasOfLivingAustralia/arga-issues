@@ -79,4 +79,5 @@ class Writer:
 
                 file.unlink()
         print(f"\nCreated a single file at {outputFilePath}")
+        self.subfileDir.rmdir()
         self.writtenFiles = [outputFilePath]
