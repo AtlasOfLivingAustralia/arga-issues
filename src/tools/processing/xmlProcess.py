@@ -38,16 +38,17 @@ class ElementContainer:
         flat = {}
 
         if self.text:
-            flat[f"{self.tag}_text"] = self.text
+            flat[self.tag] = self.text
 
         for attr, value in self.attributes.items():
             flat[f"{self.tag}_{attr}"] = value
 
         for tag, children in self.children.items():
             if len(children) > 1 or tag in compressChildren:
-                flat |= {self.tag: [child.flatten(compressChildren) for child in children]}
+                childKey = f"sub_{self.tag}" if self.text else self.tag
+                flat |= {childKey: [child.flatten(compressChildren) for child in children]}
             else:
-                flat |= children[0].flatten(compressChildren) 
+                flat |= children[0].flatten(compressChildren)
 
         return flat
 
