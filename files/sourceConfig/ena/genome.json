@@ -10,14 +10,20 @@
                     "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, genomeCollections.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 100000,
-                        "onefile": "genomeCollections"
+                        "subfileRows": 150000,
+                        "compressChild": [
+                            "CHROMOSOMES",
+                            "ASSEMBLY_LINKS",
+                            "ASSEMBLY_ATTRIBUTES",
+                            "ASSEMBLY"
+                        ]
                     },
                     "outputs": [
-                        "{PATH, ROOT, genomeCollections.csv}"
+                        "{PATH, PROCESSING, genomeCollections.csv}"
                     ]
                 }
             ]
