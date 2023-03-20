@@ -40,7 +40,7 @@ class ElementContainer:
         extracted = {}
 
         for attribute, valueMap in splitAttrib.items():
-            for newColumn, attributeValue in valueMap.items():
+            for attributeValue, newColumn in valueMap.items():
                 if self.attributes.get(attribute, None) == attributeValue:
                     if delete: # Remove old attribute
                         self.attributes.pop(attribute) 
@@ -135,6 +135,7 @@ def process(filePath: Path, outputFilePath: Path, entryCount: int = 0, firstEntr
                 writer.writeDF(df)
                 data.clear()
                 columns.clear()
+                del df
                 gc.collect()
 
             element.clear()
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--entries', type=int, default=0, help="Amount of entries to parse.")
     parser.add_argument('-s', '--subfile', type=int, default=0, help="Maximum entries per csv generated.")
     parser.add_argument('-f', '--firstEntry', type=int, default=0, help="First entry to parse from.")
-    parser.add_argument('-t', '--onlyTags', help="Path to json file with tag restrictions")
+    parser.add_argument('-t', '--tagProperties', help="Path to json file with tag properties. Properties file should have `onlyIncludeTags` to only use specific tags, `compressChild` for tags to compress children of, and `collectionExtract` for extracting fields from compressed collections.")
     args = parser.parse_args()
 
     inputPath = Path(args.inputFilePath)
@@ -164,12 +165,16 @@ if __name__ == '__main__':
 
     outputPath = Path(args.outputFilePath)
 
-    onlyTagPath = Path(args.onlyTags)
-    if not onlyTagPath.exists():
-        print(f"No tagfile found at path: {onlyTagPath}")
+    tagProperties = Path(args.tagProperties)
+    if not tagProperties.exists():
+        print(f"No tagfile found at path: {tagProperties}")
         exit()
 
-    with open(args.onlyTags) as fp:
-        onlyIncludeTags = json.load(fp)
+    with open(args.tagProperties) as fp:
+        properties = json.load(fp)
 
-    process(inputPath, outputPath, args.entries, args.firstEntry, args.subfile, onlyIncludeTags)
+    onlyIncludeTags = properties.get("onlyIncludeTags", [])
+    compressChild = properties.get("compressChild", [])
+    collectionExtract = properties.get("collectionExtract", {})
+
+    process(inputPath, outputPath, args.entries, args.firstEntry, args.subfile, onlyIncludeTags, compressChild, collectionExtract)
