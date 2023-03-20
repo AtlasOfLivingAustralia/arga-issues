@@ -55,7 +55,7 @@ class DWCProcessor:
         self.outputDir = outputDir
 
         self.augments = dwcProperties.pop("augment", [])
-        self.chunkSize = dwcProperties.pop("chunkSize", 1024*1024)
+        self.chunkSize = dwcProperties.pop("chunkSize", 100000)
 
         self.augmentSteps = [AugmentStep(augProperties) for augProperties in self.augments]
 
@@ -98,7 +98,7 @@ class DWCProcessor:
     def applyEnrichment(self, df):
         for keyword, database in self.enrichDBs.items():
             for enrichFile in database.getDWCFiles():
-                for enrichChunk in self.chunkGen(enrichFile.filePath, enrichFile.separator, enrichFile.firstRow, enrichFile.encoding):
+                for enrichChunk in dff.chunkGenerator(enrichFile.filePath, self.chunkSize, enrichFile.separator, enrichFile.firstRow, enrichFile.encoding):
                     if keyword not in df or keyword not in enrichChunk:
                         continue
 
