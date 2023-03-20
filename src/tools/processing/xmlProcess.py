@@ -5,6 +5,8 @@ from xml.etree import cElementTree as ET
 from lib.subfileWriter import Writer
 import lib.commonFuncs as cmn
 import gc
+import pandas as pd
+import time
 
 class ElementContainer:
     def __init__(self, element: ET.Element):
@@ -34,25 +36,43 @@ class ElementContainer:
         
         self.children[element.tag].append(element)
 
-    def flatten(self, compressChildren: list = []) -> dict:
+    def extractAttributes(self, splitAttrib: dict, delete: bool = False) -> dict:
+        extracted = {}
+
+        for attribute, valueMap in splitAttrib.items():
+            for newColumn, attributeValue in valueMap.items():
+                if self.attributes.get(attribute, None) == attributeValue:
+                    if delete: # Remove old attribute
+                        self.attributes.pop(attribute) 
+
+                    extracted |= {newColumn: self.text}
+                    break
+
+        return extracted
+
+    def flatten(self, compressChildren: list = [], collectionExtract: dict = {}) -> dict:
         flat = {}
 
         if self.text:
-            flat[self.tag] = self.text
+            flat[f"{self.tag}_text"] = self.text
 
         for attr, value in self.attributes.items():
             flat[f"{self.tag}_{attr}"] = value
 
         for tag, children in self.children.items():
             if len(children) > 1 or tag in compressChildren:
-                childKey = f"sub_{self.tag}" if self.text else self.tag
-                flat |= {childKey: [child.flatten(compressChildren) for child in children]}
+                if tag in collectionExtract:
+                    for child in children:
+                        flat |= child.extractAttributes(collectionExtract[tag])
+
+                flat |= {self.tag: [child.flatten(compressChildren) for child in children]}
+                
             else:
-                flat |= children[0].flatten(compressChildren)
+                flat |= children[0].flatten(compressChildren, collectionExtract)
 
         return flat
 
-def process(filePath: Path, outputFilePath: Path, entryCount: int = 0, firstEntry: int = 0, subfileRows: int = 0, onlyIncludeTags: list = [], compressChild: list = []):
+def process(filePath: Path, outputFilePath: Path, entryCount: int = 0, firstEntry: int = 0, subfileRows: int = 0, onlyIncludeTags: list = [], compressChild: list = [], collectionExtract: dict = {}):
     writer = Writer(outputFilePath.parent, "xmlProcessing", "xmlSection")
 
     if entryCount < 0:
@@ -104,15 +124,15 @@ def process(filePath: Path, outputFilePath: Path, entryCount: int = 0, firstEntr
                 continue
 
             if currentEntry >= firstEntry: # Only add data if it is within data entry range
-                flatContainer = elementContainer.flatten(compressChild)
+                flatContainer = elementContainer.flatten(compressChild, collectionExtract)
                 data.append(flatContainer)
                 columns = cmn.extendUnique(columns, flatContainer.keys())
                 if currentEntry == lastEntry: # Exit if last entry reached
                     break
 
             if len(data) == subfileRows:
-                writer.writeCSV(columns, data)
-
+                df = pd.DataFrame.from_records(data, columns=columns)
+                writer.writeDF(df)
                 data.clear()
                 columns.clear()
                 gc.collect()
