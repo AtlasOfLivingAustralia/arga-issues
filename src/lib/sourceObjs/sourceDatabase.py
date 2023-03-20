@@ -32,7 +32,7 @@ class Database:
         self.dwcDir = self.databaseDir / "dwc"
 
         self.sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir)
-        dwcProcessor = DWCProcessor(self.database, self.dwcProperties, self.enrichDBs, self.dwcDir)
+        dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.enrichDBs, self.dwcDir)
         self.fileManager = FileManager(self.sourceDirectories, self.authFile, dwcProcessor)
 
         self.postInit(properties)

@@ -36,13 +36,13 @@ if __name__ == '__main__':
 
     data = {}
     with pd.read_csv(stageFile.filePath, encoding=stageFile.encoding, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
-        for chunk in reader:
-
+        for idx, chunk in enumerate(reader):
+            print(f"Scanning chunk: {idx}", end='\r')
             if not data: # Empty data dict, initial pass
                 newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, customLookup, source.location, prefixMissing=False)
                 for column in chunk.columns:
                     values = chunk[column].tolist()
-                    values = [v for idx, v in enumerate(values, start=1) if v not in values[idx:] and v != 'nan']
+                    values = [v for index, v in enumerate(values, start=1) if v not in values[index:] and v != 'nan']
 
                     data[column] = {"maps to": newColMap[column], "values": values[:entryLimit]}
 
