@@ -51,7 +51,7 @@ class FileStep(ScriptStep):
 
     def process(self, overwrite=False, verbose=True):
         if self.outputs and not overwrite and self.checkOutputsExist():
-            print("Outputs already exist, not overwriting")
+            print(f"All outputs {self.outputs} exist, not overwriting")
             return
         
         return super().process(verbose)

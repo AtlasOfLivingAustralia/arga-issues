@@ -23,17 +23,16 @@ class StageFile:
     def getFilePath(self):
         return self.filePath
     
-    def create(self):
-        if self.filePath.exists():
-            print(f"{str(self.filePath)} already exists, skipping creation")
+    def create(self, overwrite: bool = False) -> None:
+        if self.filePath.exists() and not overwrite:
+            print(f"{self.filePath} already exists and not overwriting, skipping creation")
             return
         
         for parent in self.parents:
             parent.create()
 
         self.filePath.parent.mkdir(parents=True, exist_ok=True)
-
-        self.processor.process()
+        self.processor.process(overwrite)
 
 class DWCStageFile:
     def __init__(self, preDwCFile: StageFile, processor: DWCProcessor):
@@ -48,9 +47,9 @@ class DWCStageFile:
     def getFilePath(self):
         return self.filePath
 
-    def create(self):
-        if self.filePath.exists():
-            print(f"{str(self.filePath)} already exists, skipping creation")
+    def create(self, overwrite: bool = False) -> None:
+        if self.filePath.exists() and not overwrite:
+            print(f"{self.filePath} already exists and not overwriting, skipping creation")
             return
         
         self.parent.create()
@@ -79,9 +78,9 @@ class FileManager:
     def getFiles(self, stage: FileStage):
         return self.stages[stage]
     
-    def createAll(self, stage: FileStage):
+    def createAll(self, stage: FileStage, overwrite: bool = False):
         for file in self.stages[stage]:
-            file.create()
+            file.create(overwrite)
 
     def addDownloadURLStage(self, url: str, fileName: str, processing: list[dict], fileProperties: dict = {}):
         downloadedFile = self.sourceDirectories[1] / fileName # downloaded files go into download directory
