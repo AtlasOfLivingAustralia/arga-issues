@@ -10,14 +10,19 @@
                     "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, bold_xml.csv}"
                     ],
                     "kwargs": {
                         "subfileRows": 1000000,
-                        "onefile": "bold_xml"
+                        "compressChild": [
+                            "tracefiles",
+                            "sequences",
+                            "specimen_imagery"
+                        ]
                     },
                     "outputs": [
-                        "{PATH, ROOT, bold_xml.csv}"
+                        "{PATH, PROCESSING, bold_xml.csv}"
                     ]
                 }
             ]
