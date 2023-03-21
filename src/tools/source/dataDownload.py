@@ -11,4 +11,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     source = sources.getDB(args.source, False)
-    source.download()
+    source.download(args.overwrite)
