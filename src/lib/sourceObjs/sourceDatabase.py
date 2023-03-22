@@ -44,10 +44,10 @@ class Database:
     def __repr__(self):
         return str(self)
 
-    def postInit(self):
+    def postInit(self, properties: dict) -> None:
         raise NotImplementedError
 
-    def prepare(self):
+    def prepare(self) -> None:
         raise NotImplementedError
     
     def getFileNameFromURL(self, url: str) -> str:
@@ -69,21 +69,21 @@ class Database:
     def createDwC(self, overwrite: bool = False) -> None:
         self.fileManager.createAll(FileStage.DWC, overwrite)
 
-    def createDirectory(self):
+    def createDirectory(self) -> None:
         print(f"Creating directory for data: {str(self.databaseDir)}")
         self.databaseDir.mkdir(parents=True, exist_ok=True)
 
-    def checkLeftovers(self, properties: dict):
+    def checkLeftovers(self, properties: dict) -> None:
         for property in properties:
             print(f"{self.location}-{self.database} unknown property: {property}")
     
-    def getDataType(self):
+    def getDataType(self) -> str:
         return self.dataType
 
-    def getDBType(self):
+    def getDBType(self) -> str:
         return self.dbType
     
-    def getBaseDir(self):
+    def getBaseDir(self) -> Path:
         return self.databaseDir
     
     def getPreDWCFiles(self) -> list[StageFile]:
@@ -94,14 +94,14 @@ class Database:
 
 class SpecificDB(Database):
 
-    def postInit(self, properties):
+    def postInit(self, properties: dict) -> None:
         self.dbType = DBType.SPECIFIC
         self.files = properties.pop("files", None)
 
         if self.files is None:
             raise Exception("No provided files for source") from AttributeError
 
-    def prepare(self):
+    def prepare(self) -> None:
         for file in self.files:
             url = file.get("url", None)
             fileName = file.get("downloadedFile", None)
@@ -123,7 +123,7 @@ class SpecificDB(Database):
 
 class LocationDB(Database):
 
-    def postInit(self, properties):
+    def postInit(self, properties: dict) -> None:
         self.dbType = DBType.LOCATION
         self.localFile = "files.txt"
         self.subDirDepthLimit = 20
@@ -141,7 +141,7 @@ class LocationDB(Database):
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
 
-    def prepare(self, recrawl=False):
+    def prepare(self, recrawl: bool = False) -> None:
         localFilePath = self.databaseDir / self.localFile
 
         if not recrawl and localFilePath.exists():
@@ -167,7 +167,7 @@ class LocationDB(Database):
 
 class ScriptUrlDB(Database):
     
-    def postInit(self, properties):
+    def postInit(self, properties: dict) -> None:
         self.dbType = DBType.SCRIPTURL
         self.folderPrefix = properties.pop("folderPrefix", False)
         self.script = properties.pop("script", None)
@@ -177,7 +177,7 @@ class ScriptUrlDB(Database):
 
         self.scriptStep = FileStep(self.script, SelectorParser(self.sourceDirectories, []))
         
-    def prepare(self):
+    def prepare(self) -> None:
         urls = self.scriptStep.process()
 
         for url in urls:
@@ -191,7 +191,7 @@ class ScriptUrlDB(Database):
 
 class ScriptDataDB(Database):
 
-    def postInit(self, properties):
+    def postInit(self, properties: dict) -> None:
         self.dbType = DBType.SCRIPTDATA
         self.script = properties.pop("script", None)
 
@@ -200,7 +200,7 @@ class ScriptDataDB(Database):
 
         self.scriptStep = FileStep(self.script, SelectorParser(self.sourceDirectories, []))
         
-    def prepare(self):
+    def prepare(self) -> None:
         self.fileManager.addRetrieveScriptStage(self.scriptStep, self.fileProperties)
 
         if self.combineProcessing:
