@@ -72,10 +72,10 @@ class DWCProcessor:
         print(f"Creating DWC from preDWC file {inputPath}")
 
         for idx, df in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
-            print(f"At chunk: {idx}", end='\r')
             if idx == 0:
                 newColMap, copyColMap = dff.createMappings(df.columns, self.dwcLookup, self.customLookup, self.prefix)
              
+            print(f"At chunk: {idx}", end='\r')
             df = dff.applyColumnMap(df, newColMap, copyColMap)
             df = dff.applyExclusions(df, self.exclude)
             df = self.applyAugments(df)
@@ -106,5 +106,6 @@ class DWCProcessor:
                     if keyword not in df or keyword not in enrichChunk:
                         continue
 
-                    df = df.merge(enrichChunk, 'left', on=keyword, suffixes=('', f'_{database.database}'))
+                    columnDifferences = list(enrichChunk.columns.difference(df.columns)) + [keyword]
+                    df = df.merge(enrichChunk[columnDifferences], 'left', on=keyword)
         return df
