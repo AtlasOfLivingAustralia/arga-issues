@@ -6,7 +6,6 @@ from lib.subfileWriter import Writer
 import lib.commonFuncs as cmn
 import gc
 import pandas as pd
-import time
 
 class ElementContainer:
     def __init__(self, element: ET.Element):
@@ -72,7 +71,7 @@ class ElementContainer:
 
         return flat
 
-def process(filePath: Path, outputFilePath: Path, entryCount: int = 0, firstEntry: int = 0, subfileRows: int = 0, onlyIncludeTags: list = [], compressChild: list = [], collectionExtract: dict = {}):
+def process(filePath: Path, outputFilePath: Path, encoding="utf-8", entryCount: int = 0, firstEntry: int = 0, subfileRows: int = 0, onlyIncludeTags: list = [], compressChild: list = [], collectionExtract: dict = {}):
     writer = Writer(outputFilePath.parent, "xmlProcessing", "xmlSection")
 
     if entryCount < 0:
@@ -86,7 +85,8 @@ def process(filePath: Path, outputFilePath: Path, entryCount: int = 0, firstEntr
 
     lastEntry = (firstEntry + entryCount - 1) if entryCount > 0 else -1 # Ignore last entry if all entries requested
 
-    iterator = ET.iterparse(filePath, events=('start', 'end'))
+    parser = ET.XMLParser(encoding=encoding)
+    iterator = ET.iterparse(filePath, events=('start', 'end'), parser=parser)
     _, root = next(iterator)
 
     event, element = next(iterator)
