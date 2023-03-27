@@ -65,11 +65,17 @@ if __name__ == '__main__':
             if all(len(info["values"]) >= entryLimit for info in data.values()):
                 break
     
+    print()
+
     if args.tsv:
         dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
         df = pd.DataFrame.from_dict(dfData)
         df.index += 1
-        df.to_csv(outputDir / "fieldExamples.tsv", sep="\t", index_label="Example #")
+        output = outputDir / "fieldExamples.tsv"
+        print(f"Writing to file {output}")
+        df.to_csv(output, sep="\t", index_label="Example #")
     else:
-        with open(outputDir / "fieldExamples.json", 'w') as fp:
+        output = outputDir / "fieldExamples.json"
+        print(f"Writing to file {output}")
+        with open(output, 'w') as fp:
             json.dump(data, fp, indent=4)
