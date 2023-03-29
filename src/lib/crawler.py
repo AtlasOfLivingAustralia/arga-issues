@@ -6,10 +6,11 @@ from bs4 import BeautifulSoup
 import concurrent.futures
 
 class Crawler:
-    def __init__(self, url, reString, maxDepth=-1, retries=5, user="", password=""):
+    def __init__(self, url, reString, maxDepth=-1, maxWorkers=40, retries=5, user="", password=""):
         self.url = url
         self.reString = reString
         self.maxDepth = maxDepth
+        self.maxWorkers = maxWorkers
         self.retries = retries
 
         self.regex = re.compile(reString)
@@ -23,7 +24,7 @@ class Crawler:
         while len(folderURLs):
             newFolders = []
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.maxWorkers) as executor:
                 futures = [executor.submit(self.getMatches, folderURL) for folderURL in folderURLs]
                 for idx, future in enumerate(concurrent.futures.as_completed(futures)):
                     print(f"At depth: {subDirDepth}, folder: {idx+1} / {len(folderURLs)}", end="\r")
