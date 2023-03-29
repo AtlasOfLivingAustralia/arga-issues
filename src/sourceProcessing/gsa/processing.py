@@ -20,10 +20,27 @@ def build(outputFilePath):
         exit()
 
     data = []
-    titles = ["project_accession", "sample_accession", "experiment_accession", "run_accession"]
+    prefixes = {
+        "PRJCA": "project_accession",
+        "SAMC": "sample_accession",
+        "CRX": "experiment_accession",
+        "CRA": "experiment_accession",
+        "CRR": "run_accession"
+    }
+
     for file in files:
         path = file.strip(url)
-        info = {title: layer for title, layer in zip(titles, path.split("/"))} | {"url": file}
+        info = {}
+        for item in path.split("/"):
+            if item.endswith(".gz"): # Reached file name, no new column
+                break
+
+            for prefix, column in prefixes.items():
+                if item.startswith(prefix):
+                    info[column] = item
+                    break
+
+        info |= {"url": file}
         data.append(info)
 
     df = pd.DataFrame.from_records(data)
