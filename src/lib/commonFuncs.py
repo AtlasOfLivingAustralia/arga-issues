@@ -2,11 +2,7 @@ import logging
 import csv
 import lib.config as cfg
 import json
-import requests
-import re
-from requests.auth import HTTPBasicAuth
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+
 
 def reverseLookup(lookupDict):
     return {oldName: newName for newName, oldNameList in lookupDict.items() for oldName in oldNameList}
@@ -87,53 +83,6 @@ def addUniqueEntry(dictionary, key, value, duplicateLimit=0):
 def loadFromJson(path):
     with open(path) as fp:
         return json.load(fp)
-
-def getMatches(location, regex, user="", password=""):
-    if not user:
-        rawHTML = requests.get(location)
-    else:
-        rawHTML = requests.get(location, auth=HTTPBasicAuth(user, password))
-
-    soup = BeautifulSoup(rawHTML.text, 'html.parser')
-    exp = re.compile(regex)
-
-    folders = []
-    matches = []
-    for link in soup.find_all('a'):
-        link = link.get('href')
-
-        if link is None:
-            continue
-        
-        fullLink = urljoin(location, link)
-        if fullLink.startswith(location) and fullLink != location and fullLink.endswith('/'): # Folder classification
-            folders.append(fullLink)
-
-        if exp.match(link):
-            matches.append(fullLink)
-
-    return folders, matches
-
-def crawl(url, regexMatch, maxDepth=0, user="", password=""):
-    subDirDepth = 0
-    folders = [url]
-    matchingFiles = []
-
-    while len(folders):
-        newFolders = []
-
-        for idx, folder in enumerate(folders):
-            print(f"At depth: {subDirDepth}, folder: {idx}", end="\r")
-            newSubFolders, newFiles = getMatches(folder, regexMatch, user, password)
-            matchingFiles.extend(newFiles)
-
-            if subDirDepth < maxDepth:
-                newFolders.extend(newSubFolders)
-            
-        folders = newFolders.copy()
-        subDirDepth += 1
-
-    return matchingFiles
 
 def dictListToCSV(dictList, columns, filePath):
     with open(filePath, 'w', newline='', encoding='utf-8') as fp:
