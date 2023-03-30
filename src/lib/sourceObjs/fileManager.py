@@ -90,7 +90,6 @@ class FileManager:
         self.stages[FileStage.RAW].append(rawFile)
 
         if not processing:
-            self.stages[FileStage.PROCESSED].append(rawFile)
             return
         
         processor = FileProcessor([rawFile.getFilePath()], processing, self.sourceDirectories)
@@ -98,11 +97,20 @@ class FileManager:
             processedFile = StageFile(outputPath, fileProperties, processor, [rawFile])
             self.stages[FileStage.PROCESSED].append(processedFile)
 
-    def addRetrieveScriptStage(self, scriptStep, fileProperties):
-        downloadProcessor = FileProcessor.fromSteps([], [scriptStep], self.sourceDirectories)
+    def addRetrieveScriptStage(self, script, processing, fileProperties):
+        downloadProcessor = FileProcessor([], [script], self.sourceDirectories)
         for filePath in downloadProcessor.getOutputs():
             processedFile = StageFile(filePath, fileProperties, downloadProcessor)
             self.stages[FileStage.RAW].append(processedFile)
+
+        if not processing:
+            return
+        
+        for file in self.stages[FileStage.RAW]:
+            processor = FileProcessor([file.filePath], processing, self.sourceDirectories)
+            for filePath in processor.getOutputs():
+                processedFile = StageFile(filePath, {}, processor, [file])
+                self.stages[FileStage.PROCESSED].append(processedFile)
     
     def addCombineStage(self, processing):
         parentFiles = self.stages[FileStage.PROCESSED]

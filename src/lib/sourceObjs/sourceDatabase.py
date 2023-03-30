@@ -197,11 +197,9 @@ class ScriptDataDB(Database):
 
         if self.script is None:
             raise Exception("No script specified") from AttributeError
-
-        self.scriptStep = FileStep(self.script, SelectorParser(self.sourceDirectories, []))
         
     def prepare(self) -> None:
-        self.fileManager.addRetrieveScriptStage(self.scriptStep, self.fileProperties)
+        self.fileManager.addRetrieveScriptStage(self.script, self.globalProcessing, self.fileProperties)
 
         if self.combineProcessing:
             self.fileManager.addCombineStage(self.combineProcessing)
