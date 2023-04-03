@@ -43,7 +43,7 @@ if __name__ == '__main__':
                 newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, customLookup, source.location, prefixMissing=False)
                 for column in chunk.columns:
                     values = chunk[column].tolist()
-                    values = [v for index, v in enumerate(values, start=1) if v not in values[:index] and v != np.NaN]
+                    values = [v for index, v in enumerate(values) if v not in values[:index] and v not in [np.NaN, np.nan]]
 
                     data[column] = {"maps to": newColMap[column], "values": values[:entryLimit]}
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
                     values = chunk[column].tolist()
                     lst = data[column]["values"]
                     for v in values:
-                        if v in lst or v == np.NaN:
+                        if v in lst or v in [np.NaN, np.nan]:
                             continue
 
                         lst.append(v)
