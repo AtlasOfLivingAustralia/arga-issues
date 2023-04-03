@@ -102,7 +102,7 @@ def process(filePath: Path, outputFilePath: Path, encoding="utf-8", entryCount: 
         if event == 'start':
             path.append(ElementContainer(element))
 
-            if element.tag == topLevelTag:
+            if element.tag == topLevelTag and len(path) == 1:
                 currentEntry += 1
                 print(f'At entry: {currentEntry+1:,}', end='\r')
 
@@ -123,11 +123,11 @@ def process(filePath: Path, outputFilePath: Path, encoding="utf-8", entryCount: 
                 element.clear()
                 continue
 
-            if currentEntry >= firstEntry: # Only add data if it is within data entry range
+            if len(data) >= firstEntry: # Only add data if it is within data entry range
                 flatContainer = elementContainer.flatten(compressChild, collectionExtract)
                 data.append(flatContainer)
                 columns = cmn.extendUnique(columns, flatContainer.keys())
-                if currentEntry == lastEntry: # Exit if last entry reached
+                if len(data) == lastEntry: # Exit if last entry reached
                     break
 
             if len(data) == subfileRows:
@@ -143,7 +143,8 @@ def process(filePath: Path, outputFilePath: Path, encoding="utf-8", entryCount: 
 
     # Write remaining data to file
     if data:
-        writer.writeCSV(columns, data)
+        df = pd.DataFrame.from_records(data, columns=columns)
+        writer.writeDF(df)
 
     print()
     writer.oneFile(outputFilePath) # Compress to one file
