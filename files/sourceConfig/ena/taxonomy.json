@@ -10,7 +10,8 @@
                     "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING}"
                     ],
                     "outputs": [
                         "{PATH, PROCESSING, taxonomy.xml}"
@@ -20,14 +21,14 @@
                     "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, taxonomy.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 1000000,
-                        "onefile": "taxonomy"
+                        "subfileRows": 100000
                     },
                     "outputs": [
-                        "{PATH, PREDWC, taxonomy.csv}"
+                        "{PATH, PROCESSING, taxonomy.csv}"
                     ]
                 }
             ]

@@ -24,7 +24,7 @@
     "dwcProperties": {
         "augment": [
             {
-                "script": "sourceProcessing/anemone/postDWC.py",
+                "path": "sourceProcessing/anemone/postDWC.py",
                 "function": "augment"
             }
         ]
