@@ -6,6 +6,7 @@ from lib.processing.processor import DWCProcessor
 from lib.processing.steps import FileStep
 from lib.processing.parser import SelectorParser
 from lib.sourceObjs.fileManager import FileManager, FileStage, StageFile
+from lib.crawler import Crawler
 
 class Database:
 
@@ -140,6 +141,8 @@ class LocationDB(Database):
 
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
+        
+        self.crawler = Crawler(self.fileLocation, self.regexMatch, self.maxSubDirDepth, user=self.fileManager.user, password=self.fileManager.password)
 
     def prepare(self, recrawl: bool = False) -> None:
         localFilePath = self.databaseDir / self.localFile
@@ -150,9 +153,9 @@ class LocationDB(Database):
         else:
             print("Crawling...")
             localFilePath.unlink(True)
-
-            urls = cmn.crawl(self.fileLocation, self.regexMatch, self.maxSubDirDepth, user=self.user, password=self.password)
             
+            urls, _ = self.crawler.crawl()
+
             with open(localFilePath, 'w') as fp:
                 fp.writelines(urls)
 
