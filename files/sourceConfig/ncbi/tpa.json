@@ -7,7 +7,7 @@
             "downloadedFile": "con_tpa_cu.gbff.gz",
             "processing": [
                 {
-                    "script": "tools/processingl/extract.py",
+                    "path": "tools/processingl/extract.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
@@ -17,7 +17,7 @@
                     ]
                 },
                 {
-                    "script": "sourceProcessing/ncbi/flatfileParser.py",
+                    "path": "sourceProcessing/ncbi/flatfileParser.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
