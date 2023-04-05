@@ -80,7 +80,7 @@ class DWCProcessor:
             df = dff.applyExclusions(df, self.exclude)
             df = self.applyAugments(df)
             df = self.applyEnrichment(df)
-            df = dff.dropEmptyColumns(df)
+            # df = dff.dropEmptyColumns(df)
 
             self.writer.writeDF(df)
 
