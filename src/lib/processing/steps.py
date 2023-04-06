@@ -5,18 +5,24 @@ import subprocess
 import platform
 
 class ScriptStep:
-    def __init__(self, stepParamters: dict):
+    def __init__(self, stepParamters: dict, parser: SelectorParser, inputs: list = []):
         self.path = stepParamters.pop("path", None)
         self.function = stepParamters.pop("function", None)
         self.args = stepParamters.pop("args", [])
         self.kwargs = stepParamters.pop("kwargs", {})
         self.outputs = stepParamters.pop("outputs", [])
 
+        self.parser = parser
+
         if self.path is None:
             raise Exception("No script path specified") from AttributeError
         
         if self.function is None:
             raise Exception("No script function specified") from AttributeError
+        
+        self.args = self.parser.parseMultipleArgs(self.args)
+        self.kwargs = {key: self.parser.parseArg(value) for key, value in self.kwargs.items()}
+        self.outputs = self.parser.parseMultipleArgs(self.outputs)
 
         for parameter in stepParamters:
             print(f"Unknown step parameter: {parameter}")
@@ -24,7 +30,12 @@ class ScriptStep:
     def getOutputs(self):
         return self.outputs
 
-    def process(self, verbose=True):
+    def process(self, overwrite=False, verbose=True):
+        if self.outputs and not overwrite:
+            if verbose:
+                print(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
+            return
+        
         processFunction = pFuncs.importFunction(self.path, self.function)
 
         if verbose:
@@ -38,24 +49,7 @@ class ScriptStep:
             print(msg)
         
         return processFunction(*self.args, **self.kwargs)
-
-class FileStep(ScriptStep):
-    def __init__(self, stepParamters: dict, parser: SelectorParser):
-        self.parser = parser
-
-        super().__init__(stepParamters)
-        
-        self.outputs = self.parser.parseMultipleArgs(self.outputs)
-        self.args = self.parser.parseMultipleArgs(self.args)
-        self.kwargs = {key: self.parser.parseArg(value) for key, value in self.kwargs.items()}
-
-    def process(self, overwrite=False, verbose=True):
-        if self.outputs and not overwrite and self.checkOutputsExist():
-            print(f"All outputs {self.outputs} exist, not overwriting")
-            return
-        
-        return super().process(verbose)
-
+    
     def checkOutputsExist(self):
         for output in self.outputs:
             if isinstance(output, Path) and not output.exists():
@@ -64,12 +58,12 @@ class FileStep(ScriptStep):
 
 class DownloadStep:
     def __init__(self, stepParameters: dict, parser: SelectorParser):
-        self.parser = parser
-
         self.url = stepParameters.pop("download", None)
         self.filePath = stepParameters.pop("filePath", None)
         self.user = stepParameters.pop("user", "")
         self.password = stepParameters.pop("pass", "")
+
+        self.parser = parser
 
         if self.url is None:
             raise Exception("No url specified") from AttributeError
@@ -98,8 +92,8 @@ class DownloadStep:
 
         subprocess.run(args)
 
-class AugmentStep(ScriptStep):
-
+class AugmentStep:
+    
     def process(self, df, verbose=False):
         processFunction = pFuncs.importFunction(self.path, self.function)
         return processFunction(df, *self.args, **self.kwargs)

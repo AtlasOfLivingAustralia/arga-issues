@@ -1,15 +1,13 @@
 import lib.config as cfg
-import lib.commonFuncs as cmn
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
-from lib.processing.processor import DWCProcessor
+from lib.sourceObjs.systemManager import SystemManager, FileStage
 from lib.processing.steps import FileStep
 from lib.processing.parser import SelectorParser
-from lib.sourceObjs.fileManager import FileManager, FileStage, StageFile
+from lib.processing.stages import StageFile
 from lib.crawler import Crawler
 
 class Database:
-
     def __init__(self, dataType: str, location: str, database: str, properties: dict = {}, enrichDBs: dict = {}):
         self.dataType = dataType
         self.location = location
@@ -19,7 +17,7 @@ class Database:
 
         # Standard properties
         self.folderPrefix = properties.pop("folderPrefix", False)
-        self.authFile = properties.pop("auth", None)
+        self.authFile = properties.pop("auth", "")
         self.globalProcessing = properties.pop("globalProcessing", [])
         self.combineProcessing = properties.pop("combineProcessing", [])
         self.fileProperties = properties.pop("fileProperties", {})
@@ -27,14 +25,7 @@ class Database:
 
         self.locationDir = cfg.folderPaths.data / location
         self.databaseDir = self.locationDir / database
-        self.downloadDir = self.databaseDir / "raw"
-        self.processingDir = self.databaseDir / "processing"
-        self.preConversionDir = self.databaseDir / "preConversion"
-        self.dwcDir = self.databaseDir / "dwc"
-
-        self.sourceDirectories = (self.databaseDir, self.downloadDir, self.processingDir, self.preConversionDir)
-        dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.enrichDBs, self.dwcDir)
-        self.fileManager = FileManager(self.sourceDirectories, self.authFile, dwcProcessor)
+        self.systemManager = SystemManager(self.location, self.databaseDir, self.authFile, self.dwcProperties, self.encirichDBs)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -62,13 +53,13 @@ class Database:
         return f"{folderName}_{fileName}"
     
     def download(self, overwrite: bool = False) -> None:
-        self.fileManager.createAll(FileStage.RAW, overwrite)
+        self.systemManager.createAll(FileStage.RAW, overwrite)
 
     def createPreDwC(self, overwrite: bool = False) -> None:
-        self.fileManager.createAll(FileStage.PRE_DWC, overwrite)
+        self.systemManager.createAll(FileStage.PRE_DWC, overwrite)
 
     def createDwC(self, overwrite: bool = False) -> None:
-        self.fileManager.createAll(FileStage.DWC, overwrite)
+        self.systemManager.createAll(FileStage.DWC, overwrite)
 
     def createDirectory(self) -> None:
         print(f"Creating directory for data: {str(self.databaseDir)}")
@@ -88,10 +79,10 @@ class Database:
         return self.databaseDir
     
     def getPreDWCFiles(self) -> list[StageFile]:
-        return self.fileManager.getFiles(FileStage.PRE_DWC)
+        return self.systemManager.getFiles(FileStage.PRE_DWC)
     
     def getDWCFiles(self) -> list[StageFile]:
-        return self.fileManager.getFiles(FileStage.DWC)
+        return self.systemManager.getFiles(FileStage.DWC)
 
 class SpecificDB(Database):
 
@@ -115,12 +106,12 @@ class SpecificDB(Database):
             if fileName is None:
                 raise Exception("No filename provided to download to") from AttributeError
             
-            self.fileManager.addDownloadURLStage(url, fileName, processingSteps, fileProperties)
+            self.systemManager.addDownloadURLStage(url, fileName, processingSteps, fileProperties)
 
         if self.combineProcessing:
-            self.fileManager.addCombineStage(self.combineProcessing)
+            self.systemManager.addCombineStage(self.combineProcessing)
         
-        self.fileManager.pushPreDwC()
+        self.systemManager.pushPreDwC()
 
 class LocationDB(Database):
 
@@ -142,7 +133,7 @@ class LocationDB(Database):
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
         
-        self.crawler = Crawler(self.fileLocation, self.regexMatch, self.maxSubDirDepth, user=self.fileManager.user, password=self.fileManager.password)
+        self.crawler = Crawler(self.fileLocation, self.regexMatch, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
 
     def prepare(self, recrawl: bool = False) -> None:
         localFilePath = self.databaseDir / self.localFile
@@ -161,12 +152,12 @@ class LocationDB(Database):
 
         for url in urls:
             fileName = self.getFileNameFromURL(url)
-            self.fileManager.addDownloadURLStage(url, fileName, self.globalProcessing, self.fileProperties)
+            self.systemManager.addDownloadURLStage(url, fileName, self.globalProcessing, self.fileProperties)
 
         if self.combineProcessing:
-            self.fileManager.addCombineStage(self.combineProcessing)
+            self.systemManager.addCombineStage(self.combineProcessing)
 
-        self.fileManager.pushPreDwC()
+        self.systemManager.pushPreDwC()
 
 class ScriptUrlDB(Database):
     
@@ -185,12 +176,12 @@ class ScriptUrlDB(Database):
 
         for url in urls:
             fileName = self.getFileNameFromURL(url)
-            self.fileManager.addDownloadURLStage(url, fileName, self.globalProcessing)
+            self.systemManager.addDownloadURLStage(url, fileName, self.globalProcessing)
 
         if self.combineProcessing:
-            self.fileManager.addCombineStage(self.combineProcessing)
+            self.systemManager.addCombineStage(self.combineProcessing)
         
-        self.fileManager.pushPreDwC()
+        self.systemManager.pushPreDwC()
 
 class ScriptDataDB(Database):
 
@@ -202,9 +193,9 @@ class ScriptDataDB(Database):
             raise Exception("No script specified") from AttributeError
         
     def prepare(self) -> None:
-        self.fileManager.addRetrieveScriptStage(self.script, self.globalProcessing, self.fileProperties)
+        self.systemManager.addRetrieveScriptStage(self.script, self.globalProcessing, self.fileProperties)
 
         if self.combineProcessing:
-            self.fileManager.addCombineStage(self.combineProcessing)
+            self.systemManager.addCombineStage(self.combineProcessing)
 
-        self.fileManager.pushPreDwC()
+        self.systemManager.pushPreDwC()
