@@ -26,12 +26,6 @@ class DWCProcessor:
     def process(self, inputPath: Path, outputFilePath: Path, sep: str, header: int, encoding: str, overwrite: bool = False):
         if not self.checkPreparedEnrichment():
             return
-        
-        if outputFilePath.exists() and not overwrite:
-            print(f"DWC file {outputFilePath} exists and not overwriting, skipping creation")
-            return
-        
-        print(f"Creating DWC from preDWC file {inputPath}")
 
         for idx, df in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             if idx == 0:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from lib.processing.parser import SelectorParser
+from lib.processing.dwcProcessor import DWCProcessor
 import platform
 import subprocess
 import lib.processing.processingFuncs as pFuncs
@@ -111,25 +112,29 @@ class StageDownloadScript:
 
         subprocess.run(args)
 
-class DWCStageFile:
-    def __init__(self, preDwCFile: StageFile):
-        self.parent = preDwCFile
-        self.separator = preDwCFile.separator
-        self.firstRow = preDwCFile.firstRow
-        self.encoding = preDwCFile.encoding
+class StageDWCConversion:
+    def __init__(self, input: StageFile, dwcProcessor: DWCProcessor):
+        self.input = input
+        self.dwcProcessor = dwcProcessor
+        self.outputFileName = f"{self.input.filePath.stem}-dwc.csv"
 
-        # self.processor = processor
-        # self.filePath = processor.outputDir / f"{self.parent.filePath.stem}-dwc.csv"
+    def getOutput(self) -> Path:
+        return self.dwcProcessor.outputDir / self.outputFileName
 
-    def getFilePath(self):
-        return self.filePath
+    def run(self, overwrite=False):
+        outputPath = self.getOutput()
 
-    def create(self, overwrite: bool = False) -> None:
-        if self.filePath.exists() and not overwrite:
-            print(f"{self.filePath} already exists and not overwriting, skipping creation")
+        if outputPath.exists() and not overwrite:
+            print(f"DWC file {outputPath} exists and not overwriting, skipping creation")
             return
         
-        self.parent.create()
-        self.filePath.parent.mkdir(parents=True, exist_ok=True)
-
-        self.processor.process(self.parent.filePath, self.filePath, self.parent.separator, self.parent.firstRow, self.parent.encoding)
+        print(f"Creating DWC from preDWC file {self.input.filePath}")
+        
+        self.dwcProcessor.process(
+            self.input.filePath,
+            self.getOutput(),
+            self.input.separator,
+            self.input.firstRow,
+            self.input.encoding,
+            overwrite
+        )

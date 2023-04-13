@@ -1,8 +1,8 @@
 from pathlib import Path
 from enum import Enum
-from lib.processing.fileProcessor import FileProcessor
-from lib.processing.stages import StageFile, DWCStageFile, StageDownloadScript, StageScript
+from lib.processing.stages import StageFile, StageDownloadScript, StageScript, StageDWCConversion
 from lib.processing.parser import SelectorParser
+from lib.processing.dwcProcessor import DWCProcessor
 
 class FileStage(Enum):
     RAW       = 0
@@ -35,6 +35,7 @@ class SystemManager:
         self.dwcDir = self.rootDir / "dwc"
         
         self.parser = SelectorParser(self.rootDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
+        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.enrichDBs, self.dwcDir)
 
         self.stages = {stage: [] for stage in FileStage}
 
@@ -52,34 +53,31 @@ class SystemManager:
         rawFile = StageFile(downloadedFile, {} if processing else fileProperties, downloadScript)
         self.stages[FileStage.RAW].append(rawFile)
 
-        nextInputs = [rawFile]
+        outputs = [rawFile]
         for step in processing:
-            scriptStep = StageScript(step, nextInputs, self.parser)
-            nextInputs = [StageFile(filePath, {}, scriptStep) for filePath in scriptStep.getOutputs()]
+            scriptStep = StageScript(step, outputs, self.parser)
+            outputs = [StageFile(filePath, {}, scriptStep) for filePath in scriptStep.getOutputs()]
 
-        self.stages[FileStage.PROCESSED].extend(nextInputs) # Next inputs are the outputs after final step
+        self.stages[FileStage.PROCESSED].extend(outputs)
 
     def addRetrieveScriptStage(self, script, processing, fileProperties):
-        downloadProcessor = FileProcessor([], [script], self.sourceDirectories)
-        for filePath in downloadProcessor.getOutputs():
-            processedFile = StageFile(filePath, fileProperties, downloadProcessor)
-            self.stages[FileStage.RAW].append(processedFile)
+        scriptStep = StageScript(script, [], self.parser)
+        outputs = [StageFile(filePath, fileProperties, scriptStep) for filePath in scriptStep.getOutputs()]
+        self.stages[FileStage.RAW].extend(outputs)
 
-        if not processing:
-            return
-        
-        for file in self.stages[FileStage.RAW]:
-            processor = FileProcessor([file.filePath], processing, self.sourceDirectories)
-            for filePath in processor.getOutputs():
-                processedFile = StageFile(filePath, {}, processor, [file])
-                self.stages[FileStage.PROCESSED].append(processedFile)
+        for step in processing:
+            scriptStep = StageScript(step, outputs, self.parser)
+            outputs = [StageFile(filePath, {}, scriptStep) for filePath in scriptStep.getOutputs()]
+
+        self.stages[FileStage.PROCESSED].extend(outputs)
     
     def addCombineStage(self, processing):
-        parentFiles = self.stages[FileStage.PROCESSED]
-        combineProcessor = FileProcessor(parentFiles, processing, self.sourceDirectories)
-        for outputPath in combineProcessor.getOutputs():
-            combinedFile = StageFile(outputPath, {}, combineProcessor, parentFiles)
-            self.stages[FileStage.COMBINED].append(combinedFile)
+        outputs = self.stages[FileStage.PROCESSED]
+        for step in processing:
+            combineScript = StageScript(step, outputs, self.parser)
+            outputs = combineScript.getOutputs()
+
+        self.stages[FileStage.COMBINED].extend(outputs)
     
     def pushPreDwC(self):
         fileStages = (FileStage.RAW, FileStage.PROCESSED, FileStage.COMBINED, FileStage.PRE_DWC)
@@ -89,6 +87,7 @@ class SystemManager:
                 self.stages[nextStage] = self.stages[stage].copy()
 
         for file in self.stages[FileStage.PRE_DWC]:
-            stageFile = DWCStageFile(file, self.dwcProcessor)
-            self.stages[FileStage.DWC].append(stageFile)
-
+            dwcConversionScript = StageDWCConversion(file, self.dwcProcessor)
+            dwcOutput = dwcConversionScript.getOutput()
+            convertedFile = StageFile(dwcOutput, {}, dwcConversionScript)
+            self.stages[FileStage.DWC].append(convertedFile)
