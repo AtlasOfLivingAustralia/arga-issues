@@ -4,7 +4,7 @@
     "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
     "subDirectoryDepth": 0,
     "regexMatch": "gb[a-z]{3}\\d+\\.seq\\.gz",
-    "processing": [
+    "globalProcessing": [
         {
             "path": "tools/processing/extract.py",
             "function": "process",
