@@ -156,6 +156,7 @@ class LocationDB(Database):
             
             urls, _ = self.crawler.crawl()
 
+            self.databaseDir.mkdir(parents=True, exist_ok=True) # Create base directory if it doesn't exist to put the file
             with open(localFilePath, 'w') as fp:
                 fp.writelines(urls)
 
