@@ -1,5 +1,4 @@
 from pathlib import Path
-from lib.processing.stages import StageFile
 
 class SelectorParser:
     def __init__(self, rootDir: Path, downloadDir: Path, processingDir: Path, predwcDir: Path, dwcDir: Path):
@@ -12,18 +11,18 @@ class SelectorParser:
         self.dirKeywords = ("ROOT", "DOWNLOAD", "PROCESSING", "PREDWC", "DWC")
         self.mapping = {keyword: directory for keyword, directory in zip(self.dirKeywords, (rootDir, downloadDir, processingDir, predwcDir, dwcDir))}
 
-    def parseArg(self, arg: str, inputs: list[StageFile]) -> Path|str:
+    def parseArg(self, arg: str, inputs: list) -> Path|str:
         if self.validSelector(arg):
             return self.parseSelector(arg, inputs)
         return arg
 
-    def parseMultipleArgs(self, args: list[str], inputs: list[StageFile]) -> list[Path|str]:
+    def parseMultipleArgs(self, args: list[str], inputs: list) -> list[Path|str]:
         return [self.parseArg(arg, inputs) for arg in args]
 
     def validSelector(self, string: str) -> bool:
         return isinstance(string, str) and string[0] == "{" and string[-1] == "}" # Output hasn't got a complete selector
     
-    def parseSelector(self, arg: str, inputs: list[StageFile]) -> str:
+    def parseSelector(self, arg: str, inputs: list) -> str:
         selector = arg[1:-1] # Strip off braces
 
         attrs = [attr.strip() for attr in selector.split(',')]
@@ -80,5 +79,5 @@ class SelectorParser:
             return selectedDir
         return selectedDir / fileName
 
-    def inputPathSelector(self, directory: str = None, selected: str = None, modifier: str = None, suffix: str = None, inputs: list[StageFile] = []):
+    def inputPathSelector(self, directory: str = None, selected: str = None, modifier: str = None, suffix: str = None, inputs: list = []):
         return self.pathSelector(directory) / self.inputSelector(selected, modifier, suffix, inputs=inputs)

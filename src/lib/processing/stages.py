@@ -1,4 +1,3 @@
-from __future__ import annotations
 from pathlib import Path
 from lib.processing.parser import SelectorParser
 from lib.processing.dwcProcessor import DWCProcessor
@@ -7,10 +6,9 @@ import subprocess
 import lib.processing.processingFuncs as pFuncs
 
 class StageFile:
-    def __init__(self, filePath: Path, fileProperties: dict, parentScript: StageScript):
+    def __init__(self, filePath: Path, fileProperties: dict, parentScript: 'StageScript'):
         self.filePath = filePath
         self.fileProperties = fileProperties
-        # self.processor = processor
         self.parentScript = parentScript
 
         self.separator = fileProperties.pop("separator", ",")
@@ -36,6 +34,7 @@ class StageScript:
         self.processingStep = processingStep.copy()
         self.inputs = inputs
         self.parser = parser
+        self.scriptRun = False
 
         self.path = self.processingStep.pop("path", None)
         self.function = self.processingStep.pop("function", None)
@@ -69,6 +68,9 @@ class StageScript:
             print(f"Not all inputs exist, unable to run script")
             return
         
+        if self.scriptRun:
+            return
+        
         processFunction = pFuncs.importFunction(self.path, self.function)
 
         if verbose:
@@ -81,7 +83,9 @@ class StageScript:
                 msg += f" with kwargs {self.kwargs}"
             print(msg)
         
-        return processFunction(*self.args, **self.kwargs)
+        output = processFunction(*self.args, **self.kwargs)
+        self.scriptRun = True
+        return output
 
 class StageDownloadScript:
     def __init__(self, url: str, downloadedFile: Path, parser: SelectorParser, user: str, password: str):
@@ -100,13 +104,13 @@ class StageDownloadScript:
         if self.downloadedFile.exists() and not overwrite:
             return
         
-        print(f"Downloading from {self.url} to file {self.filePath}")
+        print(f"Downloading from {self.url} to file {self.downloadedFile}")
 
         curl = "curl"
         if platform.system() == 'Windows':
             curl = "curl.exe"
 
-        args = [curl, self.url, "-o", self.filePath]
+        args = [curl, self.url, "-o", self.downloadedFile]
         if self.user:
             args.extend(["--user", f"{self.user}:{self.password}"])
 
@@ -129,7 +133,7 @@ class StageDWCConversion:
             return
         
         print(f"Creating DWC from preDWC file {self.input.filePath}")
-        
+
         self.dwcProcessor.process(
             self.input.filePath,
             self.getOutput(),

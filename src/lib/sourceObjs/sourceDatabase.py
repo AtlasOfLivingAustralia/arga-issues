@@ -2,7 +2,6 @@ import lib.config as cfg
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
 from lib.sourceObjs.systemManager import SystemManager, FileStage
-from lib.processing.steps import FileStep
 from lib.processing.parser import SelectorParser
 from lib.processing.stages import StageFile
 from lib.crawler import Crawler
@@ -25,7 +24,7 @@ class Database:
 
         self.locationDir = cfg.folderPaths.data / location
         self.databaseDir = self.locationDir / database
-        self.systemManager = SystemManager(self.location, self.databaseDir, self.authFile, self.dwcProperties, self.encirichDBs)
+        self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.enrichDBs, self.authFile)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -169,7 +168,7 @@ class ScriptUrlDB(Database):
         if self.script is None:
             raise Exception("No script specified") from AttributeError
 
-        self.scriptStep = FileStep(self.script, SelectorParser(self.sourceDirectories, []))
+        # self.scriptStep = FileStep(self.script, SelectorParser(self.sourceDirectories, []))
         
     def prepare(self) -> None:
         urls = self.scriptStep.process()

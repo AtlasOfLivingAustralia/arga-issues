@@ -1,9 +1,9 @@
 import lib.commonFuncs as cmn
-import lib.commonFuncs as cfg
+import lib.config as cfg
 import lib.dataframeFuncs as dff
 from pathlib import Path
 from lib.subfileWriter import Writer
-from lib.processing.steps import AugmentStep
+import lib.processing.processingFuncs as pFuncs
 
 class DWCProcessor:
     dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
@@ -19,7 +19,7 @@ class DWCProcessor:
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)
 
-        self.augmentSteps = [AugmentStep(augProperties) for augProperties in self.augments]
+        self.augmentSteps = [Augment(augProperties) for augProperties in self.augments]
 
         self.writer = Writer(outputDir, "dwcConversion", "dwcChunk")
 
@@ -65,3 +65,22 @@ class DWCProcessor:
                     columnDifferences = list(enrichChunk.columns.difference(df.columns)) + [keyword]
                     df = df.merge(enrichChunk[columnDifferences], 'left', on=keyword)
         return df
+
+class Augment:
+    def __init__(self, augmentProperties: list[dict]):
+        self.augmentProperties = augmentProperties.copy()
+
+        self.path = self.augmentProperties.pop("path", None)
+        self.function = self.augmentProperties.pop("function", None)
+        self.args = self.augmentProperties.pop("args", [])
+        self.kwargs = self.augmentProperties.pop("kwargs", {})
+
+        if self.path is None:
+            raise Exception("No script path specified") from AttributeError
+        
+        if self.function is None:
+            raise Exception("No script function specified") from AttributeError
+
+    def process(self, df):
+        processFunction = pFuncs.importFunction(self.path, self.function)
+        return processFunction(df, *self.args, **self.kwargs)
