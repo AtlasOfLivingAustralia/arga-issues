@@ -127,17 +127,10 @@ class LocationDB(Database):
     def postInit(self, properties: dict) -> None:
         self.dbType = DBType.LOCATION
         self.localFile = "files.txt"
-        self.subDirDepthLimit = 20
 
         self.fileLocation = properties.pop("dataLocation", None)
         self.regexMatch = properties.pop("regexMatch", ".*")
-        self.maxSubDirDepth = properties.pop("subDirectoryDepth", self.subDirDepthLimit)
-
-        # Never travel to depth greater than sub directory depth limit
-        if self.maxSubDirDepth < 0:
-            self.maxSubDirDepth = self.subDirDepthLimit
-        else:
-            self.maxSubDirDepth = min(self.maxSubDirDepth, self.subDirDepthLimit)
+        self.maxSubDirDepth = properties.pop("subDirectoryDepth", -1)
 
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
@@ -158,7 +151,7 @@ class LocationDB(Database):
 
             self.databaseDir.mkdir(parents=True, exist_ok=True) # Create base directory if it doesn't exist to put the file
             with open(localFilePath, 'w') as fp:
-                fp.writelines(urls)
+                fp.write("\n".join(urls))
 
         for url in urls:
             fileName = self.getFileNameFromURL(url)

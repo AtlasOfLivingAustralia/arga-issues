@@ -35,7 +35,7 @@ class Crawler:
                     
                     matchingFiles.extend(newFiles)
 
-                    if subDirDepth < self.maxDepth or self.maxDepth <= 0:
+                    if subDirDepth < self.maxDepth or self.maxDepth < 0:
                         newFolders.extend(newSubFolders)
 
             folderURLs = newFolders.copy()
