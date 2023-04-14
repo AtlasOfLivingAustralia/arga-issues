@@ -16,11 +16,11 @@ def build(savedFilePath: Path, overwrite: bool = False) -> list[str]:
         speciesList = rawJSON.get("files", [])
 
         with open(savedFilePath, 'w') as fp:
-            json.dump(speciesList, fp)
+            json.dump(speciesList, fp, indent=4)
 
     else:
         with open(savedFilePath) as fp:
-            speciesList = json.load(fp)
+            speciesList = json.load(fp) 
 
     output = []
     for species in speciesList:

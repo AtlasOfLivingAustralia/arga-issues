@@ -158,31 +158,7 @@ class LocationDB(Database):
 
         self.systemManager.pushPreDwC()
 
-class ScriptUrlDB(Database):
-    
-    def postInit(self, properties: dict) -> None:
-        self.dbType = DBType.SCRIPTURL
-        self.folderPrefix = properties.pop("folderPrefix", False)
-        self.script = properties.pop("script", None)
-        
-        if self.script is None:
-            raise Exception("No script specified") from AttributeError
-
-        # self.scriptStep = FileStep(self.script, SelectorParser(self.sourceDirectories, []))
-        
-    def prepare(self) -> None:
-        urls = self.scriptStep.process()
-
-        for url in urls:
-            fileName = self.getFileNameFromURL(url)
-            self.systemManager.addDownloadURLStage(url, fileName, self.globalProcessing)
-
-        if self.combineProcessing:
-            self.systemManager.addCombineStage(self.combineProcessing)
-        
-        self.systemManager.pushPreDwC()
-
-class ScriptDataDB(Database):
+class ScriptDB(Database):
 
     def postInit(self, properties: dict) -> None:
         self.dbType = DBType.SCRIPTDATA
