@@ -6,11 +6,11 @@ import csv
 from yaml.scanner import ScannerError
 import json
 
-def build(savedFilePath: Path, overwrite: bool = False) -> list[str]:
+def build(savedFilePath: Path, downloadDir: Path, outputFilePath: Path) -> None:
     location = "https://42basepairs.com/api/v1/files/s3/genomeark/species/"
-    downloadURL = "https://42basepairs.com/download/s3/genomeark/species/"
+    baseDLUrl = "https://42basepairs.com/download/s3/genomeark/species/"
 
-    if not savedFilePath.exists() or overwrite:
+    if not savedFilePath.exists():
         rawHTML = requests.get(location)
         rawJSON = rawHTML.json()
         speciesList = rawJSON.get("files", [])
@@ -20,26 +20,20 @@ def build(savedFilePath: Path, overwrite: bool = False) -> list[str]:
 
     else:
         with open(savedFilePath) as fp:
-            speciesList = json.load(fp) 
+            speciesList = json.load(fp)
 
-    output = []
+    allData = []
+    columns = []
     for species in speciesList:
         name = species.get("name", "")
 
         if not name or name == "..":
             continue
 
-        output.append(downloadURL + name + "metadata.yaml")
-
-    return output
-
-def combine(folderPath: Path, outputPath: Path):
-    allData = []
-    columns = []
-
-    for filePath in folderPath.iterdir():
-        if filePath.suffix != '.yaml':
-            continue
+        downloadURL = baseDLUrl + name + "metadata.yaml"
+        filePath = downloadDir / f"{name[:-1]}_metadata.yaml"
+        if not filePath.exists():
+            cmn.downloadFile(downloadURL, filePath)
 
         try:
             with open(filePath) as fp:
@@ -47,14 +41,14 @@ def combine(folderPath: Path, outputPath: Path):
         except ScannerError:
             continue
 
-        if not isinstance(data, dict):
+        if "<Error>" in data: # Invalid request
             continue
 
         data = cmn.flatten(data)
         allData.append(data)
         columns = cmn.extendUnique(columns, data.keys())
-    
-    with open(outputPath, 'w', newline='') as fp:
+
+    with open(outputFilePath, 'w', newline='') as fp:
         writer = csv.DictWriter(fp, columns)
         writer.writeheader()
         

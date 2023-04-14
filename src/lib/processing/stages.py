@@ -1,8 +1,7 @@
 from pathlib import Path
 from lib.processing.parser import SelectorParser
 from lib.processing.dwcProcessor import DWCProcessor
-import platform
-import subprocess
+import lib.commonFuncs as cmn
 import lib.processing.processingFuncs as pFuncs
 
 class StageFile:
@@ -48,18 +47,18 @@ class StageScript:
         if self.function is None:
             raise Exception("No script function specified") from AttributeError
         
-        self.args = self.parser.parseMultipleArgs(self.args)
-        self.kwargs = {key: self.parser.parseArg(value) for key, value in self.kwargs.items()}
-        self.outputs = self.parser.parseMultipleArgs(self.outputs)
+        self.args = self.parser.parseMultipleArgs(self.args, self.inputs)
+        self.kwargs = {key: self.parser.parseArg(value, self.inputs) for key, value in self.kwargs.items()}
+        self.outputs = self.parser.parseMultipleArgs(self.outputs, self.inputs)
 
-        for parameter in processingStep:
+        for parameter in self.processingStep:
             print(f"Unknown step parameter: {parameter}")
 
     def getOutputs(self) -> list[Path]:
         return self.outputs
 
     def run(self, overwrite=False, verbose=True):
-        if self.outputs and not overwrite:
+        if all(output.exists() for output in self.outputs) and not overwrite:
             if verbose:
                 print(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
             return
@@ -104,17 +103,7 @@ class StageDownloadScript:
         if self.downloadedFile.exists() and not overwrite:
             return
         
-        print(f"Downloading from {self.url} to file {self.downloadedFile}")
-
-        curl = "curl"
-        if platform.system() == 'Windows':
-            curl = "curl.exe"
-
-        args = [curl, self.url, "-o", self.downloadedFile]
-        if self.user:
-            args.extend(["--user", f"{self.user}:{self.password}"])
-
-        subprocess.run(args)
+        cmn.downloadFile(self.url, self.downloadedFile, self.user, self.password)
 
 class StageDWCConversion:
     def __init__(self, input: StageFile, dwcProcessor: DWCProcessor):

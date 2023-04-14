@@ -2,7 +2,8 @@ import logging
 import csv
 import lib.config as cfg
 import json
-
+import platform
+import subprocess
 
 def reverseLookup(lookupDict):
     return {oldName: newName for newName, oldNameList in lookupDict.items() for oldName in oldNameList}
@@ -91,3 +92,14 @@ def dictListToCSV(dictList, columns, filePath):
 
         for d in dictList:
             writer.writerow(d)
+
+def downloadFile(url, filePath, user="", password="", verbose=True):
+    curl = "curl.exe" if platform.system() == 'Windows' else "curl"
+    args = [curl, url, "-o", filePath]
+    if user:
+        args.extend(["--user", f"{user}:{password}"])
+
+    if verbose:
+        print(f"Downloading from {url} to file {filePath}")
+
+    subprocess.run(args)
