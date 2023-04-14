@@ -61,14 +61,14 @@ class Database:
         folderName = urlParts[-2]
         return f"{folderName}_{fileName}"
     
-    def download(self, overwrite: bool = False) -> None:
-        self.fileManager.createAll(FileStage.RAW, overwrite)
+    def download(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+        self.fileManager.create(FileStage.RAW, fileNumbers, overwrite)
 
-    def createPreDwC(self, overwrite: bool = False) -> None:
-        self.fileManager.createAll(FileStage.PRE_DWC, overwrite)
+    def createPreDwC(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+        self.fileManager.create(FileStage.PRE_DWC, fileNumbers, overwrite)
 
-    def createDwC(self, overwrite: bool = False) -> None:
-        self.fileManager.createAll(FileStage.DWC, overwrite)
+    def createDwC(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+        self.fileManager.create(FileStage.DWC, fileNumbers, overwrite)
 
     def createDirectory(self) -> None:
         print(f"Creating directory for data: {str(self.databaseDir)}")
@@ -86,6 +86,9 @@ class Database:
     
     def getBaseDir(self) -> Path:
         return self.databaseDir
+    
+    def getDownloadedFiles(self) -> list[StageFile]:
+        return self.fileManager.getFiles(FileStage.RAW)
     
     def getPreDWCFiles(self) -> list[StageFile]:
         return self.fileManager.getFiles(FileStage.PRE_DWC)

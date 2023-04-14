@@ -58,7 +58,7 @@ class SelectorParser:
         if suffix is None: # No suffix addition
             return Path(selectedPathStr)
 
-        return Path(selected + suffix) # Apply suffix
+        return Path(selectedPathStr + suffix) # Apply suffix
     
     def pathSelector(self, directory=None, fileName=None) -> Path:
         if directory is None:

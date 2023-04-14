@@ -78,9 +78,17 @@ class FileManager:
     def getFiles(self, stage: FileStage):
         return self.stages[stage]
     
-    def createAll(self, stage: FileStage, overwrite: bool = False):
-        for file in self.stages[stage]:
-            file.create(overwrite)
+    def create(self, stage: FileStage, fileNumbers: list[int] = [], overwrite: bool = False):
+        if not fileNumbers: # Create all files:
+            for file in self.stages[stage]:
+                file.create(overwrite)
+            return
+        
+        for number in fileNumbers:
+            if number >= 0 and number <= len(self.stages[stage]):
+                self.stages[stage][number].create()
+            else:
+                print(f"Invalid number provided: {number}")
 
     def addDownloadURLStage(self, url: str, fileName: str, processing: list[dict], fileProperties: dict = {}):
         downloadedFile = self.sourceDirectories[1] / fileName # downloaded files go into download directory
