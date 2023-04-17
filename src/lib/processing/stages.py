@@ -3,12 +3,22 @@ from lib.processing.parser import SelectorParser
 from lib.processing.dwcProcessor import DWCProcessor
 import lib.commonFuncs as cmn
 import lib.processing.processingFuncs as pFuncs
+from enum import Enum
+
+class FileStage(Enum):
+    RAW          = 0
+    INTERMEDIATE = 1
+    PROCESSED    = 2
+    COMBINED     = 3
+    PRE_DWC      = 4
+    DWC          = 5
 
 class StageFile:
-    def __init__(self, filePath: Path, fileProperties: dict, parentScript: 'StageScript'):
+    def __init__(self, filePath: Path, fileProperties: dict, parentScript: 'StageScript', stage: 'FileStage'):
         self.filePath = filePath
         self.fileProperties = fileProperties
         self.parentScript = parentScript
+        self.stage = stage
 
         self.separator = fileProperties.pop("separator", ",")
         self.firstRow = fileProperties.pop("firstrow", 0)

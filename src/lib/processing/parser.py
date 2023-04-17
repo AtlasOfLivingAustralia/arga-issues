@@ -37,16 +37,16 @@ class SelectorParser:
         if selectType == "INPUTPATH":
             return self.inputPathSelector(*attrs, inputs=inputs)
     
-    def inputSelector(self, selected: str = None, modifier: str = None, suffix: str = None):
+    def inputSelector(self, selected: str = None, modifier: str = None, suffix: str = None, inputs: list = []):
         if selected is None or not selected.isdigit():
             raise Exception(f"Invalid input value for input selection: {selected}")
 
         selectInt = int(selected)
 
-        if selectInt < 0 or selectInt >= len(self.inputPaths):
+        if selectInt < 0 or selectInt >= len(inputs):
             raise Exception(f"Invalid input selection: {selected}")
         
-        selectedPath = self.inputPaths[selectInt]
+        selectedPath = inputs[selectInt]
 
         if modifier is None: # Selector only
             return selectedPath
