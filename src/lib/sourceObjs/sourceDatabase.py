@@ -51,14 +51,14 @@ class Database:
         folderName = urlParts[-2]
         return f"{folderName}_{fileName}"
     
-    def download(self, overwrite: bool = False) -> None:
-        self.systemManager.createAll(FileStage.RAW, overwrite)
+    def download(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+        self.systemManager.create(FileStage.RAW, fileNumbers, overwrite)
 
-    def createPreDwC(self, overwrite: bool = False) -> None:
-        self.systemManager.createAll(FileStage.PRE_DWC, overwrite)
+    def createPreDwC(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+        self.systemManager.create(FileStage.PRE_DWC, fileNumbers, overwrite)
 
-    def createDwC(self, overwrite: bool = False) -> None:
-        self.systemManager.createAll(FileStage.DWC, overwrite)
+    def createDwC(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+        self.systemManager.create(FileStage.DWC, fileNumbers, overwrite)
 
     def createDirectory(self) -> None:
         print(f"Creating directory for data: {str(self.databaseDir)}")
@@ -76,6 +76,9 @@ class Database:
     
     def getBaseDir(self) -> Path:
         return self.databaseDir
+    
+    def getDownloadedFiles(self) -> list[StageFile]:
+        return self.fileManager.getFiles(FileStage.RAW)
     
     def getPreDWCFiles(self) -> list[StageFile]:
         return self.systemManager.getFiles(FileStage.PRE_DWC)
@@ -117,17 +120,10 @@ class LocationDB(Database):
     def postInit(self, properties: dict) -> None:
         self.dbType = DBType.LOCATION
         self.localFile = "files.txt"
-        self.subDirDepthLimit = 20
 
         self.fileLocation = properties.pop("dataLocation", None)
         self.regexMatch = properties.pop("regexMatch", ".*")
-        self.maxSubDirDepth = properties.pop("subDirectoryDepth", self.subDirDepthLimit)
-
-        # Never travel to depth greater than sub directory depth limit
-        if self.maxSubDirDepth < 0:
-            self.maxSubDirDepth = self.subDirDepthLimit
-        else:
-            self.maxSubDirDepth = min(self.maxSubDirDepth, self.subDirDepthLimit)
+        self.maxSubDirDepth = properties.pop("subDirectoryDepth", -1)
 
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
@@ -146,8 +142,9 @@ class LocationDB(Database):
             
             urls, _ = self.crawler.crawl()
 
+            self.databaseDir.mkdir(parents=True, exist_ok=True) # Create base directory if it doesn't exist to put the file
             with open(localFilePath, 'w') as fp:
-                fp.writelines(urls)
+                fp.write("\n".join(urls))
 
         for url in urls:
             fileName = self.getFileNameFromURL(url)

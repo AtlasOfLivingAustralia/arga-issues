@@ -7,10 +7,11 @@
             "downloadedFile": "con_tpa_cu.gbff.gz",
             "processing": [
                 {
-                    "path": "tools/processingl/extract.py",
+                    "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING}"
                     ],
                     "outputs": [
                         "{PATH, PROCESSING, con_tpa_cu.gbff}"
@@ -33,7 +34,7 @@
             "downloadedFile": "tpa_cu.gbff.gz",
             "processing": [
                 {
-                    "path": "processing/general/extract.py",
+                    "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
@@ -43,7 +44,7 @@
                     ]
                 },
                 {
-                    "path": "processing/ncbi/flatfileParser.py",
+                    "path": "sourceProcessing/ncbi/flatfileParser.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0}"
