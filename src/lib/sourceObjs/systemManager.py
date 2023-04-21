@@ -84,5 +84,5 @@ class SystemManager:
         for file in self.stages[FileStage.PRE_DWC]:
             conversionScript = StageDWCConversion(file, self.dwcProcessor)
             dwcOutput = conversionScript.getOutput()
-            convertedFile = StageFile(dwcOutput, {}, conversionScript)
+            convertedFile = StageFile(dwcOutput, {}, conversionScript, FileStage.DWC)
             self.stages[FileStage.DWC].append(convertedFile)

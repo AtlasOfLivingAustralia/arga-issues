@@ -32,8 +32,11 @@ class StageFile:
     
     def create(self, overwriteStage: FileStage, overwriteAmount: int = 0) -> None:
         if self.filePath.exists():
-            if self.stage not in (overwriteStage, FileStage.INTERMEDIATE) or overwriteAmount <= 0:
-                print(f"{self.filePath} already exists and not overwriting, skipping creation")
+            if self.stage not in (overwriteStage, FileStage.INTERMEDIATE):
+                return
+            
+            elif overwriteAmount <= 0:
+                print(f"{self.filePath} already exists")
                 return
         
         self.filePath.parent.mkdir(parents=True, exist_ok=True)
