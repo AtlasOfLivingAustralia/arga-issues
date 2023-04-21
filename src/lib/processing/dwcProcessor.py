@@ -24,6 +24,10 @@ class DWCProcessor:
         self.writer = Writer(outputDir, "dwcConversion", "dwcChunk")
 
     def process(self, inputPath: Path, outputFilePath: Path, sep: str, header: int, encoding: str, overwrite: bool = False):
+        if outputFilePath.exists() and not overwrite:
+            print(f"{outputFilePath} already exists, exiting...")
+            return
+        
         if not self.checkPreparedEnrichment():
             return
 

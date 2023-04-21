@@ -51,13 +51,13 @@ class Database:
         folderName = urlParts[-2]
         return f"{folderName}_{fileName}"
     
-    def download(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+    def download(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
         self.systemManager.create(FileStage.RAW, fileNumbers, overwrite)
 
-    def createPreDwC(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+    def createPreDwC(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
         self.systemManager.create(FileStage.PRE_DWC, fileNumbers, overwrite)
 
-    def createDwC(self, fileNumbers: list[int] = -1, overwrite: bool = False) -> None:
+    def createDwC(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
         self.systemManager.create(FileStage.DWC, fileNumbers, overwrite)
 
     def createDirectory(self) -> None:

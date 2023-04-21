@@ -34,9 +34,17 @@ class SystemManager:
     def getFiles(self, stage: FileStage):
         return self.stages[stage]
     
-    def createAll(self, stage: FileStage, overwrite: bool = False):
-        for file in self.stages[stage]:
-            file.create(overwrite)
+    def create(self, stage: FileStage, fileNumbers: list[int] = [], overwrite: int = 0):
+        if not fileNumbers: # Create all files:
+            for file in self.stages[stage]:
+                file.create(stage, overwrite)
+            return
+        
+        for number in fileNumbers:
+            if number >= 0 and number <= len(self.stages[stage]):
+                self.stages[stage][number].create(stage, overwrite)
+            else:
+                print(f"Invalid number provided: {number}")
 
     def buildProcessingChain(self, processingSteps: list[dict], initialInputs: list[StageFile], finalStage: FileStage) -> None:
         inputs = initialInputs.copy()
