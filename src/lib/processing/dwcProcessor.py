@@ -1,47 +1,9 @@
-from pathlib import Path
 import lib.commonFuncs as cmn
 import lib.config as cfg
-from lib.processing.parser import SelectorParser
-from lib.processing.steps import FileStep, DownloadStep, AugmentStep
 import lib.dataframeFuncs as dff
-import pandas as pd
+from pathlib import Path
 from lib.subfileWriter import Writer
-
-class FileProcessor:
-    def __init__(self, inputPaths: list[Path], processingSteps: list[dict], sourceDirectories: tuple):
-        self.inputPaths = inputPaths
-        self.steps = []
-
-        if not processingSteps:
-            self.outputPaths = self.inputPaths
-            return
-
-        nextInputs = inputPaths
-        for step in processingSteps:
-            parser = SelectorParser(sourceDirectories, nextInputs)
-
-            if "download" in step:
-                stepObject = DownloadStep(step.copy(), parser)
-            else:
-                stepObject = FileStep(step.copy(), parser)
-            self.steps.append(stepObject)
-            nextInputs = stepObject.getOutputs()
-
-        self.outputPaths = nextInputs
-
-    @classmethod
-    def fromSteps(cls, inputPaths, steps, sourceDirectories):
-        obj = cls(inputPaths, {}, sourceDirectories)
-        obj.steps = steps
-        obj.outputPaths = steps[-1].getOutputs()
-        return obj
-
-    def process(self, overwrite=False):
-        for step in self.steps:
-            step.process(overwrite)
-
-    def getOutputs(self) -> list[Path]:
-        return self.outputPaths
+import lib.processing.processingFuncs as pFuncs
 
 class DWCProcessor:
     dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
@@ -57,19 +19,17 @@ class DWCProcessor:
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)
 
-        self.augmentSteps = [AugmentStep(augProperties) for augProperties in self.augments]
+        self.augmentSteps = [Augment(augProperties) for augProperties in self.augments]
 
         self.writer = Writer(outputDir, "dwcConversion", "dwcChunk")
 
     def process(self, inputPath: Path, outputFilePath: Path, sep: str, header: int, encoding: str, overwrite: bool = False):
+        if outputFilePath.exists() and not overwrite:
+            print(f"{outputFilePath} already exists, exiting...")
+            return
+        
         if not self.checkPreparedEnrichment():
             return
-        
-        if outputFilePath.exists() and not overwrite:
-            print(f"DWC file {outputFilePath} exists and not overwriting, skipping creation")
-            return
-        
-        print(f"Creating DWC from preDWC file {inputPath}")
 
         for idx, df in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             if idx == 0:
@@ -109,3 +69,22 @@ class DWCProcessor:
                     columnDifferences = list(enrichChunk.columns.difference(df.columns)) + [keyword]
                     df = df.merge(enrichChunk[columnDifferences], 'left', on=keyword)
         return df
+
+class Augment:
+    def __init__(self, augmentProperties: list[dict]):
+        self.augmentProperties = augmentProperties.copy()
+
+        self.path = self.augmentProperties.pop("path", None)
+        self.function = self.augmentProperties.pop("function", None)
+        self.args = self.augmentProperties.pop("args", [])
+        self.kwargs = self.augmentProperties.pop("kwargs", {})
+
+        if self.path is None:
+            raise Exception("No script path specified") from AttributeError
+        
+        if self.function is None:
+            raise Exception("No script function specified") from AttributeError
+
+    def process(self, df):
+        processFunction = pFuncs.importFunction(self.path, self.function)
+        return processFunction(df, *self.args, **self.kwargs)

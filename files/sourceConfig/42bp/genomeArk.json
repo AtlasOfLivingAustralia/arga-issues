@@ -1,25 +1,16 @@
 {
     "dataType": "source",
-    "dbType": "scripturl",
+    "dbType": "script",
     "script": {
         "path": "sourceProcessing/42bp/genomeArk.py",
         "function": "build",
         "args": [
-            "{PATH, ROOT, species.json}"
+            "{PATH, ROOT, species.json}",
+            "{PATH, DOWNLOAD}",
+            "{PATH, PROCESSING, genomeArk.csv}"
+        ],
+        "outputs": [
+            "{PATH, PROCESSING, genomeArk.csv}"
         ]
-    },
-    "folderPrefix": true,
-    "combineProcessing": [
-        {
-            "path": "sourceProcessing/42bp/genomeArk.py",
-            "function": "combine",
-            "args": [
-                "{PATH, DOWNLOAD}",
-                "{PATH, ROOT, genomeArk.csv}"
-            ],
-            "outputs": [
-                "{PATH, ROOT, genomeArk.csv}"
-            ]
-        }
-    ]
+    }
 }

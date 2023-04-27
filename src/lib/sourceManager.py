@@ -36,11 +36,16 @@ class SourceManager:
 
         return output
 
-    def getDB(self, source: str, enrich: bool = True) -> Database:
-        location, database = self.unpackDB(source)
-        location = self.locations.get(location, None)
+    def getDB(self, sources: list[str], enrich: bool = True) -> list[Database]:
+        locations = []
 
-        if location is None:
-            raise Exception(f"Invalid location: {location}")
+        for source in sources:
+            location, database = self.unpackDB(source)
+            location = self.locations.get(location, None)
 
-        return location.loadDB(database, enrich)
+            if location is None:
+                raise Exception(f"Invalid location: {location}")
+
+            locations.append(location.loadDB(database, enrich))
+
+        return locations

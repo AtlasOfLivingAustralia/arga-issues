@@ -1,4 +1,4 @@
-from lib.sourceObjs.sourceDatabase import Database, SpecificDB, LocationDB, ScriptDataDB, ScriptUrlDB
+from lib.sourceObjs.sourceDatabase import Database, SpecificDB, LocationDB, ScriptDB
 import json
 
 class SourceLocation:
@@ -11,8 +11,7 @@ class SourceLocation:
         self.dbMapping = {
             "specific": SpecificDB,
             "location": LocationDB,
-            "scripturl": ScriptUrlDB,
-            "scriptdata": ScriptDataDB
+            "script": ScriptDB
         }
 
     def getDatabaseList(self) -> list:
