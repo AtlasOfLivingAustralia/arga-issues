@@ -1,0 +1,14 @@
+{
+    "dataType": "source",
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/dnazoo/processing.py",
+        "function": "build",
+        "args": [
+            "{PATH, DOWNLOAD, dnazoo.csv}"
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, dnazoo.csv}"
+        ]
+    }
+}
