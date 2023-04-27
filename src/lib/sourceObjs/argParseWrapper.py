@@ -14,8 +14,8 @@ class SourceArgParser(ArgumentParser):
 
     def parse_args(self, *args, **kwargs) -> tuple[list[Database], Namespace]:
         parsedArgs = super().parse_args(*args, **kwargs)
-        sources = self.manager.getDB(parsedArgs.source)
-        del parsedArgs.source # Remove source name stored in original parsed args
+        sources = self.manager.getDB(parsedArgs.sources)
+        del parsedArgs.sources # Remove source name stored in original parsed args
 
         return (sources, parsedArgs)
     

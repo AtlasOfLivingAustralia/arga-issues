@@ -16,7 +16,7 @@ class Crawler:
         self.regex = re.compile(reString)
         self.auth = HTTPBasicAuth(user, password) if user else None
 
-    def crawl(self):
+    def crawl(self) -> tuple[list, list]:
         subDirDepth = 0
         folderURLs = [self.url]
         matchingFiles = []

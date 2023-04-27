@@ -66,7 +66,7 @@ class SystemManager:
 
     def addRetrieveScriptStage(self, script, processing, fileProperties):
         scriptStep = StageScript(script, [], self.parser)
-        outputs = [StageFile(filePath, fileProperties, scriptStep) for filePath in scriptStep.getOutputs()]
+        outputs = [StageFile(filePath, fileProperties, scriptStep, FileStage.RAW) for filePath in scriptStep.getOutputs()]
         self.stages[FileStage.RAW].extend(outputs)
 
         self.buildProcessingChain(processing, outputs, FileStage.PROCESSED)
