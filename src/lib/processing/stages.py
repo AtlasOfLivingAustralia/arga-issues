@@ -101,6 +101,11 @@ class StageScript:
         
         output = processFunction(*self.args, **self.kwargs)
         self.scriptRun = True
+
+        for output in self.outputs:
+            if not output.exists():
+                print(f"Warning: Output {output} was not created")
+
         return output
 
 class StageDownloadScript:
