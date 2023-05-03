@@ -9,8 +9,8 @@ class SourceArgParser(ArgumentParser):
         super().__init__(*args, **kwargs)
 
         self.add_argument("sources", choices=self.manager.choices(), nargs="+", help="")
-        self.add_argument("-o", "--overwrite", type=int, default=0, help="Amount of steps to force overwrite on")
-        self.add_argument('-n', '--filenumbers', type=int, default=None, nargs='+', help="Choose which files to download by number")
+        self.add_argument("-o", "--overwrite", type=int, const=10, nargs='?', default=0, help="Amount of steps to force overwrite on")
+        self.add_argument('-n', '--filenumbers', type=int, nargs='+', help="Choose which files to download by number")
 
     def parse_args(self, *args, **kwargs) -> tuple[list[Database], Namespace]:
         parsedArgs = super().parse_args(*args, **kwargs)
