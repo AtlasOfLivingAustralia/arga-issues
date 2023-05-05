@@ -20,6 +20,7 @@ class StageFile:
         self.fileProperties = fileProperties
         self.parentScript = parentScript
         self.stage = stage
+        self.directory = filePath.parent
 
         self.separator = fileProperties.pop("separator", ",")
         self.firstRow = fileProperties.pop("firstrow", 0)

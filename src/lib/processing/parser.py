@@ -42,7 +42,7 @@ class SelectorParser:
         if selectType == "INPUTPATH":
             return self.inputPathSelector(*attrs, inputs=inputs)
     
-    def inputSelector(self, selected: str = None, property: str = None, modifier: str = None, suffix: str = None, inputs: list[StageFile] = []):
+    def inputSelector(self, selected: str = None, property: str = None, suffix: str = None, inputs: list[StageFile] = []):
         if selected is None or not selected.isdigit():
             raise Exception(f"Invalid input value for input selection: {selected}")
 
@@ -51,28 +51,29 @@ class SelectorParser:
         if selectInt < 0 or selectInt >= len(inputs):
             raise Exception(f"Invalid input selection: {selected}")
         
-        selectedPath = inputs[selectInt]
+        selectedStageFile = inputs[selectInt]
 
-        # if property is None: # No StageFile property requested
-        #     return selectedStageFile
+        if property is None: # No specific property, return StageFile
+            return selectedStageFile
 
-        if modifier is None: # Selector only
-            return selectedPath
+        selectedPath = None
 
-        # Apply modifier
-        if modifier == "STEM":
-            selectedPathStr = selectedPath.stem
-        elif modifier == "PARENT":
-            selectedPathStr = str(selectedPath.parent)
-        elif modifier == "PARENT_STEM":
-            selectedPathStr = selectedPath.parent.stem
+        # Apply property
+        if property == "FILEPATH":
+            selectedPath = selectedStageFile.filePath
+        elif property == "FILEPATH_STEM":
+            selectedPath = selectedStageFile.filePath.stem
+        elif property == "DIRECTORY_PATH":
+            selectedPath = selectedStageFile.directory
+        elif property == "DIRECTORY_NAME":
+            selectedPath = selectedStageFile.directory.stem
         else:
-            raise Exception(f"Invalid modifer: {modifier}") from AttributeError
+            raise Exception(f"Invalid property: {property}") from AttributeError
         
         if suffix is None: # No suffix addition
-            return Path(selectedPathStr)
+            return selectedPath
 
-        return Path(selectedPathStr + suffix) # Apply suffix
+        return Path(str(selectedPath) + suffix) # Apply suffix
     
     def pathSelector(self, directory: str = None, fileName: str = None) -> Path:
         if directory is None:
@@ -87,5 +88,5 @@ class SelectorParser:
             return selectedDir
         return selectedDir / fileName
 
-    def inputPathSelector(self, directory: str = None, selected: str = None, property: str = None, modifier: str = None, suffix: str = None, inputs: list[StageFile] = []):
-        return self.pathSelector(directory) / self.inputSelector(selected, property, modifier, suffix, inputs=inputs)
+    def inputPathSelector(self, directory: str = None, selected: str = None, property: str = None, suffix: str = None, inputs: list[StageFile] = []):
+        return self.pathSelector(directory) / self.inputSelector(selected, property, suffix, inputs=inputs)
