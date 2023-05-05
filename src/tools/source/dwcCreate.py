@@ -5,4 +5,4 @@ if __name__ == '__main__':
     
     sources, args = parser.parse_args()
     for source in sources:
-        source.createDwC(args.filenumbers, args.overwrite)
+        source.createDwC(args.filenum, args.overwrite)
