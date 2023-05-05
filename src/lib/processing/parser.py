@@ -1,4 +1,9 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from pathlib import Path
+
+if TYPE_CHECKING:
+    from lib.processing.stageFile import StageFile
 
 class SelectorParser:
     def __init__(self, rootDir: Path, downloadDir: Path, processingDir: Path, predwcDir: Path, dwcDir: Path):
@@ -16,7 +21,7 @@ class SelectorParser:
             return self.parseSelector(arg, inputs)
         return arg
 
-    def parseMultipleArgs(self, args: list[str], inputs: list) -> list[Path|str]:
+    def parseMultipleArgs(self, args: list[str], inputs: list[StageFile]) -> list:
         return [self.parseArg(arg, inputs) for arg in args]
 
     def validSelector(self, string: str) -> bool:
@@ -37,7 +42,7 @@ class SelectorParser:
         if selectType == "INPUTPATH":
             return self.inputPathSelector(*attrs, inputs=inputs)
     
-    def inputSelector(self, selected: str = None, modifier: str = None, suffix: str = None, inputs: list = []):
+    def inputSelector(self, selected: str = None, property: str = None, modifier: str = None, suffix: str = None, inputs: list[StageFile] = []):
         if selected is None or not selected.isdigit():
             raise Exception(f"Invalid input value for input selection: {selected}")
 
@@ -47,6 +52,9 @@ class SelectorParser:
             raise Exception(f"Invalid input selection: {selected}")
         
         selectedPath = inputs[selectInt]
+
+        # if property is None: # No StageFile property requested
+        #     return selectedStageFile
 
         if modifier is None: # Selector only
             return selectedPath
@@ -79,5 +87,5 @@ class SelectorParser:
             return selectedDir
         return selectedDir / fileName
 
-    def inputPathSelector(self, directory: str = None, selected: str = None, modifier: str = None, suffix: str = None, inputs: list = []):
-        return self.pathSelector(directory) / self.inputSelector(selected, modifier, suffix, inputs=inputs)
+    def inputPathSelector(self, directory: str = None, selected: str = None, property: str = None, modifier: str = None, suffix: str = None, inputs: list[StageFile] = []):
+        return self.pathSelector(directory) / self.inputSelector(selected, property, modifier, suffix, inputs=inputs)
