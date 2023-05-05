@@ -1,0 +1,44 @@
+{
+    "dataType": "source",
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/bold/datapackage.py",
+        "function": "retrieve",
+        "args": [
+            "{PATH, DOWNLOAD, datapackage.tar.gz}"
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, datapackage.tar.gz}"
+        ]
+    },
+    "globalProcessing": [
+        {
+            "path": "tools/processing/extract.py",
+            "function": "process",
+            "args": [
+                "{INPUT, 0, FILEPATH}",
+                "{PATH, PROCESSING}"
+            ],
+            "outputs": [
+                "{PATH, PROCESSING, datapackage}"
+            ]
+        },
+        {
+            "path": "sourceProcessing/bold/datapackage.py",
+            "function": "cleanUp",
+            "args": [
+                "{INPUT, 0, FILEPATH}",
+                "{PATH, PROCESSING, dataPackage.tsv}"
+            ],
+            "outputs": [
+                "{PATH, PROCESSING, dataPackage.tsv}"
+            ],
+            "outputProperties": {
+                "0": {
+                    "separator": "\t",
+                    "encoding": "iso-8859-1"
+                }
+            }
+        }
+    ]
+}
