@@ -56,19 +56,18 @@ class SelectorParser:
         if property is None: # No specific property, return StageFile
             return selectedStageFile
 
-        selectedPath = None
-
         # Apply property
-        if property == "FILEPATH":
-            selectedPath = selectedStageFile.filePath
-        elif property == "FILEPATH_STEM":
-            selectedPath = selectedStageFile.filePath.stem
-        elif property == "DIRECTORY_PATH":
-            selectedPath = selectedStageFile.directory
-        elif property == "DIRECTORY_NAME":
-            selectedPath = selectedStageFile.directory.stem
-        else:
+        propertyMap = {
+            "FILEPATH": selectedStageFile.filePath,
+            "FILEPATH_STEM": selectedStageFile.filePath.stem,
+            "DIRECTORY_PATH": selectedStageFile.directory,
+            "DIRECTORY_NAME": selectedStageFile.directory.stem
+        }
+
+        if property not in propertyMap:
             raise Exception(f"Invalid property: {property}") from AttributeError
+        
+        selectedPath = propertyMap[property]
         
         if suffix is None: # No suffix addition
             return selectedPath
