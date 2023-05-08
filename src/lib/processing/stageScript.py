@@ -1,46 +1,13 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from pathlib import Path
-from lib.processing.parser import SelectorParser
 from lib.processing.dwcProcessor import DWCProcessor
-import lib.commonFuncs as cmn
 import lib.processing.processingFuncs as pFuncs
-from enum import Enum
+import lib.commonFuncs as cmn
 
-class FileStage(Enum):
-    RAW          = 0
-    INTERMEDIATE = 1
-    PROCESSED    = 2
-    COMBINED     = 3
-    PRE_DWC      = 4
-    DWC          = 5
-
-class StageFile:
-    def __init__(self, filePath: Path, fileProperties: dict, parentScript: 'StageScript', stage: 'FileStage'):
-        self.filePath = filePath
-        self.fileProperties = fileProperties
-        self.parentScript = parentScript
-        self.stage = stage
-
-        self.separator = fileProperties.pop("separator", ",")
-        self.firstRow = fileProperties.pop("firstrow", 0)
-        self.encoding = fileProperties.pop("encoding", "utf-8")
-
-    def getFilePath(self) -> Path:
-        return self.filePath
-    
-    def exists(self) -> bool:
-        return self.filePath.exists()
-    
-    def create(self, overwriteStage: FileStage, overwriteAmount: int = 0) -> None:
-        if self.filePath.exists():
-            if self.stage not in (overwriteStage, FileStage.INTERMEDIATE):
-                return
-            
-            elif overwriteAmount <= 0:
-                print(f"{self.filePath} already exists")
-                return
-        
-        self.filePath.parent.mkdir(parents=True, exist_ok=True)
-        self.parentScript.run(overwriteStage, overwriteAmount)
+if TYPE_CHECKING:
+    from lib.processing.stageFile import StageFile, StageFileStep
+    from lib.processing.parser import SelectorParser
 
 class StageScript:
     def __init__(self, processingStep: dict, inputs: list[StageFile], parser: SelectorParser):
@@ -71,7 +38,7 @@ class StageScript:
     def getOutputs(self) -> list[Path]:
         return self.outputs
 
-    def run(self, overwriteStage: FileStage, overwrite: int = 0, verbose: bool = True):
+    def run(self, overwriteStage: StageFileStep, overwrite: int = 0, verbose: bool = True):
         if all(output.exists() for output in self.outputs) and overwrite <= 0:
             if verbose:
                 print(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
@@ -121,7 +88,7 @@ class StageDownloadScript:
     def getOutputs(self) -> list[Path]:
         return [self.downloadedFile]
 
-    def run(self, overwriteStage: FileStage, overwriteAmount: int = 0, verbose: bool = False):
+    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False):
         if self.downloadedFile.exists() and overwriteAmount <= 0:
             if verbose:
                 print(f"File already downloaded at {self.downloadedFile}, skipping redownload")
@@ -138,7 +105,7 @@ class StageDWCConversion:
     def getOutput(self) -> Path:
         return self.dwcProcessor.outputDir / self.outputFileName
 
-    def run(self, overwriteStage: FileStage, overwriteAmount: int = 0, verbose: bool = True):
+    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = True):
         outputPath = self.getOutput()
 
         if outputPath.exists() and overwriteAmount <= 0:

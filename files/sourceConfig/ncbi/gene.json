@@ -10,7 +10,7 @@
                     "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}",
+                        "{INPUT, 0, FILEPATH}",
                         "{PATH, PROCESSING}"
                     ],
                     "outputs": [

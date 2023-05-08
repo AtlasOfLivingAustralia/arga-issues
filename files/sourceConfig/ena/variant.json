@@ -9,10 +9,10 @@
             "script": "tools/processing/extract.py",
             "function": "process",
             "args": [
-                "{INPUT, 0}"
+                "{INPUT, 0, FILEPATH}"
             ],
             "outputs": [
-                "{INPUTPATH, PROCESSING, 0, STEM}"
+                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM}"
             ]
         }
     ],

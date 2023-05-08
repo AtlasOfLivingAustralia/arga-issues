@@ -10,7 +10,7 @@
                     "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}",
+                        "{INPUT, 0, FILEPATH}",
                         "{PATH, PROCESSING}"
                     ],
                     "outputs": [
@@ -21,7 +21,7 @@
                     "path": "sourceProcessing/ncbi/flatfileParser.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0, FILEPATH}"
                     ],
                     "outputs": [
                         "{PATH, PROCESSING, con_tpa_cu.csv}"
@@ -37,7 +37,7 @@
                     "path": "tools/processing/extract.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0, FILEPATH}"
                     ],
                     "outputs": [
                         "{PATH, PROCESSING, tpa_cu.gbff}"
@@ -47,7 +47,7 @@
                     "path": "sourceProcessing/ncbi/flatfileParser.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}"
+                        "{INPUT, 0, FILEPATH}"
                     ],
                     "outputs": [
                         "{PATH, PROCESSING, tpa_cu.csv}"

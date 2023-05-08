@@ -18,8 +18,8 @@ def build(outputFilePath):
 
     subprocess.run(["curl.exe", "-X", "GET", buildCall(hits, query, True), "-H", "accept: text/csv", "-o", outputFilePath])
 
-def clean(filePath, outputFilePath):
-    df = pd.read_csv(filePath)
+def clean(stageFile, outputFilePath):
+    df = pd.read_csv(stageFile.filePath)
 
     df["aggregation_source"] = df["aggregation_source"].apply(lambda x: x.replace('"', ''))
     combineFields = ["field", "value", "aggregation_source", "aggregation_method"]

@@ -10,7 +10,7 @@
                     "script": "tools/processing/excelProcess.py",
                     "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}"
                     ], 
                     "outputs": [
                         "{SCRIPT}"

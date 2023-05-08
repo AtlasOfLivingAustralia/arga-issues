@@ -1,9 +1,8 @@
 import lib.config as cfg
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
-from lib.sourceObjs.systemManager import SystemManager, FileStage
-from lib.processing.parser import SelectorParser
-from lib.processing.stages import StageFile
+from lib.sourceObjs.systemManager import SystemManager
+from lib.processing.stageFile import StageFile, StageFileStep
 from lib.crawler import Crawler
 
 class Database:
@@ -52,13 +51,13 @@ class Database:
         return f"{folderName}_{fileName}"
     
     def download(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
-        self.systemManager.create(FileStage.RAW, fileNumbers, overwrite)
+        self.systemManager.create(StageFileStep.RAW, fileNumbers, overwrite)
 
     def createPreDwC(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
-        self.systemManager.create(FileStage.PRE_DWC, fileNumbers, overwrite)
+        self.systemManager.create(StageFileStep.PRE_DWC, fileNumbers, overwrite)
 
     def createDwC(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
-        self.systemManager.create(FileStage.DWC, fileNumbers, overwrite)
+        self.systemManager.create(StageFileStep.DWC, fileNumbers, overwrite)
 
     def createDirectory(self) -> None:
         print(f"Creating directory for data: {str(self.databaseDir)}")
@@ -78,13 +77,13 @@ class Database:
         return self.databaseDir
     
     def getDownloadedFiles(self) -> list[StageFile]:
-        return self.fileManager.getFiles(FileStage.RAW)
+        return self.fileManager.getFiles(StageFileStep.RAW)
     
     def getPreDWCFiles(self) -> list[StageFile]:
-        return self.systemManager.getFiles(FileStage.PRE_DWC)
+        return self.systemManager.getFiles(StageFileStep.PRE_DWC)
     
     def getDWCFiles(self) -> list[StageFile]:
-        return self.systemManager.getFiles(FileStage.DWC)
+        return self.systemManager.getFiles(StageFileStep.DWC)
 
 class SpecificDB(Database):
 
