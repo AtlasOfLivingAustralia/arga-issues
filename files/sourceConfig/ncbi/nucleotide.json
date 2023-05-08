@@ -9,7 +9,7 @@
             "path": "tools/processing/extract.py",
             "function": "process",
             "args": [
-                "{INPUT, 0}",
+                "{INPUT, 0, FILEPATH}",
                 "{PATH, PROCESSING}"
             ],
             "outputs": [
@@ -20,10 +20,10 @@
             "path": "sourceProcessing/ncbi/flatfileParser.py",
             "function": "process",
             "args": [
-                "{INPUT, 0}"
+                "{INPUT, 0, FILEPATH}"
             ],
             "outputs": [
-                "{INPUTPATH, PROCESSING, 0, STEM, .csv}"
+                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM, .csv}"
             ]
         }
     ]

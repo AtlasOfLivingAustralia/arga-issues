@@ -10,7 +10,7 @@
                     "path": "tools/processing/xmlProcess.py",
                     "function": "process",
                     "args": [
-                        "{INPUT, 0}",
+                        "{INPUT, 0, FILEPATH}",
                         "{PATH, PROCESSING, genomeCollections.csv}"
                     ],
                     "kwargs": {
