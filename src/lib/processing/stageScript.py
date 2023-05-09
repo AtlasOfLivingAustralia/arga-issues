@@ -37,7 +37,7 @@ class StageScript:
             print(f"Unknown step parameter: {parameter}")
 
     def getOutputs(self) -> list[tuple[Path, dict]]:
-        return [(output, self.outputProperties.get(str(idx), {})) for idx, output in self.outputs]
+        return [(output, self.outputProperties.get(str(idx), {})) for idx, output in enumerate(self.outputs)]
 
     def run(self, overwriteStage: StageFileStep, overwrite: int = 0, verbose: bool = True):
         if all(output.exists() for output in self.outputs) and overwrite <= 0:

@@ -13,7 +13,7 @@ class ExtractTypes(Enum):
     XZ = ".xz"
     TAR = ".tar"
 
-def process(filePath, outputDir=None, addSuffix=""):
+def process(filePath: Path, outputDir: Path = None, addSuffix: str = "", overwrite: bool = False) -> Path:
     if not isinstance(filePath, Path):
         filePath = Path(filePath)
 
@@ -28,6 +28,10 @@ def process(filePath, outputDir=None, addSuffix=""):
             outputFile = outputDir / f"{filePath.stem}.{addSuffix}"
         else:
             outputFile = outputDir / filePath.stem
+
+        if outputFile.exists() and not overwrite:
+            print("Output file already exists.... Skipping extraction stage")
+            continue
         
         if extractType == ExtractTypes.ZIP:
             with zipfile.ZipFile(filePath, 'r') as zip:
