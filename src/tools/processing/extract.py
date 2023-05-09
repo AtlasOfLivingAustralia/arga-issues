@@ -3,6 +3,7 @@ import gzip
 import shutil
 import lzma
 import argparse
+import tarfile
 from pathlib import Path
 from enum import Enum
 
@@ -10,8 +11,9 @@ class ExtractTypes(Enum):
     ZIP = ".zip"
     GZIP = ".gz"
     XZ = ".xz"
+    TAR = ".tar"
 
-def process(filePath, outputDir=None):
+def process(filePath, outputDir=None, addSuffix=""):
     if not isinstance(filePath, Path):
         filePath = Path(filePath)
 
@@ -21,7 +23,11 @@ def process(filePath, outputDir=None):
     extensions = [e.value for e in ExtractTypes]
     while filePath.suffix in extensions:
         extractType = ExtractTypes(filePath.suffix)
-        outputFile = outputDir / filePath.stem
+
+        if not Path(filePath.stem).suffix and addSuffix: # No suffix leftover after next extract stage
+            outputFile = outputDir / f"{filePath.stem}.{addSuffix}"
+        else:
+            outputFile = outputDir / filePath.stem
         
         if extractType == ExtractTypes.ZIP:
             with zipfile.ZipFile(filePath, 'r') as zip:
@@ -32,9 +38,12 @@ def process(filePath, outputDir=None):
                 shutil.copyfileobj(gz, fp)
 
         if extractType == ExtractTypes.XZ:
-            print(filePath.stem)
             with lzma.open(filePath) as xz, open(outputFile, 'wb') as fp:
                 shutil.copyfileobj(xz, fp)
+
+        if extractType == ExtractTypes.TAR:
+            with tarfile.open(filePath, 'r') as tar:
+                tar.extractall(outputFile)
 
         filePath = outputFile
 

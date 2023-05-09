@@ -5,7 +5,7 @@ import lib.config as cfg
 import lib.dataframeFuncs as dff
 import numpy as np
 from lib.sourceObjs.argParseWrapper import SourceArgParser
-from lib.processing.stages import StageFile
+from lib.processing.stageFile import StageFile
 from pathlib import Path
 
 def collectFields(stageFile: StageFile, prefix: str, outputFile: Path, entryLimit: int, overwrite: bool = False):
