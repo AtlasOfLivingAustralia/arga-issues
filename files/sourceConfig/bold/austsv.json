@@ -7,7 +7,7 @@
             "downloadedFile": "bold_data.tsv",
             "fileProperties": {
                 "separator": "\t",
-                "encoding": "cp1252"
+                "encoding": "iso-8859-1"
             }
         }
     ]
