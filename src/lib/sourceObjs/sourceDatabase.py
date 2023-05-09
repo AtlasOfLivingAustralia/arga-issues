@@ -18,7 +18,6 @@ class Database:
         self.authFile = properties.pop("auth", "")
         self.globalProcessing = properties.pop("globalProcessing", [])
         self.combineProcessing = properties.pop("combineProcessing", [])
-        self.fileProperties = properties.pop("fileProperties", {})
         self.dwcProperties = properties.pop("dwcProperties", {})
 
         self.locationDir = cfg.folderPaths.data / location
@@ -120,6 +119,7 @@ class LocationDB(Database):
         self.dbType = DBType.LOCATION
         self.localFile = "files.txt"
 
+        self.fileProperties = properties.pop("fileProperties", {})
         self.fileLocation = properties.pop("dataLocation", None)
         self.regexMatch = properties.pop("regexMatch", ".*")
         self.maxSubDirDepth = properties.pop("subDirectoryDepth", -1)
@@ -164,7 +164,7 @@ class ScriptDB(Database):
             raise Exception("No script specified") from AttributeError
         
     def prepare(self) -> None:
-        self.systemManager.addRetrieveScriptStage(self.script, self.globalProcessing, self.fileProperties)
+        self.systemManager.addRetrieveScriptStage(self.script, self.globalProcessing)
 
         if self.combineProcessing:
             self.systemManager.addCombineStage(self.combineProcessing)

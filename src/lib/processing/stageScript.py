@@ -21,6 +21,7 @@ class StageScript:
         self.args = self.processingStep.pop("args", [])
         self.kwargs = self.processingStep.pop("kwargs", {})
         self.outputs = self.processingStep.pop("outputs", [])
+        self.outputProperties = self.processingStep.pop("outputProperties", {})
 
         if self.path is None:
             raise Exception("No script path specified") from AttributeError
@@ -35,8 +36,8 @@ class StageScript:
         for parameter in self.processingStep:
             print(f"Unknown step parameter: {parameter}")
 
-    def getOutputs(self) -> list[Path]:
-        return self.outputs
+    def getOutputs(self) -> list[tuple[Path, dict]]:
+        return [(output, self.outputProperties.get(str(idx), {})) for idx, output in self.outputs]
 
     def run(self, overwriteStage: StageFileStep, overwrite: int = 0, verbose: bool = True):
         if all(output.exists() for output in self.outputs) and overwrite <= 0:

@@ -52,7 +52,7 @@ class SystemManager:
         for idx, step in enumerate(processingSteps):
             scriptStep = StageScript(step, inputs, self.parser)
             stage = StageFileStep.INTERMEDIATE if idx < len(processingSteps) else finalStage
-            inputs = [StageFile(filePath, {}, scriptStep, stage) for filePath in scriptStep.getOutputs()]
+            inputs = [StageFile(filePath, properties, scriptStep, stage) for filePath, properties in scriptStep.getOutputs()]
 
         self.stages[finalStage].extend(inputs)
 
@@ -60,14 +60,14 @@ class SystemManager:
         downloadedFile = self.downloadDir / fileName # downloaded files go into download directory
         downloadScript = StageDownloadScript(url, downloadedFile, self.parser, self.user, self.password)
         
-        rawFile = StageFile(downloadedFile, {} if processing else fileProperties, downloadScript, StageFileStep.RAW)
+        rawFile = StageFile(downloadedFile, fileProperties, downloadScript, StageFileStep.RAW)
         self.stages[StageFileStep.RAW].append(rawFile)
 
         self.buildProcessingChain(processing, [rawFile], StageFileStep.PROCESSED)
 
-    def addRetrieveScriptStage(self, script, processing, fileProperties):
+    def addRetrieveScriptStage(self, script, processing):
         scriptStep = StageScript(script, [], self.parser)
-        outputs = [StageFile(filePath, fileProperties, scriptStep, StageFileStep.RAW) for filePath in scriptStep.getOutputs()]
+        outputs = [StageFile(filePath, properties, scriptStep, StageFileStep.RAW) for filePath, properties in scriptStep.getOutputs()]
         self.stages[StageFileStep.RAW].extend(outputs)
 
         self.buildProcessingChain(processing, outputs, StageFileStep.PROCESSED)
