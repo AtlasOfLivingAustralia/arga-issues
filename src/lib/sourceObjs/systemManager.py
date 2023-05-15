@@ -75,12 +75,14 @@ class SystemManager:
     def addCombineStage(self, processing):
         self.buildProcessingChain(processing, self.stages[StageFileStep.PROCESSED], StageFileStep.COMBINED)
     
-    def pushPreDwC(self):
+    def pushPreDwC(self, verbose=False):
         fileStages = (StageFileStep.RAW, StageFileStep.PROCESSED, StageFileStep.COMBINED, StageFileStep.PRE_DWC)
         for idx, stage in enumerate(fileStages[:-1], start=1):
             nextStage = fileStages[idx]
             if self.stages[stage] and not self.stages[nextStage]: # If this stage has files and next doesn't
                 self.stages[nextStage] = self.stages[stage].copy()
+                if verbose:
+                    print(f"Pushed files {stage.name} --> {nextStage.name}")
 
         for file in self.stages[StageFileStep.PRE_DWC]:
             conversionScript = StageDWCConversion(file, self.dwcProcessor)
