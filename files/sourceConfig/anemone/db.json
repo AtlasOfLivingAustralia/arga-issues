@@ -14,7 +14,7 @@
                 "{PATH, PROCESSING}"
             ],
             "outputs": [
-                "{INPUTPATH, PROCESSING, 0, STEM}"
+                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM}"
             ]
         }
     ],
