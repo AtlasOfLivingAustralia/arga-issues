@@ -1,0 +1,13 @@
+{
+    "dataType": "source",
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "ftp://ftp.bvbrc.org/RELEASE_NOTES/genome_metadata",
+            "downloadedFile": "metadata.tsv",
+            "fileProperties": {
+                "separator": "\t"
+            }
+        }
+    ]
+}
