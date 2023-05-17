@@ -6,9 +6,10 @@ from bs4 import BeautifulSoup
 import concurrent.futures
 
 class Crawler:
-    def __init__(self, url, reString, maxDepth=-1, maxWorkers=40, retries=5, user="", password=""):
+    def __init__(self, url, reString, downloadLink="", maxDepth=-1, maxWorkers=40, retries=5, user="", password=""):
         self.url = url
         self.reString = reString
+        self.downloadLink = downloadLink
         self.maxDepth = maxDepth
         self.maxWorkers = maxWorkers
         self.retries = retries
@@ -60,7 +61,7 @@ class Crawler:
 
         return (matchingFiles, [])
     
-    def getMatches(self, location):
+    def getMatches(self, location: str) -> tuple[bool, list[str], list[str]]:
         for attempt in range(self.retries):
             try:
                 rawHTML = requests.get(location, auth=self.auth)
@@ -84,6 +85,9 @@ class Crawler:
                 folders.append(fullLink)
 
             if self.regex.match(link):
-                matches.append(fullLink)
+                if self.downloadLink:
+                    matches.append(urllib.parse.urljoin(self.downloadLink, link))
+                else:
+                    matches.append(fullLink)
 
         return (True, folders, matches)
