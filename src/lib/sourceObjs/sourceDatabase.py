@@ -121,13 +121,14 @@ class LocationDB(Database):
 
         self.fileProperties = properties.pop("fileProperties", {})
         self.fileLocation = properties.pop("dataLocation", None)
+        self.downloadLink = properties.pop("downloadLink", "")
         self.regexMatch = properties.pop("regexMatch", ".*")
         self.maxSubDirDepth = properties.pop("subDirectoryDepth", -1)
 
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
         
-        self.crawler = Crawler(self.fileLocation, self.regexMatch, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
+        self.crawler = Crawler(self.fileLocation, self.regexMatch, self.downloadLink, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
 
     def prepare(self, recrawl: bool = False) -> None:
         localFilePath = self.databaseDir / self.localFile
