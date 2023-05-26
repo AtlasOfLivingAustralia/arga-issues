@@ -6,14 +6,18 @@ from lib.subfileWriter import Writer
 import lib.processing.processingFuncs as pFuncs
 
 class DWCProcessor:
-    dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
-    customLookup = cmn.loadFromJson(cfg.filePaths.otherMapping)
-    exclude = cmn.loadFromJson(cfg.filePaths.excludedEntries)
+        self.prefix = prefix
 
     def __init__(self, prefix: str, dwcProperties: dict, outputDir: Path):
         self.prefix = prefix
         self.dwcProperties = dwcProperties
         self.outputDir = outputDir
+
+        mapPath = cfg.folderPaths.mapping / location
+        if mapPath.exists():
+            self.map = cmn.loadFromJson(mapPath)
+        else:
+            self.map = {}
 
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)
@@ -29,7 +33,7 @@ class DWCProcessor:
 
         for idx, df in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             if idx == 0:
-                newColMap, copyColMap = dff.createMappings(df.columns, self.dwcLookup, self.customLookup, self.prefix)
+                newColMap, copyColMap = dff.createMappings(df.columns, self.dwcLookup, self.location)
              
             print(f"At chunk: {idx}", end='\r')
             df = dff.applyColumnMap(df, newColMap, copyColMap)

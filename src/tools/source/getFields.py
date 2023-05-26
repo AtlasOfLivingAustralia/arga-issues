@@ -17,7 +17,7 @@ def collectFields(stageFile: StageFile, prefix: str, outputFile: Path, entryLimi
         for idx, chunk in enumerate(reader):
             print(f"Scanning chunk: {idx}", end='\r')
             if not data: # Empty data dict, initial pass
-                newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, customLookup, prefix, prefixMissing=False)
+                newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, prefix, customLookup, prefixMissing=False)
                 for column in chunk.columns:
                     values = chunk[column].tolist()
                     values = [v for index, v in enumerate(values) if v not in values[:index] and v not in [np.NaN, np.nan]]
