@@ -8,11 +8,15 @@ import concurrent.futures
 def getTxT(ftpPath: str) -> dict:
     assemblyStats = f"{ftpPath}/{ftpPath.rsplit('/', 1)[-1]}_assembly_stats.txt"
     data = requests.get(assemblyStats)
-    table = data.text.rsplit("# ", 1)[-1]
-    df2 = pd.read_csv(StringIO(table), sep="\t")
-    df2 = df2.drop(df2[df2["unit-name"] != "all"].index)
+    data = data.text.rsplit("# ", 1)[-1] # Clean up everything before table
 
-    stats = pd.Series(df2.value.values, index=df2.statistic.values).to_dict()
+    table = data.split("\nPrimary Assembly", 1)[0] # Clean up everything after relevant rows
+    stats = {row[-2]: row[-1] for row in [line.split("\t") for line in table.split("\n")[1:]]}
+
+    # df2 = pd.read_csv(StringIO(data), sep="\t")
+    # df2 = df2.drop(df2[df2["unit-name"] != "all"].index)
+    # stats = pd.Series(df2.value.values, index=df2.statistic.values).to_dict()
+
     stats["ftp_path"] = ftpPath
     return stats
 
