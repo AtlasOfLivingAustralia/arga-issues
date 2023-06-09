@@ -17,7 +17,7 @@ class DWCProcessor:
         if mapPath.exists():
             self.map = cmn.loadFromJson(mapPath)
         else:
-            self.map = {}
+            raise Exception(f"No DWC map found for location: {self.location}") from FileNotFoundError
 
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)

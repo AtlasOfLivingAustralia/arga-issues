@@ -8,16 +8,19 @@ from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile
 from pathlib import Path
 
-def collectFields(stageFile: StageFile, prefix: str, outputFile: Path, entryLimit: int, overwrite: bool = False):
-    dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
-    customLookup = cmn.loadFromJson(cfg.filePaths.otherMapping)
+def collectFields(stageFile: StageFile, location: str, entryLimit: int):
+    mapPath = cfg.folderPaths.mapping / location
+    if mapPath.exists():
+        dwcLookup = cmn.loadFromJson(mapPath)
+    else:
+        raise Exception(f"No DWC map found for location: {self.location}") from FileNotFoundError
 
     data = {}
     with pd.read_csv(stageFile.filePath, encoding=stageFile.encoding, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
         for idx, chunk in enumerate(reader):
             print(f"Scanning chunk: {idx}", end='\r')
             if not data: # Empty data dict, initial pass
-                newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, prefix, customLookup, prefixMissing=False)
+                newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, location, {}, prefixMissing=False)
                 for column in chunk.columns:
                     values = chunk[column].tolist()
                     values = [v for index, v in enumerate(values) if v not in values[:index] and v not in [np.NaN, np.nan]]
@@ -58,7 +61,7 @@ if __name__ == '__main__':
         extension = "tsv" if args.tsv else "json"
         output = outputDir / f"fieldExamples.{extension}"
 
-        if output.exists() and not args.overwrite:
+        if output.exists() and args.overwrite <= 0:
             print(f"Output file {output} already exists, please run with overwrite flag (-o) to overwrite")
             continue
 
@@ -68,14 +71,18 @@ if __name__ == '__main__':
                 print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
                 continue
 
-            data = collectFields(stageFile, source.getBaseDir(), output, args.entries, args.overwrite > 0)
-                
-            print(f"Writing to file {output}")
-            if args.tsv:
-                dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
-                df = pd.DataFrame.from_dict(dfData)
-                df.index += 1 # Increment index so output is 1-indexed numbers
-                df.to_csv(output, sep="\t", index_label="Example #")
-            else:
-                with open(output, 'w') as fp:
-                    json.dump(data, fp, indent=4)
+        if not stageFile.filePath.exists():
+            print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
+            continue
+
+        data = collectFields(stageFile, source.getBaseDir(), args.entries)
+            
+        print(f"Writing to file {output}")
+        if args.tsv:
+            dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
+            df = pd.DataFrame.from_dict(dfData)
+            df.index += 1 # Increment index so output is 1-indexed numbers
+            df.to_csv(output, sep="\t", index_label="Example #")
+        else:
+            with open(output, 'w') as fp:
+                json.dump(data, fp, indent=4)
