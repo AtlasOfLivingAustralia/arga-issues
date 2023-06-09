@@ -6,10 +6,9 @@ from lib.processing.stageFile import StageFile, StageFileStep
 from lib.crawler import Crawler
 
 class Database:
-    def __init__(self, location: str, database: str, properties: dict = {}, enrichDBs: dict = {}):
+    def __init__(self, location: str, database: str, properties: dict = {}):
         self.location = location
         self.database = database
-        self.enrichDBs = enrichDBs
         self.dbType = DBType.UNKNOWN
 
         # Standard properties
@@ -21,7 +20,7 @@ class Database:
 
         self.locationDir = cfg.folderPaths.data / location
         self.databaseDir = self.locationDir / database
-        self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.enrichDBs, self.authFile)
+        self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.authFile)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
