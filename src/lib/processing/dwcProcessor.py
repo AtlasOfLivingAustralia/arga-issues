@@ -13,7 +13,7 @@ class DWCProcessor:
         self.dwcProperties = dwcProperties
         self.outputDir = outputDir
 
-        mapPath = cfg.folderPaths.mapping / location
+        mapPath = cfg.folderPaths.mapping / f"{location}.json"
         if mapPath.exists():
             self.map = cmn.loadFromJson(mapPath)
         else:

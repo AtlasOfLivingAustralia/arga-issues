@@ -9,11 +9,11 @@ from lib.processing.stageFile import StageFile
 from pathlib import Path
 
 def collectFields(stageFile: StageFile, location: str, entryLimit: int):
-    mapPath = cfg.folderPaths.mapping / location
+    mapPath = cfg.folderPaths.mapping / f"{location}.json"
     if mapPath.exists():
         dwcLookup = cmn.loadFromJson(mapPath)
     else:
-        raise Exception(f"No DWC map found for location: {self.location}") from FileNotFoundError
+        raise Exception(f"No DWC map found for location: {location}") from FileNotFoundError
 
     data = {}
     with pd.read_csv(stageFile.filePath, encoding=stageFile.encoding, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
@@ -75,7 +75,7 @@ if __name__ == '__main__':
             print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
             continue
 
-        data = collectFields(stageFile, source.getBaseDir(), args.entries)
+        data = collectFields(stageFile, source.location, args.entries)
             
         print(f"Writing to file {output}")
         if args.tsv:
