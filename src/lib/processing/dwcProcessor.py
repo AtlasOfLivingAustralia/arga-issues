@@ -26,9 +26,6 @@ class DWCProcessor:
         if outputFilePath.exists() and not overwrite:
             print(f"{outputFilePath} already exists, exiting...")
             return
-        
-        if not self.checkPreparedEnrichment():
-            return
 
         for idx, df in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             if idx == 0:
