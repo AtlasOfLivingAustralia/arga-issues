@@ -17,20 +17,19 @@ class SourceLocation:
     def getDatabaseList(self) -> list:
         return list(self.databaseItems.keys())
 
-    def getTopLevelData(self, databaseInfo: dict) -> tuple[str, str, dict]:
+    def getTopLevelData(self, databaseInfo: dict) -> tuple[str, dict]:
         dbType = databaseInfo.pop("dbType", "Unknown") # Describes how the data is stored in the db (specific, location)
-        dataType = databaseInfo.pop("dataType", "Unknown") # Describes what type of data this is (source, enrich)
         enrichDBs = databaseInfo.pop("enrich", {}) # Databases needed to enrich this data
 
-        return (dbType, dataType, enrichDBs)
+        return (dbType, enrichDBs)
 
-    def createDB(self, dbType: str, dataType: str, database: str, databaseInfo: dict, enrichDBs: dict) -> Database:
+    def createDB(self, dbType: str, database: str, databaseInfo: dict, enrichDBs: dict) -> Database:
         db = self.dbMapping.get(dbType, None)
 
         if db is None:
             raise Exception(f"Invalid dbType: {dbType}. Should be one of ({self.dbMapping.keys()})")
         
-        return db(dataType, self.location, database, databaseInfo, enrichDBs)
+        return db(self.location, database, databaseInfo, enrichDBs)
 
     def loadDB(self, database: str, enrich: bool = False) -> Database:
         databasePath = self.databaseItems.get(database, None)
@@ -41,7 +40,7 @@ class SourceLocation:
         with open(databasePath) as fp:
             databaseInfo = json.load(fp)
 
-        dbType, dataType, enrichDBs = self.getTopLevelData(databaseInfo)
+        dbType, enrichDBs = self.getTopLevelData(databaseInfo)
         
         enrichment = {}
         if enrich:
@@ -49,7 +48,6 @@ class SourceLocation:
                 enrichDB = self.loadDB(enrichDatabase, False) # Don't load enrich for enrich dbs
                 enrichment[enrichKey] = enrichDB
 
-        db = self.createDB(dbType, dataType, database, databaseInfo, enrichment)
+        db = self.createDB(dbType, database, databaseInfo, enrichment)
         db.prepare()
         return db
-    
