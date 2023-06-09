@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "location",
     "dataLocation": "https://www.arb-silva.de/no_cache/download/archive/current/Exports/full_metadata/",
     "downloadLink": "https://www.arb-silva.de/",

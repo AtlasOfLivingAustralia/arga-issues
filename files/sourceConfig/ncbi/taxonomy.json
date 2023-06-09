@@ -1,5 +1,4 @@
 {
-    "dataType": "enrich",
     "dbType": "specific",
     "files": [
         {

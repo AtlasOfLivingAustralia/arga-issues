@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "location",
     "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
     "subDirectoryDepth": 0,

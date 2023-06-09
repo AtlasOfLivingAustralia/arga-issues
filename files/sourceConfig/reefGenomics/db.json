@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "script",
     "script": {
         "path": "sourceProcessing/reefGenomics/processing.py",

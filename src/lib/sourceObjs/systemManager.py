@@ -28,7 +28,7 @@ class SystemManager:
         self.dwcDir = self.rootDir / "dwc"
         
         self.parser = SelectorParser(self.rootDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
-        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.enrichDBs, self.dwcDir)
+        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.dwcDir)
 
         self.stages = {stage: [] for stage in StageFileStep}
 

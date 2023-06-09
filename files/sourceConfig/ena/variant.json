@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "location",
     "dataLocation": "https://ftp.ebi.ac.uk/pub/databases/eva/rs_releases/release_4/by_species/",
     "subDirectoryDepth": -1,

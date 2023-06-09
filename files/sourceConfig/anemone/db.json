@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "location",
     "dataLocation": "https://db.anemone.bio/dist/",
     "auth": "auth.txt",
