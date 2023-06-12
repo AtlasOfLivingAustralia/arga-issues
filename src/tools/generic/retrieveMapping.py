@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import lib.config as cfg
 import numpy as np
+import argparse
 
 def buildURL(docID: str, sheetID: str) -> str:
     return f"https://docs.google.com/spreadsheets/d/{docID}/export?format=csv&gid={sheetID}"
@@ -31,6 +32,10 @@ def getMappings(df: pd.DataFrame) -> dict:
     return mappings
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Retrieve mapping from google sheet")
+    parser.add_argument("-o", "--overwrite", action="store_true", help="Create brand new map, removing the old one")
+    args = parser.parse_args()
+
     documentID = "1dglYhHylG5_YvpslwuRWOigbF5qhU-uim11t_EE_cYE"
 
     sheetIDs = {
@@ -49,7 +54,7 @@ if __name__ == "__main__":
 
         mapFile = cfg.folderPaths.mapping / f"{location}.json"
 
-        if not mapFile.exists():
+        if not mapFile.exists() or args.overwrite:
             with open(mapFile, "w") as fp:
                 json.dump(mappings, fp, indent=4)
             continue

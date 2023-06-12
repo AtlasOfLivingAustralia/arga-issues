@@ -6,10 +6,9 @@ from lib.subfileWriter import Writer
 import lib.processing.processingFuncs as pFuncs
 
 class DWCProcessor:
-        self.prefix = prefix
 
-    def __init__(self, prefix: str, dwcProperties: dict, outputDir: Path):
-        self.prefix = prefix
+    def __init__(self, location: str, dwcProperties: dict, outputDir: Path):
+        self.location = location
         self.dwcProperties = dwcProperties
         self.outputDir = outputDir
 
