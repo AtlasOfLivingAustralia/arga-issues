@@ -21,7 +21,10 @@ def getMappings(df: pd.DataFrame) -> dict:
             if not isinstance(value, str): # Ignore float/int
                 continue
 
-            if value in ("0", "1", "nan", "NaN", np.nan, np.NaN, np.NAN) or value.startswith("ARGA"):
+            if value in ("0", "1", "nan", "NaN", np.nan, np.NaN, np.NAN): # Ignore these values
+                continue
+
+            if any(value.startswith(v) for v in ("ARGA", "#", '"')): # Ignore values with these prefixes
                 continue
             
             elements = [elem.strip() for elem in value.split(",")]
