@@ -1,51 +1,40 @@
 import pandas as pd
 import json
-import lib.commonFuncs as cmn
-import lib.config as cfg
 import lib.dataframeFuncs as dff
-import numpy as np
 from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile
-from pathlib import Path
+from lib.remapper import Remapper
+import random
 
-def collectFields(stageFile: StageFile, location: str, entryLimit: int):
-    mapPath = cfg.folderPaths.mapping / f"{location}.json"
-    if mapPath.exists():
-        dwcLookup = cmn.loadFromJson(mapPath)
-    else:
-        raise Exception(f"No DWC map found for location: {location}") from FileNotFoundError
+def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int = 1024 * 1024) -> dict:
+    random.seed()
+
+    remapper = Remapper(location)
+    chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize, stageFile.separator, stageFile.firstRow)
 
     data = {}
-    with pd.read_csv(stageFile.filePath, encoding=stageFile.encoding, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
-        for idx, chunk in enumerate(reader):
-            print(f"Scanning chunk: {idx}", end='\r')
-            if not data: # Empty data dict, initial pass
-                newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, location, {}, prefixMissing=False)
-                for column in chunk.columns:
-                    values = chunk[column].tolist()
-                    values = [v for index, v in enumerate(values) if v not in values[:index] and v not in [np.NaN, np.nan]]
+    for idx, chunk in enumerate(chunkGen):
+        print(f"Scanning chunk: {idx}", end='\r')
 
-                    data[column] = {"maps to": newColMap[column], "values": values[:entryLimit]}
+        if idx == 0:
+            mappings = remapper.createMappings(chunk.columns)
+            data = {column: {"Maps to": mappings[column], "values": []} for column in chunk.columns}
 
-            else: # Second pass onwards
-                for column in chunk.columns:
-                    if len(data[column]["values"]) >= entryLimit:
-                        continue
+        for column in chunk.columns:
+            columnValues = data[column]["values"] # Reference pointer to values
+            seriesValues = list(set(chunk[column].dropna().tolist())) # Convert column to list of unique values
+        
+            if len(seriesValues) <= entryLimit:
+                columnValues.extend(seriesValues)
+                continue
 
-                    values = chunk[column].tolist()
-                    lst = data[column]["values"]
-                    for v in values:
-                        if v in lst or v in [np.NaN, np.nan]:
-                            continue
+            columnValues.extend(random.sample(seriesValues, entryLimit))
 
-                        lst.append(v)
-                        if len(lst) >= entryLimit:
-                            break
+    # Shuffle entries and take only up to entry limit if required
+    for column, properties in data.items():
+        if len(properties["values"]) > entryLimit:
+            properties["values"] = random.shuffle(list(set(properties["values"])))[:entryLimit]
 
-            if all(len(info["values"]) >= entryLimit for info in data.values()):
-                break
-    
-    print() # Add line break after counter
     return data
 
 if __name__ == '__main__':

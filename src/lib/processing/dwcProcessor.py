@@ -1,8 +1,7 @@
-import lib.commonFuncs as cmn
-import lib.config as cfg
 import lib.dataframeFuncs as dff
 from pathlib import Path
 from lib.subfileWriter import Writer
+from lib.remapper import Remapper
 import lib.processing.processingFuncs as pFuncs
 
 class DWCProcessor:
@@ -12,30 +11,25 @@ class DWCProcessor:
         self.dwcProperties = dwcProperties
         self.outputDir = outputDir
 
-        mapPath = cfg.folderPaths.mapping / f"{location}.json"
-        if mapPath.exists():
-            self.map = cmn.loadFromJson(mapPath)
-        else:
-            raise Exception(f"No DWC map found for location: {self.location}") from FileNotFoundError
-
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)
 
         self.augmentSteps = [Augment(augProperties) for augProperties in self.augments]
 
         self.writer = Writer(outputDir, "dwcConversion", "dwcChunk")
+        self.remapper = Remapper(location)
 
     def process(self, inputPath: Path, outputFilePath: Path, sep: str, header: int, encoding: str, overwrite: bool = False):
         if outputFilePath.exists() and not overwrite:
             print(f"{outputFilePath} already exists, exiting...")
             return
 
-        for idx, df in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
+        for idx, chunk in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             if idx == 0:
-                newColMap, copyColMap = dff.createMappings(df.columns, self.dwcLookup, self.location)
+                self.remapper.createMappings(chunk.columns)
              
             print(f"At chunk: {idx}", end='\r')
-            df = dff.applyColumnMap(df, newColMap, copyColMap)
+            df = self.remapper.applyMap(df, False)
             df = dff.applyExclusions(df, self.exclude)
             df = self.applyAugments(df)
             # df = dff.dropEmptyColumns(df)
