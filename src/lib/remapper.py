@@ -23,7 +23,8 @@ class Remapper:
         if mapPath.exists():
             self.map = cmn.loadFromJson(mapPath)
         else:
-            raise Exception(f"No DWC map found for location: {self.location}") from FileNotFoundError
+            print(f"WARNING: No DWC map found for location {self.location}")
+            self.map = {}
         
         self.reverseLookup = self.buildReverseLookup(self.map)
 

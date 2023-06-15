@@ -12,7 +12,7 @@ def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSiz
     random.seed(seed)
 
     remapper = Remapper(location)
-    chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize, stageFile.separator, stageFile.firstRow)
+    chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
 
     data = {}
     for idx, chunk in enumerate(chunkGen):
@@ -32,10 +32,10 @@ def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSiz
 
             columnValues.extend(random.sample(seriesValues, entryLimit))
 
-    # Shuffle entries and take only up to entry limit if required
+    # Shuffle entries and take only up to entry limit
     for column, properties in data.items():
-        if len(properties["values"]) > entryLimit:
-            properties["values"] = random.shuffle(list(set(properties["values"])))[:entryLimit]
+        random.shuffle(list(set(properties["values"]))) # Shuffle items inplace
+        properties["values"] = properties["values"][:entryLimit] # Only keep up to entry limit
 
     return (data, seed)
 
