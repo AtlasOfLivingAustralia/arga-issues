@@ -5,12 +5,8 @@ from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile
 from lib.remapper import Remapper
 import random
-import sys
 
-def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int = 1024 * 1024) -> tuple[dict, int]:
-    seed = random.randrange(sys.maxsize)
-    random.seed(seed)
-
+def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int) -> dict:
     remapper = Remapper(location)
     chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
 
@@ -37,13 +33,37 @@ def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSiz
         random.shuffle(list(set(properties["values"]))) # Shuffle items inplace
         properties["values"] = properties["values"][:entryLimit] # Only keep up to entry limit
 
-    return (data, seed)
+    return data
+
+def collectRecords(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int, seed: int) -> dict:
+    remapper = Remapper(location)
+    chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
+
+    data = {}
+    samples = []
+    for idx, chunk in enumerate(chunkGen):
+        print(f"Scanning chunk: {idx}", end='\r')
+        samples.append(chunk.sample(n=entryLimit, random_state=seed))
+
+    df = pd.concat(samples)
+    # sampledDF = df.sample(n=entryLimit, random_state=seed)
+    emptyDF = df.isna().sum(axis=1)
+    indexes = [idx for idx, _ in sorted(emptyDF.items(), key=lambda x: x[1])]
+    
+    reducedDF = df.loc[indexes]
+    mappings = remapper.createMappings(reducedDF.columns)
+
+    data = {column: {"Maps to": mappings[column], "values": reducedDF[column].tolist()} for column in reducedDF.columns}
+    return data
 
 if __name__ == '__main__':
     parser = SourceArgParser(description="Get column names of preDwc files")
-    parser.add_argument('-e', '--entries', type=int, default=10, help="Number of unique entries to get")
+    parser.add_argument('-e', '--entries', type=int, default=50, help="Number of unique entries to get")
     parser.add_argument('-t', '--tsv', action="store_true", help="Output as tsv instead")
-    
+    parser.add_argument('-u', '--uniques', action="store_true", help="Find unique values only, ignoring record")
+    parser.add_argument('-c', '--chunksize', type=int, default=1024*1024, help="File chunk size to read at a time")
+    parser.add_argument('-s', '--seed', type=int, default=-1, help="Specify seed to run")
+
     sources, args = parser.parse_args()
     entryLimit = args.entries
 
@@ -66,9 +86,16 @@ if __name__ == '__main__':
             print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
             continue
 
-        data, seed = collectFields(stageFile, source.location, args.entries)
+        seed = args.seed if args.seed >= 0 else random.randrange(2**32 - 1) # Max value for pandas seed
+        random.seed(seed)
 
-        output = outputDir / f"fieldExamples_{seed}.{extension}"
+        if args.uniques:
+            data = collectFields(stageFile, source.location, args.entries, args.chunksize)
+            output = outputDir / f"fieldExamples_{args.chunksize}_{seed}.{extension}"
+        else:
+            data = collectRecords(stageFile, source.location, args.entries, args.chunksize, seed)
+            output = outputDir / f"recordExamples_{args.chunksize}_{seed}.{extension}"
+
         print(f"Writing to file {output}")
         if args.tsv:
             dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
