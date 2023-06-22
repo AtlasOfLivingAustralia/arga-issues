@@ -14,7 +14,6 @@ class Database:
         self.dbType = DBType.UNKNOWN
 
         # Standard properties
-        self.folderPrefix = properties.pop("folderPrefix", False)
         self.authFile = properties.pop("auth", "")
         self.globalProcessing = properties.pop("globalProcessing", [])
         self.combineProcessing = properties.pop("combineProcessing", [])
@@ -38,16 +37,6 @@ class Database:
 
     def prepare(self) -> None:
         raise NotImplementedError
-    
-    def getFileNameFromURL(self, url: str) -> str:
-        urlParts = url.split('/')
-        fileName = urlParts[-1]
-
-        if not self.folderPrefix:
-            return fileName
-
-        folderName = urlParts[-2]
-        return f"{folderName}_{fileName}"
     
     def download(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
         self.systemManager.create(StageFileStep.RAW, fileNumbers, overwrite)
@@ -124,6 +113,7 @@ class LocationDB(Database):
         self.downloadLink = properties.pop("downloadLink", "")
         self.regexMatch = properties.pop("regexMatch", ".*")
         self.maxSubDirDepth = properties.pop("subDirectoryDepth", -1)
+        self.folderPrefix = properties.pop("folderPrefix", False)
 
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
@@ -154,6 +144,16 @@ class LocationDB(Database):
             self.systemManager.addCombineStage(self.combineProcessing)
 
         self.systemManager.pushPreDwC()
+
+    def getFileNameFromURL(self, url: str) -> str:
+        urlParts = url.split('/')
+        fileName = urlParts[-1]
+
+        if not self.folderPrefix:
+            return fileName
+
+        folderName = urlParts[-2]
+        return f"{folderName}_{fileName}"
 
 class ScriptDB(Database):
 

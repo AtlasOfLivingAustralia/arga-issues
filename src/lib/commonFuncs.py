@@ -101,5 +101,7 @@ def downloadFile(url, filePath, user="", password="", verbose=True):
 
     if verbose:
         print(f"Downloading from {url} to file {filePath}")
+    else:
+        args.append("-s")
 
     subprocess.run(args)

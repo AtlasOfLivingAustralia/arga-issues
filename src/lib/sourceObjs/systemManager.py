@@ -3,6 +3,7 @@ from lib.processing.stageFile import StageFileStep, StageFile
 from lib.processing.stageScript import StageDownloadScript, StageScript, StageDWCConversion
 from lib.processing.parser import SelectorParser
 from lib.processing.dwcProcessor import DWCProcessor
+import concurrent.futures
 
 class SystemManager:
     def __init__(self, location: str, rootDir: Path, dwcProperties: dict, enrichDBs: dict, authFileName: str = ""):
@@ -35,17 +36,27 @@ class SystemManager:
     def getFiles(self, stage: StageFileStep):
         return self.stages[stage]
     
-    def create(self, stage: StageFileStep, fileNumbers: list[int] = [], overwrite: int = 0):
+    def create(self, stage: StageFileStep, fileNumbers: list[int] = [], overwrite: int = 0, maxWorkers: int = 100):
         if not fileNumbers: # Create all files:
-            for file in self.stages[stage]:
-                file.create(stage, overwrite)
+            files = self.stages[stage] # All stage files
+        else:
+            files = []
+            for number in fileNumbers:
+                if number >= 0 and number <= len(self.stages[stage]):
+                    files.append(self.stages[stage][number])
+                else:
+                    print(f"Invalid number provided: {number}")
+
+        if len(files) == 1:
+            files[0].create(stage, overwrite) # Skip threadpool if only 1 file being processed
             return
-        
-        for number in fileNumbers:
-            if number >= 0 and number <= len(self.stages[stage]):
-                self.stages[stage][number].create(stage, overwrite)
-            else:
-                print(f"Invalid number provided: {number}")
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
+            futures = [executor.submit(file.create, (stage, overwrite)) for file in files]
+            for idx, future in enumerate(concurrent.futures.as_completed(futures)):
+                future.result()
+                print(f"Created file: {idx} of {len(files)}", end="\r")
+            print()
 
     def buildProcessingChain(self, processingSteps: list[dict], initialInputs: list[StageFile], finalStage: StageFileStep) -> None:
         inputs = initialInputs.copy()
