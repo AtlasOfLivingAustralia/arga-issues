@@ -54,13 +54,6 @@ class SystemManager:
 
         print("Using concurrency for large quantity of tasks")
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
-            futures = [executor.submit(file.create, (stage, overwrite)) for file in files]
-            for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
-                future.result()
-                print(f"Created file: {idx} of {len(files)}", end="\r")
-            print()
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             futures = (executor.submit(file.create, (stage, overwrite)) for file in files)
             try:
                 for idx, future in enumerate(concurrent.futures.as_completed(futures)):
