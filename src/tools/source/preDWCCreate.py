@@ -5,4 +5,4 @@ if __name__ == '__main__':
     
     sources, args = parser.parse_args()
     for source in sources:
-        source.createPreDwC(args.filenum, args.overwrite)
+        source.createPreDwC(args.filenums, args.overwrite)

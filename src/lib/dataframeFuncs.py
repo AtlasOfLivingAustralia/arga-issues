@@ -74,7 +74,7 @@ def applyColumnMap(df: pd.DataFrame, newColumns: dict, copyColumns: dict, verbos
 
     return df
 
-def splitField(df: pd.DataFrame, column: str, func: function, newColumns: dict) -> pd.DataFrame:
+def splitField(df: pd.DataFrame, column: str, func: callable, newColumns: dict) -> pd.DataFrame:
     seriesList = zip(*df[column].apply(lambda x: func(x)))
     for colname, series in zip(newColumns, seriesList):
         if column is None:

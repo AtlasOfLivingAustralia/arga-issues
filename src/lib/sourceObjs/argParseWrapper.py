@@ -1,4 +1,5 @@
 from argparse import ArgumentParser, Namespace
+from typing import IO
 from lib.sourceManager import SourceManager
 from lib.sourceObjs.sourceDatabase import Database
 
@@ -9,8 +10,8 @@ class SourceArgParser(ArgumentParser):
         super().__init__(*args, **kwargs)
 
         self.add_argument("sources", choices=self.manager.choices(), nargs="+", help="")
-        self.add_argument("-o", "--overwrite", type=int, const=10, nargs='?', default=0, help="Amount of steps to force overwrite on")
-        self.add_argument('-n', '--filenum', type=int, default=0, help="Choose which file number to interact with")
+        self.add_argument("-o", "--overwrite", type=int, const=10, nargs="?", default=0, help="Amount of steps to force overwrite on")
+        self.add_argument("-n", "--filenums", type=int, nargs="+", default=[], help="Choose which file number to interact with")
 
     def parse_args(self, *args, **kwargs) -> tuple[list[Database], Namespace]:
         parsedArgs = super().parse_args(*args, **kwargs)
@@ -18,4 +19,3 @@ class SourceArgParser(ArgumentParser):
         del parsedArgs.sources # Remove source name stored in original parsed args
 
         return (sources, parsedArgs)
-    

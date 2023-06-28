@@ -36,13 +36,13 @@ class Database:
     def prepare(self) -> None:
         raise NotImplementedError
     
-    def download(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
+    def download(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
         self.systemManager.create(StageFileStep.RAW, fileNumbers, overwrite)
 
-    def createPreDwC(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
+    def createPreDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
         self.systemManager.create(StageFileStep.PRE_DWC, fileNumbers, overwrite)
 
-    def createDwC(self, fileNumbers: list[int] = -1, overwrite: int = 0) -> None:
+    def createDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
         self.systemManager.create(StageFileStep.DWC, fileNumbers, overwrite)
 
     def createDirectory(self) -> None:
@@ -59,14 +59,29 @@ class Database:
     def getBaseDir(self) -> Path:
         return self.databaseDir
     
-    def getDownloadedFiles(self) -> list[StageFile]:
-        return self.fileManager.getFiles(StageFileStep.RAW)
+    def getDownloadedFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
+        return self.selectFiles(self.systemManager.getFiles(StageFileStep.RAW), selectIndexes, "RAW")
     
-    def getPreDWCFiles(self) -> list[StageFile]:
-        return self.systemManager.getFiles(StageFileStep.PRE_DWC)
+    def getPreDWCFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
+        return self.selectFiles(self.systemManager.getFiles(StageFileStep.PRE_DWC), selectIndexes, "PreDWC")
     
-    def getDWCFiles(self) -> list[StageFile]:
-        return self.systemManager.getFiles(StageFileStep.DWC)
+    def getDWCFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
+        return self.selectFiles(self.systemManager.getFiles(StageFileStep.DWC), selectIndexes, "DWC")
+
+    def selectFiles(self, fileList: list[StageFile], indexes: list[int], stage: str) -> list[StageFile]:
+        if not indexes:
+            return fileList
+        
+        selectedFiles = []
+        invalidIndexes = []
+        for index in indexes:
+            if index >= 0 or index < len(fileList):
+                selectedFiles.append(fileList[index])
+            else:
+                invalidIndexes.append(index)
+
+        print(f"Invalid {stage} files selected: {invalidIndexes}")
+        return selectedFiles
 
 class SpecificDB(Database):
 

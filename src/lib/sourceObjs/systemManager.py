@@ -33,7 +33,7 @@ class SystemManager:
 
         self.stages = {stage: [] for stage in StageFileStep}
 
-    def getFiles(self, stage: StageFileStep):
+    def getFiles(self, stage: StageFileStep) -> list[StageFile]:
         return self.stages[stage]
     
     def create(self, stage: StageFileStep, fileNumbers: list[int] = [], overwrite: int = 0, maxWorkers: int = 100):
@@ -47,13 +47,15 @@ class SystemManager:
                 else:
                     print(f"Invalid number provided: {number}")
 
-        if len(files) == 1:
-            files[0].create(stage, overwrite) # Skip threadpool if only 1 file being processed
+        if len(files) <= 10:
+            for file in files:
+                file.create(stage, overwrite) # Skip threadpool if only 1 file being processed
             return
 
+        print("Using concurrency for large quantity of tasks")
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             futures = [executor.submit(file.create, (stage, overwrite)) for file in files]
-            for idx, future in enumerate(concurrent.futures.as_completed(futures)):
+            for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
                 future.result()
                 print(f"Created file: {idx} of {len(files)}", end="\r")
             print()

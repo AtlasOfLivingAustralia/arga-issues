@@ -62,25 +62,20 @@ if __name__ == '__main__':
             print(f"Output file {output} already exists, please run with overwrite flag (-o) to overwrite")
             continue
 
-        preDwCFiles = source.getPreDWCFiles()
-        if args.filenum < 0 or args.filenum >= len(preDwCFiles):
-            print(f"Invalid preDWC file selected. Valid value is between 0 and {len(preDwCFiles) - 1} inclusive")
-            continue
-        
-        stageFile = preDwCFiles[args.filenum]
+        stageFiles = source.getPreDWCFiles(args.filenums)
+        for stageFile in stageFiles:
+            if not stageFile.filePath.exists():
+                print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
+                continue
 
-        if not stageFile.filePath.exists():
-            print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
-            continue
-
-        data = collectFields(stageFile, source.getBaseDir(), output, args.entries, args.overwrite > 0)
-            
-        print(f"Writing to file {output}")
-        if args.tsv:
-            dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
-            df = pd.DataFrame.from_dict(dfData)
-            df.index += 1 # Increment index so output is 1-indexed numbers
-            df.to_csv(output, sep="\t", index_label="Example #")
-        else:
-            with open(output, 'w') as fp:
-                json.dump(data, fp, indent=4)
+            data = collectFields(stageFile, source.getBaseDir(), output, args.entries, args.overwrite > 0)
+                
+            print(f"Writing to file {output}")
+            if args.tsv:
+                dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
+                df = pd.DataFrame.from_dict(dfData)
+                df.index += 1 # Increment index so output is 1-indexed numbers
+                df.to_csv(output, sep="\t", index_label="Example #")
+            else:
+                with open(output, 'w') as fp:
+                    json.dump(data, fp, indent=4)
