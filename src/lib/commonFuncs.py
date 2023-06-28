@@ -5,10 +5,19 @@ import json
 import platform
 import subprocess
 
-def reverseLookup(lookupDict):
-    return {oldName: newName for newName, oldNameList in lookupDict.items() for oldName in oldNameList}
+def reverseLookup(lookup: dict) -> dict:
+    nameMap = {}
+
+    for newName, oldNameList in lookup.items():
+        for name in oldNameList:
+            if name not in nameMap:
+                nameMap[name]  = []
+            
+            nameMap[name].append(newName)
+
+    return nameMap
     
-def latlongToDecimal(latlong):
+def latlongToDecimal(latlong: str) -> str:
     """
     Paramters:
         latlong: string representation of both latitude and longitude
@@ -38,10 +47,10 @@ def loadLogger(filename):
 
     return logging.getLogger(__name__)
 
-def flatten(d, parent=""):
+def flatten(inputDict: dict, parent: str = "") -> dict:
     res = {}
     
-    for key, value in d.items():
+    for key, value in inputDict.items():
         addKey = key if not parent else f"{parent}_{key}"
 
         if isinstance(value, dict):
@@ -57,18 +66,18 @@ def flatten(d, parent=""):
 
     return res
 
-def getColumns(filepath, separator=',', headerRow=0):
-    with open(filepath, encoding='utf-8') as fp:
+def getColumns(filePath: str, separator: str = ',', headerRow: int = 0) -> str:
+    with open(filePath, encoding='utf-8') as fp:
         reader = csv.reader(fp, delimiter=separator)
         for idx, row in enumerate(reader):
             if idx == headerRow:
                 return row
 
-def extendUnique(lst, values):
+def extendUnique(lst: list, values: list) -> None:
     lst.extend([item for item in values if item not in lst])
     return lst
 
-def addUniqueEntry(dictionary, key, value, duplicateLimit=0):
+def addUniqueEntry(dictionary: dict, key: any, value: any, duplicateLimit: int = 0) -> None:
     if key not in dictionary:
         dictionary[key] = value
         return
@@ -81,11 +90,11 @@ def addUniqueEntry(dictionary, key, value, duplicateLimit=0):
             return
         suffixNum += 1
 
-def loadFromJson(path):
+def loadFromJson(path: str) -> dict:
     with open(path) as fp:
         return json.load(fp)
 
-def dictListToCSV(dictList, columns, filePath):
+def dictListToCSV(dictList: list, columns: list, filePath: str) -> None:
     with open(filePath, 'w', newline='', encoding='utf-8') as fp:
         writer = csv.DictWriter(fp, columns)
         writer.writeheader()
@@ -93,7 +102,7 @@ def dictListToCSV(dictList, columns, filePath):
         for d in dictList:
             writer.writerow(d)
 
-def downloadFile(url, filePath, user="", password="", verbose=True):
+def downloadFile(url: str, filePath: str, user: str = "", password: str = "", verbose: bool = True):
     curl = "curl.exe" if platform.system() == 'Windows' else "curl"
     args = [curl, url, "-o", filePath]
     if user:

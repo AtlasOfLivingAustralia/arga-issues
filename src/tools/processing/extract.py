@@ -31,7 +31,7 @@ def process(filePath: Path, outputDir: Path = None, addSuffix: str = "", overwri
 
         if outputFile.exists() and not overwrite:
             print("Output file already exists.... Skipping extraction stage")
-            continue
+            break
         
         if extractType == ExtractTypes.ZIP:
             with zipfile.ZipFile(filePath, 'r') as zip:

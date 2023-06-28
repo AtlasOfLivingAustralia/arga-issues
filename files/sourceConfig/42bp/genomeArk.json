@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "script",
     "script": {
         "path": "sourceProcessing/42bp/genomeArk.py",

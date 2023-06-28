@@ -29,7 +29,7 @@ class SystemManager:
         self.dwcDir = self.rootDir / "dwc"
         
         self.parser = SelectorParser(self.rootDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
-        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.enrichDBs, self.dwcDir)
+        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.dwcDir)
 
         self.stages = {stage: [] for stage in StageFileStep}
 
@@ -57,6 +57,17 @@ class SystemManager:
                 future.result()
                 print(f"Created file: {idx} of {len(files)}", end="\r")
             print()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
+            futures = (executor.submit(file.create, (stage, overwrite)) for file in files)
+            try:
+                for idx, future in enumerate(concurrent.futures.as_completed(futures)):
+                    future.result()
+                    print(f"Created file: {idx} of {len(files)}", end="\r")
+            except KeyboardInterrupt:
+                return
+            finally:
+                print()
 
     def buildProcessingChain(self, processingSteps: list[dict], initialInputs: list[StageFile], finalStage: StageFileStep) -> None:
         inputs = initialInputs.copy()

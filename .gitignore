@@ -25,6 +25,7 @@ hs_err_pid*
 # Local Folders #
 data
 files/generated
+files/mapping
 src/unsortedFiles
 logs
 env
@@ -35,6 +36,11 @@ env
 *.db
 *.db-journal
 *.xml
+
+# Test Data #
+src/tests/*/*.txt
+src/tests/*/*.json
+src/tests/*/testing.py
 
 # Hidden Files #
 .history

@@ -6,11 +6,9 @@ from lib.processing.stageFile import StageFile, StageFileStep
 from lib.crawler import Crawler
 
 class Database:
-    def __init__(self, dataType: str, location: str, database: str, properties: dict = {}, enrichDBs: dict = {}):
-        self.dataType = dataType
+    def __init__(self, location: str, database: str, properties: dict = {}):
         self.location = location
         self.database = database
-        self.enrichDBs = enrichDBs
         self.dbType = DBType.UNKNOWN
 
         # Standard properties
@@ -21,7 +19,7 @@ class Database:
 
         self.locationDir = cfg.folderPaths.data / location
         self.databaseDir = self.locationDir / database
-        self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.enrichDBs, self.authFile)
+        self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.authFile)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -54,9 +52,6 @@ class Database:
     def checkLeftovers(self, properties: dict) -> None:
         for property in properties:
             print(f"{self.location}-{self.database} unknown property: {property}")
-    
-    def getDataType(self) -> str:
-        return self.dataType
 
     def getDBType(self) -> str:
         return self.dbType
@@ -118,7 +113,7 @@ class LocationDB(Database):
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
         
-        self.crawler = Crawler(self.fileLocation, self.regexMatch, self.downloadLink, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
+        self.crawler = Crawler(self.databaseDir, self.regexMatch, self.downloadLink, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
 
     def prepare(self, recrawl: bool = False) -> None:
         localFilePath = self.databaseDir / self.localFile
@@ -127,10 +122,10 @@ class LocationDB(Database):
             with open(localFilePath) as fp:
                 urls = fp.read().splitlines()
         else:
-            print("Crawling...")
             localFilePath.unlink(True)
             
-            urls, _ = self.crawler.crawl()
+            self.crawler.crawl(self.fileLocation)
+            urls = self.crawler.getURLList()
 
             self.databaseDir.mkdir(parents=True, exist_ok=True) # Create base directory if it doesn't exist to put the file
             with open(localFilePath, 'w') as fp:
