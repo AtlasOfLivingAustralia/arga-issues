@@ -47,6 +47,17 @@ class SystemManager:
             else:
                 print(f"Invalid number provided: {number}")
 
+        with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
+            futures = (executor.submit(file.create, (stage, overwrite)) for file in files)
+            try:
+                for idx, future in enumerate(concurrent.futures.as_completed(futures)):
+                    future.result()
+                    print(f"Created file: {idx} of {len(files)}", end="\r")
+            except KeyboardInterrupt:
+                return
+            finally:
+                print()
+
     def buildProcessingChain(self, processingSteps: list[dict], initialInputs: list[StageFile], finalStage: StageFileStep) -> None:
         inputs = initialInputs.copy()
         for idx, step in enumerate(processingSteps):

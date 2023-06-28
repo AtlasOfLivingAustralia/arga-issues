@@ -123,7 +123,7 @@ class LocationDB(Database):
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
         
-        self.crawler = Crawler(self.fileLocation, self.regexMatch, self.downloadLink, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
+        self.crawler = Crawler(self.databaseDir, self.regexMatch, self.downloadLink, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
 
     def prepare(self, recrawl: bool = False) -> None:
         localFilePath = self.databaseDir / self.localFile
@@ -132,10 +132,10 @@ class LocationDB(Database):
             with open(localFilePath) as fp:
                 urls = fp.read().splitlines()
         else:
-            print("Crawling...")
             localFilePath.unlink(True)
             
-            urls, _ = self.crawler.crawl()
+            self.crawler.crawl(self.fileLocation)
+            urls = self.crawler.getURLList()
 
             self.databaseDir.mkdir(parents=True, exist_ok=True) # Create base directory if it doesn't exist to put the file
             with open(localFilePath, 'w') as fp:
