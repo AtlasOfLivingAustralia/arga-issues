@@ -7,7 +7,20 @@
             "fileProperties": {
                 "separator": "\t",
                 "firstrow": 1
-            }
+            },
+            "processing": [
+                {
+                    "path": "sourceProcessing/ncbi/genomeData.py",
+                    "function": "enrich",
+                    "args": [
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, refseq_enriched.csv}"
+                    ],
+                    "outputs": [
+                        "{PATH, PROCESSING, refseq_enriched.csv}"
+                    ]
+                }
+            ]
         }
     ],
     "enrich": {

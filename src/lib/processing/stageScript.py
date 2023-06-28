@@ -95,7 +95,7 @@ class StageDownloadScript:
                 print(f"File already downloaded at {self.downloadedFile}, skipping redownload")
             return
         
-        cmn.downloadFile(self.url, self.downloadedFile, self.user, self.password)
+        cmn.downloadFile(self.url, self.downloadedFile, self.user, self.password, verbose)
 
 class StageDWCConversion:
     def __init__(self, input: StageFile, dwcProcessor: DWCProcessor):

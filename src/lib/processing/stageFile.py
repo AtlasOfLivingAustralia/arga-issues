@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from pathlib import Path
 from enum import Enum
+import pandas as pd
 
 if TYPE_CHECKING:
     from lib.processing.stageScript import StageScript
@@ -31,6 +32,9 @@ class StageFile:
     
     def exists(self) -> bool:
         return self.filePath.exists()
+    
+    def loadDataFrame(self) -> pd.DataFrame:
+        return pd.read_csv(self.filePath, sep=self.separator, header=self.firstRow, encoding=self.encoding)
     
     def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0) -> None:
         if self.filePath.exists():
