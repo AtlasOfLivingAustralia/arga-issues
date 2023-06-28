@@ -12,7 +12,7 @@
                 "{PATH, PROCESSING}"
             ],
             "outputs": [
-                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM, .csv}"
+                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM}"
             ]
         },
         {
