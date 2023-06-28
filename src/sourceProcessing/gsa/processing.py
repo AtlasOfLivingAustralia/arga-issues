@@ -5,7 +5,7 @@ def build(outputFilePath):
     url = "http://download.cncb.ac.cn/gsa/"
     regexMatch = ".*\\.gz"
 
-    crawler = Crawler(url, regexMatch)
+    crawler = Crawler(outputFilePath.parent, url, regexMatch)
     files, leftoverFolders = crawler.crawl()
 
     if leftoverFolders:
