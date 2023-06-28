@@ -2,11 +2,11 @@
     "dbType": "location",
     "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
     "subDirectoryDepth": 0,
-    "regexMatch": "gb[a-z]{3}\\d+\\.seq\\.gz",
+    "regexMatch": "gbmam\\d+\\.seq\\.gz",
     "globalProcessing": [
         {
-            "path": "lib/tools/extractor.py",
-            "function": "Extractor.extract",
+            "path": "tools/processing/extract.py",
+            "function": "process",
             "args": [
                 "{INPUT, 0, FILEPATH}",
                 "{PATH, PROCESSING}"
