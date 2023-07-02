@@ -2,17 +2,17 @@
     "dbType": "location",
     "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
     "subDirectoryDepth": 0,
-    "regexMatch": "gbest\\d+\\.seq\\.gz",
+    "regexMatch": "gbphg\\d+\\.seq\\.gz",
     "combineProcessing": [
         {
             "path": "sourceProcessing/ncbi/nucleotide.py",
             "function": "combine",
             "args": [
                 "{PATH, DOWNLOAD}",
-                "{PATH, PROCESSING, nucExpressedSeq.csv}"
+                "{PATH, PROCESSING, nucPhage.csv}"
             ],
             "outputs": [
-                "{PATH, PROCESSING, nucExpressedSeq.csv}"
+                "{PATH, PROCESSING, nucPhage.csv}"
             ]
         }
     ]

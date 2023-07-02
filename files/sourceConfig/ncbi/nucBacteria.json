@@ -3,26 +3,16 @@
     "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
     "subDirectoryDepth": 0,
     "regexMatch": "gbbct\\d+\\.seq\\.gz",
-    "globalProcessing": [
+    "combineProcessing": [
         {
-            "path": "tools/processing/extract.py",
-            "function": "process",
+            "path": "sourceProcessing/ncbi/nucleotide.py",
+            "function": "combine",
             "args": [
-                "{INPUT, 0, FILEPATH}",
-                "{PATH, PROCESSING}"
+                "{PATH, DOWNLOAD}",
+                "{PATH, PROCESSING, nucBacteria.csv}"
             ],
             "outputs": [
-                "{INPUTPATH, PROCESSING, 0, STEM}"
-            ]
-        },
-        {
-            "path": "sourceProcessing/ncbi/flatfileParser.py",
-            "function": "process",
-            "args": [
-                "{INPUT, 0, FILEPATH}"
-            ],
-            "outputs": [
-                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM, .csv}"
+                "{PATH, PROCESSING, nucBacteria.csv}"
             ]
         }
     ]

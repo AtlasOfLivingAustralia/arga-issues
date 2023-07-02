@@ -1,182 +1,207 @@
-import argparse
-import numpy as np
-import sys
 from pathlib import Path
-import csv
+from enum import Enum
 
-def rawBlockToSections(block, headings, skipJoins=[]):
-    headingPositions = getHeadingPositions(block, headings)
-    return getHeadingBlocks(block, headingPositions, skipJoins)
+class Section(Enum):
+    INFO = "INFO"
+    REFERENCE = "REFERENCE"
+    COMMENT = "COMMENT"
+    FEATURES = "FEATURES"
+    ORIGIN = "ORIGIN"
 
-def getHeadingPositions(block, headings):
-    headingPositions = {}
+class FlatFileParser:
+    def __init__(self):
+        self.seqBaseURL = "https://ftp.ncbi.nlm.nih.gov/genbank/"
+        self.genbankBaseURL = "https://www.ncbi.nlm.nih.gov/nuccore/"
+        self.fastaSuffix = "?report=fasta&format=text"
 
-    for heading in headings:
-        position = block.find(heading)
-        if position >= 0:
-            headingPositions[heading] = position
+        self.sectionParserCallbacks = {
+            Section.INFO: self.parseInfo,
+            Section.REFERENCE: self.parseReferences,
+            Section.COMMENT: self.parseComment,
+            Section.FEATURES: self.parseFeatures,
+            Section.ORIGIN: self.parseOrigin
+        }
 
-    return headingPositions
+    def parse(self, filePath: Path, verbose: bool = False) -> list[dict]:
+        with open(filePath) as fp:
+            data = fp.read()
 
-def getHeadingBlocks(block, headingPositions, skipJoins=[]):
-    headings = headingPositions.keys()
-    positions = list(headingPositions.values()) + [len(block)]
+        # Cut off header of file
+        firstLocusPos = data.find("LOCUS")
+        header = data[:firstLocusPos]
+        data = data[firstLocusPos:]
 
-    headingBlocks = {}
-    for idx, (heading, position) in enumerate(zip(headings, positions)):
-        blockText = block[position:positions[idx+1]]
-        blockText = [line.strip() for line in blockText.split('\n')]
-        if heading not in skipJoins:
-            blockText = ''.join(blockText).replace(heading, '').strip()
+        records = []
+        for idx, entry in enumerate(data.split("//\n")[:-1], start=1): # Split into separate loci, exclude empty entry after last
+            if verbose:
+                print(f"Parsing entry: {idx}", end="\r")
+            splitData = self.splitEntryBlocks(entry)
+            output = {}
+            for section, textBlock in splitData.items():
+                if section in [Section.ORIGIN]: # Skip origin section
+                    continue
+
+                callBack = self.sectionParserCallbacks[section]
+                output |= callBack(textBlock)
+
+            # Attach seq file path and fasta file
+            # output["seq_file"] = f"{self.seqBaseURL}{filePath.name}.gz"
+            output["genbank_url"] = f"{self.genbankBaseURL}{output['version']}"
+            output["fasta_url"] = f"{self.genbankBaseURL}{output['version']}{self.fastaSuffix}"
+            records.append(output)
+
+        if verbose:
+            print()
+
+        return records
+
+    def splitEntryBlocks(self, entryText: str) -> dict[Section, str]:
+        headers = [Section.REFERENCE.value, Section.COMMENT.value, Section.FEATURES.value, Section.ORIGIN.value]
+        referencesPos, commentPos, featuresPos, originPos = [entryText.find(header) for header in headers]
+
+        infoBlock = entryText[:referencesPos]
+        if commentPos > 0:
+            referencesBlock = entryText[referencesPos:commentPos]
+            commentBlock = entryText[commentPos:featuresPos]
         else:
-            blockText[0] = blockText[0].replace(heading, '').strip()
+            referencesBlock = entryText[referencesPos:featuresPos]
+            commentBlock = ""
+        featureBlock = entryText[featuresPos:originPos]
+        originBlock = entryText[originPos:]
 
-        headingBlocks[heading.lower()] = blockText
+        blockData = {
+            Section.INFO: infoBlock,
+            Section.REFERENCE: referencesBlock,
+            Section.COMMENT: commentBlock,
+            Section.FEATURES: featureBlock,
+            Section.ORIGIN: originBlock   
+        }
 
-    return headingBlocks
+        return blockData
 
-def parseInfo(infoBlock):
-    headings = ["LOCUS", "DEFINITION", "ACCESSION", "VERSION", "KEYWORDS", "SOURCE", "ORGANISM"]
-    locusHeadings = ["locus", "basepairs", "", "type", "shape", "val", "date"]
+    def getHeadingBlocks(self, textBlock: str, headings: list[str], skipJoining: list[str] = []) -> dict:
+        # Get heading positions in text block
+        foundHeadings = []
+        headingPositions = []
+        for heading in headings:
+            position = textBlock.find(heading)
+            if position >= 0:
+                foundHeadings.append(heading)
+                headingPositions.append(position)
 
-    info = rawBlockToSections(infoBlock, headings, ["ORGANISM"])
-    organism = info.pop("organism")
-    info["species"] = organism[0]
-    info["higherClassification"] = ''.join(organism[1:])
+        # Split block text at heading positions
+        headingPositions.append(len(textBlock)) # Add length of block to end of positions to do string slicing
+        headingBlocks = {}
+        for idx, (head, startPos) in enumerate(zip(foundHeadings, headingPositions), start=1):
+            text = textBlock[startPos:headingPositions[idx]]
+            text = [line.strip() for line in text.split("\n")]
+            text[0] = text[0].replace(head, "").strip() # Clean off heading in block of text
 
-    # Split the compacted locus line of values into separate values
-    splitValues = [value.strip() for value in info["locus"].split()]
-    for name, value in zip(locusHeadings, splitValues):
-        if name: # If the new name exists, otherwise skip that value
-            info[name] = value
+            if head not in skipJoining: # Create 1 line of text when joining
+                text = " ".join(text).strip()
 
-    return info
+            headingBlocks[head.lower()] = text
 
-def parseReferences(referencesBlock):
-    headings = ["REFERENCE", "AUTHORS", "TITLE", "JOURNAL", "PUBMED"]
+        return headingBlocks
+    
+    def parseInfo(self, infoBlock: str) -> dict:
+        headings = ["LOCUS", "DEFINITION", "ACCESSION", "VERSION", "KEYWORDS", "SOURCE", "ORGANISM"]
 
-    references = []
-    for reference in referencesBlock.split(headings[0]):
-        reference = rawBlockToSections(headings[0] + reference, headings)
-        splitRef = reference.pop("reference").split(' ', 1)
-        if len(splitRef) == 1: # no bases
-            base = np.NAN
-        else:
-            base = splitRef[1].strip().lstrip('(bases').rstrip(')')
-        
-        if splitRef[0]:
-            references.append({"reference": splitRef[0], "bases": base} | reference)
+        # Manually split ORGANISM so don't join automatically
+        info = self.getHeadingBlocks(infoBlock, headings, ["ORGANISM"])
+        try:
+            organism = info.pop("organism")
+        except:
+            print(infoBlock)
+            print(info)
+        info["species"] = organism[0]
+        info["higherClassification"] = ''.join(organism[1:])
 
-    return references
+        # Split the compacted locus line of values into separate values
+        locusHeadings = ["locus", "basepairs", "", "type", "shape", "val", "date"]
+        splitValues = [value.strip() for value in info["locus"].split()]
+        for name, value in zip(locusHeadings, splitValues):
+            if name: # If the new name exists, otherwise skip that value
+                info[name] = value
 
-def parseFeatures(featureBlock):
-    featureList = [] # A list of all features
-    lastKey = None # Last key updated for data over multiple lines
-    featureIndent = 21 # Amount of spaces that features information is indented
+        return info
 
-    for line in featureBlock.split('\n')[1:]: # Split by newline and ignore first line
-        data = line[featureIndent:]
-        data = data.replace('"', '')
+    def parseReferences(self, referencesBlock: str) -> dict:
+        headings = ["REFERENCE", "AUTHORS", "TITLE", "JOURNAL", "PUBMED"]
 
-        if not data:
-            continue
+        references = []
+        for reference in referencesBlock.split(headings[0]):
+            reference = self.getHeadingBlocks(headings[0] + reference, headings)
+            splitRef = reference.pop("reference").split(' ', 1)
+            if len(splitRef) == 1: # no bases
+                base = ""
+            else:
+                base = splitRef[1].strip().lstrip('(bases').rstrip(')')
+            
+            if splitRef[0]:
+                references.append({"reference": splitRef[0], "bases": base} | reference)
 
-        if not line.startswith(' ' * featureIndent): # Line contains a heading
-            heading = line[:featureIndent].strip()
-            featureList.append({"feature": heading, "range": data})
+        return {"referenes": references}
+    
+    def parseComment(self, commentBlock: str) -> dict:
+        return {"comment": commentBlock.replace("\n", " ")}
 
-        else: # Data line with no heading
-            if data[0] == '/': # New data point
-                data = data[1:]
-                if '=' in data:
-                    key, value = data.split('=', 1)
-                else:
-                    key = "property"
-                    value = data
+    def parseFeatures(self, featureBlock: str) -> dict:
+        featureList = [] # A list of all features
+        lastKey = None # Last key updated for data over multiple lines
+        featureIndent = 21 # Amount of spaces that features information is indented
 
-                featureList[-1][key] = value
-                lastKey = key
-                
-            else: # Data value is part of value from previous line
-                lastData = featureList[-1].setdefault(lastKey, "default")
-                featureList[-1][lastKey] = lastData + data
+        for line in featureBlock.split('\n')[1:]: # Split by newline and ignore first line
+            data = line[featureIndent:]
+            data = data.replace('"', '')
 
-    features = []
-    for featureDict in featureList:
-        feature = featureDict.pop("feature")
-        gene = featureDict.pop("gene", "default")
+            if not data:
+                continue
 
-        # geneInfo = features.setdefault(gene, {})
-        geneInfo = {}
+            if not line.startswith(' ' * featureIndent): # Line contains a heading
+                heading = line[:featureIndent].strip()
+                featureList.append({"feature": heading, "range": data})
 
-        if feature != "gene":
-            featureDict = {f"{feature}_{key}": value for key, value in featureDict.items()}
+            else: # Data line with no heading
+                if data[0] == '/': # New data point
+                    data = data[1:]
+                    if '=' in data:
+                        key, value = data.split('=', 1)
+                    else:
+                        key = "property"
+                        value = data
 
-        features.append({"gene": gene} | geneInfo | featureDict)
+                    featureList[-1][key] = value
+                    lastKey = key
+                    
+                else: # Data value is part of value from previous line
+                    lastData = featureList[-1].setdefault(lastKey, "default")
+                    featureList[-1][lastKey] = lastData + data
 
-    return features
+        features = []
+        for featureDict in featureList:
+            feature = featureDict.pop("feature")
+            gene = featureDict.pop("gene", "default")
 
-def parseOrigin(originBlock):
-    origin = []
-    for line in originBlock.split('\n')[1:]:
-        if not line:
-            continue
-        
-        basepairs, seq = line.strip().split(' ', 1)
-        origin.append({"basepairs": basepairs, "seq": seq})
+            # geneInfo = features.setdefault(gene, {})
+            geneInfo = {}
 
-    return origin
+            if feature != "gene":
+                featureDict = {f"{feature}_{key}": value for key, value in featureDict.items()}
 
-def process(filePath):
-    if not isinstance(filePath, Path):
-        filePath = Path(filePath)
+            features.append({"gene": gene} | geneInfo | featureDict)
 
-    outputFilePath = filePath.parent / f"{filePath.stem}.csv"
-    writeHeader = True
+        return {"genes": features}
 
-    with open(filePath) as fp:
-        data = fp.read()
+    def parseOrigin(self, originBlock: str) -> dict:
+        # origin = ""
+        # origin = []
+        # for line in originBlock.split('\n')[1:]:
+        #     if not line:
+        #         continue
+            
+        #     basepairs, seq = line.strip().split(" ", 1)
+        #     origin.append({"basepairs": basepairs, "seq": seq})
 
-    firstLocus = data.find("LOCUS")
-    header = data[:firstLocus]
-
-    data = data[firstLocus:]
-    data = data.split("//\n")
-
-    for entry in data[:-1]: # Exclude empty item after // at end of file
-        referencesRef = entry.find("REFERENCE")
-        featuresRef = entry.find("FEATURES")
-        originRef = entry.rfind("ORIGIN")
-
-        infoBlock = entry[:referencesRef]
-        referencesBlock = entry[referencesRef:featuresRef]
-        featureBlock = entry[featuresRef:originRef]
-        originBlock = entry[originRef:]
-
-        info = parseInfo(infoBlock)
-        references = parseReferences(referencesBlock)
-        features = parseFeatures(featureBlock)
-        origin = parseOrigin(originBlock)
-
-        data = info | {"genes": features} | {"references": references} | {"origin": origin}
-        with open(outputFilePath, "a", newline='', encoding='utf-8') as fp:
-            writer = csv.DictWriter(fp, data.keys())
-
-            if writeHeader:
-                writer.writeheader()
-                writeHeader = False
-
-            writer.writerow(data)
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Parser for NCBI sequence flatfiles")
-    parser.add_argument('file', help="Sequence file to parse.")
-    parser.add_argument('-p', '--path', default="../data/raw/sequenceFiles", help="Path to sequence file folder.")
-    args = parser.parse_args()
-
-    filePath = Path(args.path, args.file)
-    if not filePath.exists():
-        print(f"No file found at  {filePath}")
-        sys.exit()
-
-    process(filePath)
+        origin = "".join(line.split(" ", 1)[1].replace(" ", "") for line in originBlock.split("\n")[1:-1])
+        return {"origin": origin}
