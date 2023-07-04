@@ -5,7 +5,7 @@ from tools.processing import extract
 import pandas as pd
 
 def combine(folderPath: Path, outputFilePath: Path):
-    writer = Writer(folderPath, "seqChunks", "chunk")
+    writer = Writer(outputFilePath.parent, "seqChunks", "chunk")
     flatfileParser = FlatFileParser()
     records = []
     verbose = True

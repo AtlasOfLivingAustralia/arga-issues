@@ -24,7 +24,11 @@ class FlatFileParser:
 
     def parse(self, filePath: Path, verbose: bool = False) -> list[dict]:
         with open(filePath) as fp:
-            data = fp.read()
+            try:
+                data = fp.read()
+            except UnicodeDecodeError:
+                print(f"Failed to read file: {filePath}")
+                return []
 
         # Cut off header of file
         firstLocusPos = data.find("LOCUS")
@@ -46,8 +50,10 @@ class FlatFileParser:
 
             # Attach seq file path and fasta file
             # output["seq_file"] = f"{self.seqBaseURL}{filePath.name}.gz"
-            output["genbank_url"] = f"{self.genbankBaseURL}{output['version']}"
-            output["fasta_url"] = f"{self.genbankBaseURL}{output['version']}{self.fastaSuffix}"
+            version = output.get("version", "")
+            if version:
+                output["genbank_url"] = f"{self.genbankBaseURL}{output['version']}"
+                output["fasta_url"] = f"{self.genbankBaseURL}{output['version']}{self.fastaSuffix}"
             records.append(output)
 
         if verbose:
@@ -111,12 +117,12 @@ class FlatFileParser:
         info = self.getHeadingBlocks(infoBlock, headings, ["ORGANISM"])
         try:
             organism = info.pop("organism")
+            info["species"] = organism[0]
+            info["higherClassification"] = ''.join(organism[1:])
         except:
             print(infoBlock)
             print(info)
-        info["species"] = organism[0]
-        info["higherClassification"] = ''.join(organism[1:])
-
+        
         # Split the compacted locus line of values into separate values
         locusHeadings = ["locus", "basepairs", "", "type", "shape", "val", "date"]
         splitValues = [value.strip() for value in info["locus"].split()]
