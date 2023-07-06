@@ -9,11 +9,15 @@ if __name__ == '__main__':
     sources, args = parser.parse_args()
     for source in sources:
         dwcFiles = source.getDWCFiles(args.filenums)
-        for idx, file in enumerate(dwcFiles, start=1):
+        for file in dwcFiles:
+            if not file.filePath.exists():
+                print(f"DwC file {file.filePath} does not exist, have you run preDwCCreate.py?")
+                continue
+
             df = next(file.loadDataFrameIterator(args.entries))
 
             if args.excludeUnmapped:
                 keepColls = [col for col in df.columns if not col.startswith(source.location)]
                 df = df[keepColls]
 
-            df.to_csv(file.directory.parent / f"dwc_example_{idx}.csv", index=False)
+            df.to_csv(file.directory.parent / f"{file.filePath.name}_example.csv", index=False)
