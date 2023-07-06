@@ -61,7 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--tsv', action="store_true", help="Output as tsv instead")
     parser.add_argument('-u', '--uniques', action="store_true", help="Find unique values only, ignoring record")
     parser.add_argument('-c', '--chunksize', type=int, default=1024*1024, help="File chunk size to read at a time")
-    parser.add_argument('-r', '--sample', type=int, default=0, help="Amount of random samples to take per chunk")
+    parser.add_argument('-r', '--samples', type=int, default=0, help="Amount of random samples to take per chunk")
     parser.add_argument('-s', '--seed', type=int, default=-1, help="Specify seed to run")
 
     sources, args = parser.parse_args()
