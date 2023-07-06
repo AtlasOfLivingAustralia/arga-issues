@@ -6,8 +6,8 @@
     "subDirectoryDepth": 0,
     "globalProcessing": [
         {
-            "path": "tools/processing/extract.py",
-            "function": "process",
+            "path": "lib/tools/extractor.py",
+            "function": "Extractor.extract",
             "args": [
                 "{INPUT, 0, FILEPATH}",
                 "{PATH, PROCESSING}"

@@ -5,8 +5,8 @@
     "regexMatch": "gb[a-z]{3}\\d+\\.seq\\.gz",
     "globalProcessing": [
         {
-            "path": "tools/processing/extract.py",
-            "function": "process",
+            "path": "lib/tools/extractor.py",
+            "function": "Extractor.extract",
             "args": [
                 "{INPUT, 0, FILEPATH}",
                 "{PATH, PROCESSING}"
