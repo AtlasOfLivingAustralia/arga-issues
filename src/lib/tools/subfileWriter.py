@@ -52,7 +52,7 @@ class Writer:
         self.writtenFiles.append(filePath)
         self.globalColumns = cmn.extendUnique(self.globalColumns, df.columns)
 
-    def oneFile(self, outputFilePath: Path, keepWrittenFile: False) -> None:
+    def oneFile(self, outputFilePath: Path, keepWrittenFile: bool = False) -> None:
         if outputFilePath.exists():
             print(f"Removing old file {outputFilePath}")
             outputFilePath.unlink()
