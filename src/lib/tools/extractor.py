@@ -15,6 +15,14 @@ class ExtractTypes(Enum):
 class Extractor:
     extensions = [ext.value for ext in ExtractTypes]
 
+    def __init__(self, outputDir: str = "", addSuffix: str = "", overwrite: bool = False):
+        self.outputDir = outputDir
+        self.addSuffix = addSuffix
+        self.overwrite = overwrite
+
+    def run(self, filePath: str):
+        return self.extract(filePath, self.outputDir, self.addSuffix, self.overwrite)
+
     @staticmethod
     def extract(filePath: str, outputDir: str = "", addSuffix: str = "", overwrite: bool = False) -> Path | None:
         filePath: Path = Path(filePath)

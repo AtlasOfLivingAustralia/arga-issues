@@ -1,11 +1,13 @@
 from pathlib import Path
 from sourceProcessing.ncbi.flatfileParser import FlatFileParser
-from lib.subfileWriter import Writer
-from tools.processing import extract
+from lib.tools.subfileWriter import Writer
+from lib.tools.extractor import Extractor
 import pandas as pd
 
 def combine(folderPath: Path, outputFilePath: Path):
     writer = Writer(outputFilePath.parent, "seqChunks", "chunk")
+    extractor = Extractor(outputFilePath.parent)
+
     flatfileParser = FlatFileParser()
     records = []
     verbose = True
@@ -14,7 +16,7 @@ def combine(folderPath: Path, outputFilePath: Path):
         if verbose:
             print(f"Extracting file {filePath}")
             
-        extractedFile = extract.process(filePath, outputFilePath.parent)
+        extractedFile = extractor.run(filePath)
 
         if verbose:
             print(f"Parsing file {extractedFile}")
