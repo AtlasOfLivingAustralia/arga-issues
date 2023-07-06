@@ -29,8 +29,8 @@ class DWCProcessor:
                 self.remapper.createMappings(chunk.columns)
              
             print(f"At chunk: {idx}", end='\r')
-            df = self.remapper.applyMap(df, False)
-            df = dff.applyExclusions(df, self.exclude)
+            df = self.remapper.applyMap(chunk, False)
+            # df = dff.applyExclusions(df, self.exclude)
             df = self.applyAugments(df)
             # df = dff.dropEmptyColumns(df)
 

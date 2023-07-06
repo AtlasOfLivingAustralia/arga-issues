@@ -89,7 +89,7 @@ class Remapper:
                 if verbose:
                     print(f"Copied column '{column}' to '{colName}'")
 
-            df.rename({column, newColumnNames[0]}, axis=1, inplace=True) # Rename column to first new name in list
+            df.rename({column: newColumnNames[0]}, axis=1, inplace=True) # Rename column to first new name in list
 
             if verbose:
                 print(f"Renamed column '{column}' to '{newColumnNames[0]}'")

@@ -42,10 +42,14 @@ if __name__ == "__main__":
     documentID = "1dglYhHylG5_YvpslwuRWOigbF5qhU-uim11t_EE_cYE"
 
     sheetIDs = {
-        "ncbi-refseq": 1264640954,
+        "ncbi-refseq": 2003682060,
         "42bp-genomeArk": 84855374,
         "anemone-db": 286004534,
-        "bold-tsv": 1099164815
+        "bold-tsv": 1099164815,
+        "ncbi-biosample": 109194600,
+        "ena-genomes": 1058330275,
+        "tsi-koala": 975794491,
+        "bpa-portal": 1982878906
     }
 
     for database, sheetID in sheetIDs.items():
