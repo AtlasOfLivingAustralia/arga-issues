@@ -3,7 +3,7 @@ import json
 import lib.dataframeFuncs as dff
 from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile
-from lib.remapper import Remapper
+from lib.tools.remapper import Remapper
 import random
 
 def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int, samples: int) -> dict:

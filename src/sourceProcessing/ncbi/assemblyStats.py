@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-from lib.subfileWriter import Writer
+from lib.tools.subfileWriter import Writer
 
 def combine(inputFolder: Path, outputFilePath: Path):
     writer = Writer(outputFilePath.parent, "assemblySections", "section")

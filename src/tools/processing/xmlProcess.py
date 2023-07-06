@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 from xml.etree import cElementTree as ET
-from lib.subfileWriter import Writer
+from lib.tools.subfileWriter import Writer
 import lib.commonFuncs as cmn
 import gc
 import pandas as pd

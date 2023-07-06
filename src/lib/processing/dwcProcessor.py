@@ -1,7 +1,7 @@
 import lib.dataframeFuncs as dff
 from pathlib import Path
-from lib.subfileWriter import Writer
-from lib.remapper import Remapper
+from lib.tools.subfileWriter import Writer
+from lib.tools.remapper import Remapper
 import lib.processing.processingFuncs as pFuncs
 
 class DWCProcessor:
