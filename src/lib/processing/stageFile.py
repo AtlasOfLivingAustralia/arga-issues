@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 from enum import Enum
 import pandas as pd
+import lib.dataframeFuncs as dff
+from collections.abc import Iterator
 
 if TYPE_CHECKING:
     from lib.processing.stageScript import StageScript
@@ -36,6 +38,9 @@ class StageFile:
     def loadDataFrame(self) -> pd.DataFrame:
         return pd.read_csv(self.filePath, sep=self.separator, header=self.firstRow, encoding=self.encoding)
     
+    def loadDataFrameIterator(self, chunkSize: int = 1024 * 1024) ->  Iterator[pd.DataFrame]:
+        return dff.chunkGenerator(self.filePath, chunkSize, self.separator, self.firstRow, self.encoding)
+
     def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0) -> None:
         if self.filePath.exists():
             if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE):
