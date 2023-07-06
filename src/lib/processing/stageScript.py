@@ -114,12 +114,11 @@ class StageDWCConversion:
             return
         
         print(f"Creating DWC from preDWC file {self.input.filePath}")
-
         self.dwcProcessor.process(
             self.input.filePath,
-            self.getOutput(),
+            self.outputFileName,
             self.input.separator,
             self.input.firstRow,
             self.input.encoding,
-            overwriteAmount > 0
+            overwriteStage == StageFileStep.DWC and overwriteAmount > 0
         )

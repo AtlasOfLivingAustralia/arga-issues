@@ -19,7 +19,8 @@ class DWCProcessor:
         self.writer = Writer(outputDir, "dwcConversion", "dwcChunk")
         self.remapper = Remapper(location)
 
-    def process(self, inputPath: Path, outputFilePath: Path, sep: str, header: int, encoding: str, overwrite: bool = False):
+    def process(self, inputPath: Path, outputFileName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False) -> Path:
+        outputFilePath = self.outputDir / outputFileName
         if outputFilePath.exists() and not overwrite:
             print(f"{outputFilePath} already exists, exiting...")
             return
@@ -37,6 +38,7 @@ class DWCProcessor:
             self.writer.writeDF(df)
 
         self.writer.oneFile(outputFilePath)
+        return outputFilePath
 
     def applyAugments(self, df):
         for augment in self.augmentSteps:

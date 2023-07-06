@@ -24,7 +24,7 @@ class Writer:
 
     def writing(func):
         def wrapper(self, *args):
-            if not self.writtenFiles:
+            if not self.subfileDir.exists():
                 self.subfileDir.mkdir(parents=True, exist_ok=True)
 
             func(self, *args)
@@ -52,7 +52,7 @@ class Writer:
         self.writtenFiles.append(filePath)
         self.globalColumns = cmn.extendUnique(self.globalColumns, df.columns)
 
-    def oneFile(self, outputFilePath: Path) -> None:
+    def oneFile(self, outputFilePath: Path, keepWrittenFile: False) -> None:
         if outputFilePath.exists():
             print(f"Removing old file {outputFilePath}")
             outputFilePath.unlink()
@@ -61,6 +61,8 @@ class Writer:
             print(f"Only single subfile, moving {self.writtenFiles[0]} to {outputFilePath}")
             self.writtenFiles[0].rename(outputFilePath)
             self.subfileDir.rmdir()
+            if not keepWrittenFile:
+                self.writtenFiles = []
             return
 
         print("Combining into one file")
@@ -80,4 +82,7 @@ class Writer:
                 file.unlink()
         print(f"\nCreated a single file at {outputFilePath}")
         self.subfileDir.rmdir()
-        self.writtenFiles = [outputFilePath]
+        if keepWrittenFile:
+            self.writtenFiles = [outputFilePath]
+        else:
+            self.writtenFiles = []

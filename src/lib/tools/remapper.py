@@ -55,6 +55,7 @@ class Remapper:
 
     def createMappings(self, columns: list, skipRemap: list = []) -> dict:
         # self.mappedColumns = {column: (self.mapColumn[column] if column not in skipRemap else []) for column in columns}
+        self.mappedColumns = {} # Clear mapped columns
 
         for column in columns:
             if column in skipRemap:
