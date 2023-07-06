@@ -120,5 +120,5 @@ class StageDWCConversion:
             self.input.separator,
             self.input.firstRow,
             self.input.encoding,
-            overwriteStage == StageFileStep.DWC and overwriteAmount > 0
+            overwriteAmount > 0
         )
