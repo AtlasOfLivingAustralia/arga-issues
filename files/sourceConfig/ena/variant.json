@@ -3,12 +3,13 @@
     "dataLocation": "https://ftp.ebi.ac.uk/pub/databases/eva/rs_releases/release_4/by_species/",
     "subDirectoryDepth": -1,
     "regexMatch": ".*\\.txt\\.gz",
-    "processing": [
+    "globalProcessing": [
         {
-            "script": "tools/processing/extract.py",
-            "function": "process",
+            "path": "lib/tools/extractor.py",
+            "function": "Extractor.extract",
             "args": [
-                "{INPUT, 0, FILEPATH}"
+                "{INPUT, 0, FILEPATH}",
+                "{PATH, PROCESSING}"
             ],
             "outputs": [
                 "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM}"

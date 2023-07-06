@@ -3,7 +3,7 @@ from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
 from lib.sourceObjs.systemManager import SystemManager
 from lib.processing.stageFile import StageFile, StageFileStep
-from lib.crawler import Crawler
+from lib.tools.crawler import Crawler
 
 class Database:
     def __init__(self, location: str, database: str, properties: dict = {}):

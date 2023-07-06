@@ -9,4 +9,6 @@ def importModule(path: str):
 
 def importFunction(path: str, func: str):
     module = importModule(path)
-    return getattr(module, func)
+    for obj in func.split("."):
+        module = getattr(module, obj)
+    return module
