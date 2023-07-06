@@ -1,66 +1,80 @@
 import pandas as pd
 import json
-import lib.commonFuncs as cmn
-import lib.config as cfg
 import lib.dataframeFuncs as dff
-import numpy as np
 from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile
-from pathlib import Path
+from lib.remapper import Remapper
+import random
 
-def collectFields(stageFile: StageFile, prefix: str, outputFile: Path, entryLimit: int, overwrite: bool = False):
-    dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
-    customLookup = cmn.loadFromJson(cfg.filePaths.otherMapping)
+def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int, samples: int) -> dict:
+    remapper = Remapper(location)
+    chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
 
     data = {}
-    with pd.read_csv(stageFile.filePath, encoding=stageFile.encoding, on_bad_lines="skip", chunksize=1024, delimiter=stageFile.separator, header=stageFile.firstRow, dtype=object) as reader:
-        for idx, chunk in enumerate(reader):
-            print(f"Scanning chunk: {idx}", end='\r')
-            if not data: # Empty data dict, initial pass
-                newColMap, _ = dff.createMappings(chunk.columns, dwcLookup, customLookup, prefix, prefixMissing=False)
-                for column in chunk.columns:
-                    values = chunk[column].tolist()
-                    values = [v for index, v in enumerate(values) if v not in values[:index] and v not in [np.NaN, np.nan]]
+    for idx, chunk in enumerate(chunkGen):
+        print(f"Scanning chunk: {idx}", end='\r')
 
-                    data[column] = {"maps to": newColMap[column], "values": values[:entryLimit]}
+        if idx == 0:
+            mappings = remapper.createMappings(chunk.columns)
+            data = {column: {"Maps to": mappings[column], "values": []} for column in chunk.columns}
 
-            else: # Second pass onwards
-                for column in chunk.columns:
-                    if len(data[column]["values"]) >= entryLimit:
-                        continue
+        for column in chunk.columns:
+            columnValues = data[column]["values"] # Reference pointer to values
+            seriesValues = list(set(chunk[column].dropna().tolist())) # Convert column to list of unique values
+        
+            if len(seriesValues) <= samples:
+                columnValues.extend(seriesValues)
+                continue
 
-                    values = chunk[column].tolist()
-                    lst = data[column]["values"]
-                    for v in values:
-                        if v in lst or v in [np.NaN, np.nan]:
-                            continue
+            columnValues.extend(random.sample(seriesValues, samples))
 
-                        lst.append(v)
-                        if len(lst) >= entryLimit:
-                            break
+    # Shuffle entries and take only up to entry limit
+    for column, properties in data.items():
+        random.shuffle(list(set(properties["values"]))) # Shuffle items inplace
+        properties["values"] = properties["values"][:entryLimit] # Only keep up to entry limit
 
-            if all(len(info["values"]) >= entryLimit for info in data.values()):
-                break
+    return data
+
+def collectRecords(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int, samples: int, seed: int) -> dict:
+    remapper = Remapper(location)
+    chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
+
+    data = {}
+    dfSamples = []
+    for idx, chunk in enumerate(chunkGen):
+        print(f"Scanning chunk: {idx}", end='\r')
+        dfSamples.append(chunk.sample(n=samples, random_state=seed))
+
+    df = pd.concat(dfSamples)
+    emptyDF = df.isna().sum(axis=1)
+    indexes = [idx for idx, _ in sorted(emptyDF.items(), key=lambda x: x[1])]
     
-    print() # Add line break after counter
+    reducedDF = df.loc[indexes[:entryLimit]]
+    mappings = remapper.createMappings(reducedDF.columns)
+
+    data = {column: {"Maps to": mappings[column], "values": reducedDF[column].tolist()} for column in reducedDF.columns}
     return data
 
 if __name__ == '__main__':
     parser = SourceArgParser(description="Get column names of preDwc files")
-    parser.add_argument('-e', '--entries', type=int, default=10, help="Number of unique entries to get")
+    parser.add_argument('-e', '--entries', type=int, default=50, help="Number of unique entries to get")
     parser.add_argument('-t', '--tsv', action="store_true", help="Output as tsv instead")
-    
+    parser.add_argument('-u', '--uniques', action="store_true", help="Find unique values only, ignoring record")
+    parser.add_argument('-c', '--chunksize', type=int, default=1024*1024, help="File chunk size to read at a time")
+    parser.add_argument('-r', '--samples', type=int, default=0, help="Amount of random samples to take per chunk")
+    parser.add_argument('-s', '--seed', type=int, default=-1, help="Specify seed to run")
+
     sources, args = parser.parse_args()
     entryLimit = args.entries
 
     for source in sources:
         outputDir = source.getBaseDir()
         extension = "tsv" if args.tsv else "json"
-        output = outputDir / f"fieldExamples.{extension}"
+        # output = outputDir / f"fieldExamples.{extension}"
 
-        if output.exists() and not args.overwrite:
-            print(f"Output file {output} already exists, please run with overwrite flag (-o) to overwrite")
-            continue
+        # if output.exists() and args.overwrite <= 0:
+        #     print(f"Output file {output} already exists, please run with overwrite flag (-o) to overwrite")
+        #     continue
 
         stageFiles = source.getPreDWCFiles(args.filenums)
         for stageFile in stageFiles:
@@ -68,14 +82,27 @@ if __name__ == '__main__':
                 print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
                 continue
 
-            data = collectFields(stageFile, source.getBaseDir(), output, args.entries, args.overwrite > 0)
-                
-            print(f"Writing to file {output}")
-            if args.tsv:
-                dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
-                df = pd.DataFrame.from_dict(dfData)
-                df.index += 1 # Increment index so output is 1-indexed numbers
-                df.to_csv(output, sep="\t", index_label="Example #")
-            else:
-                with open(output, 'w') as fp:
-                    json.dump(data, fp, indent=4)
+        if not stageFile.filePath.exists():
+            print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
+            continue
+
+        samples = args.samples if args.samples > args.entries else args.entries # Number of samples must be greater than the number of entries
+        seed = args.seed if args.seed >= 0 else random.randrange(2**32 - 1) # Max value for pandas seed
+        random.seed(seed)
+
+        if args.uniques:
+            data = collectFields(stageFile, source.location, args.entries, args.chunksize, samples)
+            output = outputDir / f"fieldExamples_{args.chunksize}_{seed}.{extension}"
+        else:
+            data = collectRecords(stageFile, source.location, args.entries, args.chunksize, samples, seed)
+            output = outputDir / f"recordExamples_{args.chunksize}_{seed}.{extension}"
+
+        print(f"Writing to file {output}")
+        if args.tsv:
+            dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
+            df = pd.DataFrame.from_dict(dfData)
+            df.index += 1 # Increment index so output is 1-indexed numbers
+            df.to_csv(output, sep="\t", index_label="Example #")
+        else:
+            with open(output, 'w') as fp:
+                json.dump(data, fp, indent=4)

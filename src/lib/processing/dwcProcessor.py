@@ -1,17 +1,13 @@
-import lib.commonFuncs as cmn
-import lib.config as cfg
 import lib.dataframeFuncs as dff
 from pathlib import Path
 from lib.subfileWriter import Writer
+from lib.remapper import Remapper
 import lib.processing.processingFuncs as pFuncs
 
 class DWCProcessor:
-    dwcLookup = cmn.loadFromJson(cfg.filePaths.dwcMapping)
-    customLookup = cmn.loadFromJson(cfg.filePaths.otherMapping)
-    exclude = cmn.loadFromJson(cfg.filePaths.excludedEntries)
 
-    def __init__(self, prefix: str, dwcProperties: dict, outputDir: Path):
-        self.prefix = prefix
+    def __init__(self, location: str, dwcProperties: dict, outputDir: Path):
+        self.location = location
         self.dwcProperties = dwcProperties
         self.outputDir = outputDir
 
@@ -21,19 +17,20 @@ class DWCProcessor:
         self.augmentSteps = [Augment(augProperties) for augProperties in self.augments]
 
         self.writer = Writer(outputDir, "dwcConversion", "dwcChunk")
+        self.remapper = Remapper(location)
 
     def process(self, inputPath: Path, outputFilePath: Path, sep: str, header: int, encoding: str, overwrite: bool = False):
         if outputFilePath.exists() and not overwrite:
             print(f"{outputFilePath} already exists, exiting...")
             return
 
-        for idx, df in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
+        for idx, chunk in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             if idx == 0:
-                newColMap, copyColMap = dff.createMappings(df.columns, self.dwcLookup, self.customLookup, self.prefix)
+                self.remapper.createMappings(chunk.columns)
              
             print(f"At chunk: {idx}", end='\r')
-            df = dff.applyColumnMap(df, newColMap, copyColMap)
-            df = dff.applyExclusions(df, self.exclude)
+            df = self.remapper.applyMap(chunk, False)
+            # df = dff.applyExclusions(df, self.exclude)
             df = self.applyAugments(df)
             # df = dff.dropEmptyColumns(df)
 

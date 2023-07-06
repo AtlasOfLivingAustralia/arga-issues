@@ -8,6 +8,7 @@ excludedEntries = "./files/mapping/exclude.json" # Exclude entries by a DwC fiel
 src = "./src" # Source folder for all python code
 sources = "./files/sourceConfig" # Location of data source config
 data = "./data" # Base location for data
+mapping = "./files/mapping" # Location for map files
 results = "./data/results" # Location to store smaller files from processing larger files
 genFiles = "./files/generated" # Base location of any generated files
 logs = "./logs" # Location of all logging files

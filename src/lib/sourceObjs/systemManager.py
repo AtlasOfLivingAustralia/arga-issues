@@ -66,7 +66,7 @@ class SystemManager:
 
     def buildProcessingChain(self, processingSteps: list[dict], initialInputs: list[StageFile], finalStage: StageFileStep) -> None:
         inputs = initialInputs.copy()
-        for idx, step in enumerate(processingSteps):
+        for idx, step in enumerate(processingSteps, start=1):
             scriptStep = StageScript(step, inputs, self.parser)
             stage = StageFileStep.INTERMEDIATE if idx < len(processingSteps) else finalStage
             inputs = [StageFile(filePath, properties, scriptStep, stage) for filePath, properties in scriptStep.getOutputs()]
@@ -77,7 +77,7 @@ class SystemManager:
         downloadedFile = self.downloadDir / fileName # downloaded files go into download directory
         downloadScript = StageDownloadScript(url, downloadedFile, self.parser, self.user, self.password)
         
-        rawFile = StageFile(downloadedFile, fileProperties, downloadScript, StageFileStep.RAW)
+        rawFile = StageFile(downloadedFile, fileProperties.copy(), downloadScript, StageFileStep.RAW)
         self.stages[StageFileStep.RAW].append(rawFile)
 
         self.buildProcessingChain(processing, [rawFile], StageFileStep.PROCESSED)
@@ -94,6 +94,7 @@ class SystemManager:
     
     def pushPreDwC(self, verbose=False):
         fileStages = (StageFileStep.RAW, StageFileStep.PROCESSED, StageFileStep.COMBINED, StageFileStep.PRE_DWC)
+        
         for idx, stage in enumerate(fileStages[:-1], start=1):
             nextStage = fileStages[idx]
             if self.stages[stage] and not self.stages[nextStage]: # If this stage has files and next doesn't
