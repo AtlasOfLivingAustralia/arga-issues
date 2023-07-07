@@ -56,13 +56,15 @@ class SystemManager:
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             futures = (executor.submit(file.create, (stage, overwrite)) for file in files)
             try:
-                for idx, future in enumerate(concurrent.futures.as_completed(futures)):
+                for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
                     future.result()
                     print(f"Created file: {idx} of {len(files)}", end="\r")
             except KeyboardInterrupt:
+                print("\nExiting...")
+                executor.shutdown(cancel_futures=True)
                 return
-            finally:
-                print()
+            
+            print()
 
     def buildProcessingChain(self, processingSteps: list[dict], initialInputs: list[StageFile], finalStage: StageFileStep) -> None:
         inputs = initialInputs.copy()
