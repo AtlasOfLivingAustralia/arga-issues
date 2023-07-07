@@ -17,12 +17,15 @@ if __name__ == '__main__':
                 continue
 
             df = next(file.loadDataFrameIterator(args.entries))
-            
+
+            fileName = f"{file.filePath.name}_example.csv"
             if args.mapped:
                 unmapped = [col for col in df.columns if not col.startswith(source.location)]
                 df = df[unmapped]
+                fileName = f"{file.filePath.name}_mapped_example.csv"
             elif args.unmapped:
                 mapped = [col for col in df.columns if col.startswith(source.location)]
                 df = df[mapped]
+                fileName = f"{file.filePath.name}_unmapped_example.csv"
 
-            df.to_csv(file.directory.parent / f"{file.filePath.name}_example.csv", index=False)
+            df.to_csv(file.directory.parent / fileName, index=False)
