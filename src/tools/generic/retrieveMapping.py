@@ -35,10 +35,6 @@ def getMappings(df: pd.DataFrame) -> dict:
     return mappings
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Retrieve mapping from google sheet")
-    parser.add_argument("-o", "--overwrite", action="store_true", help="Create brand new map, removing the old one")
-    args = parser.parse_args()
-
     documentID = "1dglYhHylG5_YvpslwuRWOigbF5qhU-uim11t_EE_cYE"
 
     sheetIDs = {
@@ -58,22 +54,8 @@ if __name__ == "__main__":
 
         df = pd.read_csv(buildURL(documentID, sheetID), keep_default_na=False)
         mappings = getMappings(df)
-
         mapFile = cfg.folderPaths.mapping / f"{location}.json"
 
-        if not mapFile.exists() or args.overwrite:
-            with open(mapFile, "w") as fp:
-                json.dump(mappings, fp, indent=4)
-            continue
-
-        with open(mapFile) as fp:
-            columnMap = json.load(fp)
-
-        for keyword, names in mappings.items():
-            if keyword not in columnMap:
-                columnMap[keyword] = names
-            else:
-                columnMap[keyword].extend(names)
-
         with open(mapFile, "w") as fp:
-            json.dump(columnMap, fp, indent=4)
+            json.dump(mappings, fp, indent=4)
+        
