@@ -64,7 +64,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--samples', type=int, default=0, help="Amount of random samples to take per chunk")
     parser.add_argument('-s', '--seed', type=int, default=-1, help="Specify seed to run")
 
-    sources, args = parser.parse_args()
+    sources, selectedFiles, args = parser.parse_args()
     entryLimit = args.entries
 
     for source in sources:
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         #     print(f"Output file {output} already exists, please run with overwrite flag (-o) to overwrite")
         #     continue
 
-        stageFiles = source.getPreDWCFiles(args.filenums)
+        stageFiles = source.getPreDWCFiles(selectedFiles)
         for stageFile in stageFiles:
             if not stageFile.filePath.exists():
                 print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")

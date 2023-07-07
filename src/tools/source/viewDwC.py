@@ -8,9 +8,9 @@ if __name__ == '__main__':
     columnGroup.add_argument("-m", "--mapped", action="store_true", help="Get only mapped fields")
     columnGroup.add_argument("-u", "--unmapped", action="store_true", help="Get only unmapped fields")
     
-    sources, args = parser.parse_args()
+    sources, selectedFiles, args = parser.parse_args()
     for source in sources:
-        dwcFiles = source.getDWCFiles(args.filenums)
+        dwcFiles = source.getDWCFiles(selectedFiles)
         for file in dwcFiles:
             if not file.filePath.exists():
                 print(f"DwC file {file.filePath} does not exist, have you run preDwCCreate.py?")
