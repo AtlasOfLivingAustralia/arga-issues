@@ -1,0 +1,14 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/csiro/processing.py",
+        "function": "build",
+        "args": [
+            "datasets",
+            "{PATH, DOWNLOAD, dataset.csv}"
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, dataset.csv}"
+        ]
+    }
+}

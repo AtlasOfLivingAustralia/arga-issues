@@ -1,0 +1,13 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/csiro/processing.py",
+        "function": "getPortalData",
+        "args": [
+            "{PATH, DOWNLOAD, portalData.csv}"
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, portalData.csv}"
+        ]
+    }
+}

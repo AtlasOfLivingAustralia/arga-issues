@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "specific",
     "files" : [
         {
@@ -10,10 +9,5 @@
                 "firstrow": 1
             }
         }
-    ],
-    "enrich": {
-        "biosample": "ncbi_biosample",
-        "bioproject": "ncbi_bioproject",
-        "taxonomy": "taxonID"
-    }
+    ]
 }

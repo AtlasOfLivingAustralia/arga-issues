@@ -7,18 +7,18 @@ def splitLine(line, endingDivider=True):
         cleanLine = cleanLine.rstrip('|')
     return [element.strip() for element in cleanLine.split('|')]
 
-def process(outputFile):
-    biocolls = cfg.folderPaths.data / "ncbi" / "biocollections"
-    collCodes = biocolls / "Collection_codes.txt"
-    instCodes = biocolls /"Institution_codes.txt"
-    uInstCodes = biocolls / "Unique_institution_codes.txt"
+def process(fileDir, outputFilePath):
+    collCodes = fileDir / "Collection_codes.txt"
+    instCodes = fileDir /"Institution_codes.txt"
+    uInstCodes = fileDir / "Unique_institution_codes.txt"
 
-    for ref, file in enumerate((collCodes, instCodes, uInstCodes)):
+    for ref, filePath in enumerate((collCodes, instCodes, uInstCodes)):
         data = []
 
-        with open(file) as fp:
+        with open(filePath, encoding='utf-8') as fp:
             line = fp.readline()
             headers = splitLine(line)
+            line = fp.readline() # Blank line 2 in every file, call again
             line = fp.readline()
             while line:
                 data.append(splitLine(line, True))
@@ -33,7 +33,4 @@ def process(outputFile):
             output = pd.merge(output, df, 'left')
 
     output.dropna(how='all', axis=1, inplace=True)
-    output.to_csv(biocolls / outputFile, index=False)
-
-if __name__ == '__main__':
-    process("biocollections.csv")
+    output.to_csv(outputFilePath, index=False)

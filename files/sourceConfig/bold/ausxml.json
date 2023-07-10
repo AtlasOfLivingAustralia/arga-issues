@@ -1,10 +1,31 @@
 {
-    "dataType": "source",
     "dbType": "specific",
     "files": [
         {
             "url": "http://v4.boldsystems.org/index.php/API_Public/combined?geo=Australia&format=xml",
-            "downloadedFile": "bold_data.xml"
+            "downloadedFile": "bold_data.xml",
+            "processing": [
+                {
+                    "path": "tools/processing/xmlProcess.py",
+                    "function": "process",
+                    "args": [
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING, bold_xml.csv}"
+                    ],
+                    "kwargs": {
+                        "encoding": "iso-8859-1",
+                        "subfileRows": 1000000,
+                        "compressChild": [
+                            "tracefiles",
+                            "sequences",
+                            "specimen_imagery"
+                        ]
+                    },
+                    "outputs": [
+                        "{PATH, PROCESSING, bold_xml.csv}"
+                    ]
+                }
+            ]
         }
     ]
 }

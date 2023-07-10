@@ -1,5 +1,4 @@
 {
-    "dataType": "enrich",
     "dbType": "specific",
     "files": [
         {
@@ -7,21 +6,25 @@
             "downloadedFile": "taxdump.zip",
             "processing": [
                 {
-                    "script": "tools/processing/extract.py",
+                    "path": "lib/tools/extractor.py",
+                    "function": "Extractor.extract",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING}"
                     ],
                     "outputs": [
-                        "taxdump"
+                        "{PATH, PROCESSING, taxdump}"
                     ]
                 },
                 {
-                    "script": "sourceProcessing/ncbi/buildTaxonomyTree.py",
+                    "path": "sourceProcessing/ncbi/buildTaxonomyTree.py",
+                    "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING, ncbiTaxonomy.csv}"
                     ],
                     "outputs": [
-                        "ncbiTaxonomy.csv"
+                        "{PATH, PROCESSING, ncbiTaxonomy.csv}"
                     ]
                 }
             ]

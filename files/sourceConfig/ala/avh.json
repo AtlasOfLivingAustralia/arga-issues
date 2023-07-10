@@ -1,0 +1,13 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/ala/avh.py",
+        "function": "build",
+        "args": [
+            "{PATH, DOWNLOAD, avh.csv}"
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, avh.csv}"
+        ]
+    }
+}

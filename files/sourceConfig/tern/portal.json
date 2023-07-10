@@ -1,0 +1,13 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/tern/processing.py",
+        "function": "build",
+        "args": [
+            "{PATH, DOWNLOAD, tern.csv}"
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, tern.csv}"
+        ]
+    }
+}

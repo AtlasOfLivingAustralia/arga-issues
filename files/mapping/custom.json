@@ -1,5 +1,5 @@
 {
-    "ncbi_bioproject": ["ProjectID_ArchiveID_accession"],
+    "ncbi_bioproject": ["ArchiveID_accession"],
     "ncbi_biosample": ["LocusTagPrefix_biosample_id", "BioSample_accession"],
     "ncbi_database": ["ProjectID_ArchiveID_archive"],
     "ncbi_archiveID": ["ProjectID_ArchiveID_id"],

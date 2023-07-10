@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "specific",
     "files": [
         {
@@ -7,21 +6,24 @@
             "downloadedFile": "con_tpa_cu.gbff.gz",
             "processing": [
                 {
-                    "script": "tools/processingl/extract.py",
+                    "path": "lib/tools/extractor.py",
+                    "function": "Extractor.extract",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING}"
                     ],
                     "outputs": [
-                        "con_tpa_cu.gbff"
+                        "{PATH, PROCESSING, con_tpa_cu.gbff}"
                     ]
                 },
                 {
-                    "script": "sourceProcessing/ncbi/flatfileParser.py",
+                    "path": "sourceProcessing/ncbi/flatfileParser.py",
+                    "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}"
                     ],
                     "outputs": [
-                        "con_tpa_cu.csv"
+                        "{PATH, PROCESSING, con_tpa_cu.csv}"
                     ]
                 }
             ]
@@ -31,21 +33,23 @@
             "downloadedFile": "tpa_cu.gbff.gz",
             "processing": [
                 {
-                    "script": "processing/general/extract.py",
+                    "path": "lib/tools/extractor.py",
+                    "function": "Extractor.extract",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}"
                     ],
                     "outputs": [
-                        "tpa_cu.gbff"
+                        "{PATH, PROCESSING, tpa_cu.gbff}"
                     ]
                 },
                 {
-                    "script": "processing/ncbi/flatfileParser.py",
+                    "path": "sourceProcessing/ncbi/flatfileParser.py",
+                    "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}"
                     ],
                     "outputs": [
-                        "tpa_cu.csv"
+                        "{PATH, PROCESSING, tpa_cu.csv}"
                     ]
                 }
             ]

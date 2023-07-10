@@ -1,5 +1,4 @@
 {
-    "dataType": "enrich",
     "dbType": "specific",
     "files": [
         {
@@ -7,47 +6,61 @@
             "downloadedFile": "biosample_set.xml.gz",
             "processing": [
                 {
-                    "script": "tools/processing/extract.py",
+                    "path": "lib/tools/extractor.py",
+                "function": "Extractor.extract",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING}"
                     ],
                     "outputs": [
-                        "biosample_set.xml"
+                        "{PATH, PROCESSING, biosample_set.xml}"
                     ]
                 },
                 {
-                    "script": "tools/processing/xmlProcess.py",
+                    "path": "tools/processing/xmlProcess.py",
+                    "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING, biosample.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 1000000,
-                        "onefile": "biosample",
-                        "onlyTags": {
-                            "BioSample": ["accession"],
-                            "Organism": ["taxonomy_id"],
-                            "Contact": ["email", "lab"],
-                            "Link": ["type=url"],
-                            "Attribute": [
-                                "attribute_name=collection date",
-                                "attribute_name=speciment_voucher",
-                                "attribute_name=sex",
-                                "attribute_name=development stage",
-                                "attribute_name=tissue",
-                                "attribute_name=isolate",
-                                "attribute_name=lat_long",
-                                "attribute_name=geo_loc_name"
-                            ]
+                        "subfileRows": 150000,
+                        "compressChild": [
+                            "Paragraph",
+                            "Attribute",
+                            "Model",
+                            "Id",
+                            "Link",
+                            "Synonym"
+                        ],
+                        "collectionExtract": {
+                            "Attribute": {
+                                "attribute_name": {
+                                    "collection date": "collection date",
+                                    "specimen_voucher": "specimen voucher",
+                                    "sex": "sex",
+                                    "developmental stage": "developmental stage",
+                                    "tissue": "tissue",
+                                    "isolate": "isolate",
+                                    "lat_lon": "lat long",
+                                    "geo_loc_name": "geo loc name"
+                                }
+                            }
                         }
                     },
                     "outputs": [
-                        "biosample.csv"
+                        "{PATH, PROCESSING, biosample.csv}"
                     ]
                 }
             ]
         }
     ],
     "dwcProperties": {
-        "augmentScript": "sourceProcessing/ncbi/bioSamplePostDWC.py"
+        "augment": [
+            {
+                "path": "sourceProcessing/ncbi/postDWC.py",
+                "function": "biosample"
+            }
+        ]
     }
 }

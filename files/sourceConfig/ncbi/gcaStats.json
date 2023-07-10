@@ -1,0 +1,19 @@
+{
+    "dataType": "enrich",
+    "dbType": "location",
+    "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/",
+    "regexMatch": ".*assembly_stats\\.txt",
+    "combineProcessing": [
+        {
+            "path": "sourceProcessing/ncbi/assemblyStats.py",
+            "function": "combine",
+            "args": [
+                "{PATH, DOWNLOAD}",
+                "{PATH, PROCESSING, gcaStats.csv}"
+            ],
+            "outputs": [
+                "{PATH, PROCESSING, gcaStats.csv}"
+            ]
+        }
+    ]
+}

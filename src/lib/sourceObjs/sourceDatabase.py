@@ -1,48 +1,25 @@
 import lib.config as cfg
-import lib.commonFuncs as cmn
-import importlib
-from abc import ABC, abstractclassmethod
 from pathlib import Path
 from lib.sourceObjs.dbTypes import DBType
-from lib.sourceObjs.files import DBFile, PreDWCFile
-from lib.sourceObjs.processing import Processor
+from lib.sourceObjs.systemManager import SystemManager
+from lib.processing.stageFile import StageFile, StageFileStep
+from lib.tools.crawler import Crawler
 
-class Database(ABC):
-
-    def __init__(self, dataType: str, location: str, database: str, properties: dict = {}, enrichDBs: dict = {}):
-        self.dataType = dataType
+class Database:
+    def __init__(self, location: str, database: str, properties: dict = {}):
         self.location = location
         self.database = database
-        self.enrichDBs = enrichDBs
         self.dbType = DBType.UNKNOWN
 
         # Standard properties
-        self.authFile = properties.pop("auth", None)
-        self.globalProcessing = properties.pop("globalProcessing", {})
-        self.combineProcessing = properties.pop("combineProcessing", {})
-        self.fileProperties = properties.pop("fileProperties", {})
+        self.authFile = properties.pop("auth", "")
+        self.globalProcessing = properties.pop("globalProcessing", [])
+        self.combineProcessing = properties.pop("combineProcessing", [])
         self.dwcProperties = properties.pop("dwcProperties", {})
-        self.enrichDict = properties.pop("enrich", {}) # Dict to store enrich info
-        
-        self.processor = None
-
-        self.dbFiles = []
-        self.preDWCFiles = []
-        self.outputs = []
-        self.enrichDBs = {} # Dict to store references to enrich dbs
 
         self.locationDir = cfg.folderPaths.data / location
         self.databaseDir = self.locationDir / database
-
-        self.user = ""
-        self.password = ""
-
-        if self.authFile is not None:
-            with open(self.databaseDir / self.authFile) as fp:
-                data = fp.read().splitlines()
-
-            self.user = data[0].split('=')[1]
-            self.password = data[1].split('=')[1]
+        self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.authFile)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -53,108 +30,69 @@ class Database(ABC):
     def __repr__(self):
         return str(self)
 
-    @abstractclassmethod
-    def postInit(self):
-        pass
+    def postInit(self, properties: dict) -> None:
+        raise NotImplementedError
 
-    @abstractclassmethod
-    def prepare(self):
-        pass
+    def prepare(self) -> None:
+        raise NotImplementedError
+    
+    def download(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
+        self.systemManager.create(StageFileStep.RAW, fileNumbers, overwrite)
 
-    @abstractclassmethod
-    def createPreDwC(self):
-        pass
+    def createPreDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
+        self.systemManager.create(StageFileStep.PRE_DWC, fileNumbers, overwrite)
 
-    @abstractclassmethod
-    def createDwC(self):
-        pass
+    def createDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
+        self.systemManager.create(StageFileStep.DWC, fileNumbers, overwrite)
 
-    def createDirectory(self):
+    def createDirectory(self) -> None:
         print(f"Creating directory for data: {str(self.databaseDir)}")
         self.databaseDir.mkdir(parents=True, exist_ok=True)
 
-    def checkLeftovers(self, properties: list[dict]):
+    def checkLeftovers(self, properties: dict) -> None:
         for property in properties:
             print(f"{self.location}-{self.database} unknown property: {property}")
 
-    def addDBFile(self, url: str, fileName: Path, processingSteps: list[dict]) -> list[Path]:
-        processor = Processor(self.databaseDir, [fileName], processingSteps)
-        dbFile = DBFile(url, self.databaseDir, fileName, processor)
-        self.dbFiles.append(dbFile)
-        return dbFile.getOutputs()
-
-    def addPreDWCFile(self, fileName: Path, properties: dict):
-        preDWCFile = PreDWCFile(self.databaseDir, fileName, self.location, properties, self.dwcProperties, self.enrichDBs)
-        self.preDWCFiles.append(preDWCFile)
-        self.outputs.append(self.databaseDir / preDWCFile.getOutput())
-    
-    def getDataType(self):
-        return self.dataType
-
-    def getDBType(self):
+    def getDBType(self) -> str:
         return self.dbType
+    
+    def getBaseDir(self) -> Path:
+        return self.databaseDir
+    
+    def getDownloadedFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
+        return self.selectFiles(self.systemManager.getFiles(StageFileStep.RAW), selectIndexes, "RAW")
+    
+    def getPreDWCFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
+        return self.selectFiles(self.systemManager.getFiles(StageFileStep.PRE_DWC), selectIndexes, "PreDWC")
+    
+    def getDWCFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
+        return self.selectFiles(self.systemManager.getFiles(StageFileStep.DWC), selectIndexes, "DWC")
 
-    def validIdx(self, fileList: list, idx: int) -> bool:
-        return idx >= 0 and idx < len(fileList)
+    def selectFiles(self, fileList: list[StageFile], indexes: list[int], stage: str) -> list[StageFile]:
+        if not indexes:
+            return fileList
+        
+        selectedFiles = []
+        invalidIndexes = []
+        for index in indexes:
+            if index >= 0 or index < len(fileList):
+                selectedFiles.append(fileList[index])
+            else:
+                invalidIndexes.append(index)
 
-    def getSourceFile(self, idx: int) -> DBFile:
-        if not self.validIdx(self.dbFiles, idx):
-            raise Exception(f"Invalid database file selected: {idx}") from FileNotFoundError
-        return self.dbFiles[idx]
-
-    def getPreDWCFile(self, idx: int) -> PreDWCFile:
-        if not self.validIdx(self.preDWCFiles, idx):
-            raise Exception(f"Invalid preDWC file selected: {idx}") from FileNotFoundError
-
-        return self.preDWCFiles[idx]
-
-    def getOutputFile(self, idx: int):
-        if not self.validIDx(self.preDWCFiles, idx):
-            raise Exception(f"Invalid output file selected: {idx}") from FileNotFoundError
-
-        return self.outputs[idx]
-
-    def downloadFile(self, idx):
-        file = self.getSourceFile(idx)
-        file.download(user=self.user, password=self.password)
-
-    def downloadAllFiles(self):
-        for idx, _ in enumerate(self.dbFiles):
-            self.downloadFile(idx)
-
-    def processFile(self, idx):
-        file = self.getSourceFile(idx)
-        file.process()
-
-    def processAllFiles(self):
-        for idx, _ in enumerate(self.dbFiles):
-            self.processFile(idx)
-
-    def combine(self):
-        if not self.combineProcessing:
-            return
-
-        self.processor.process()
-
-    def convertDwC(self, idx):
-        file = self.getPreDWCFile(idx)
-        file.convert()
-
-    def convertAllDwC(self):
-        for idx, _ in enumerate(self.preDWCFiles):
-            self.convertDwC(idx)
+        print(f"Invalid {stage} files selected: {invalidIndexes}")
+        return selectedFiles
 
 class SpecificDB(Database):
 
-    def postInit(self, properties):
+    def postInit(self, properties: dict) -> None:
         self.dbType = DBType.SPECIFIC
         self.files = properties.pop("files", None)
 
         if self.files is None:
             raise Exception("No provided files for source") from AttributeError
 
-    def prepare(self):
-        outputs = []
+    def prepare(self) -> None:
         for file in self.files:
             url = file.get("url", None)
             fileName = file.get("downloadedFile", None)
@@ -167,97 +105,79 @@ class SpecificDB(Database):
             if fileName is None:
                 raise Exception("No filename provided to download to") from AttributeError
             
-            out = self.addDBFile(url, Path(fileName), processingSteps)
-            outputs.extend(out)
+            self.systemManager.addDownloadURLStage(url, fileName, processingSteps, fileProperties)
+
+        if self.combineProcessing:
+            self.systemManager.addCombineStage(self.combineProcessing)
         
-         # If no processing for combination is required
-        if not self.combineProcessing:
-            for file in outputs:
-                self.addPreDWCFile(file, fileProperties)
-            return
-
-        # Outputs require combining, so preDWC files are a result of combining
-        self.processor = Processor(self.databaseDir, outputs, self.combineProcessing)
-        for file in self.processor.getOutputFiles():
-            self.addPreDWCFile(file, self.fileProperties)
-
-    def createPreDwC(self):
-        self.downloadAllFiles()
-        self.processAllFiles()
-        self.combine()
-
-    def createDwC(self):
-        self.createPreDwC()
-        self.convertAllDwC()
+        self.systemManager.pushPreDwC()
 
 class LocationDB(Database):
 
-    def postInit(self, properties):
+    def postInit(self, properties: dict) -> None:
         self.dbType = DBType.LOCATION
         self.localFile = "files.txt"
-        self.subDirDepthLimit = 20
 
+        self.fileProperties = properties.pop("fileProperties", {})
         self.fileLocation = properties.pop("dataLocation", None)
+        self.downloadLink = properties.pop("downloadLink", "")
         self.regexMatch = properties.pop("regexMatch", ".*")
-        self.maxSubDirDepth = properties.pop("subDirectoryDepth", self.subDirDepthLimit)
-
-        # Never travel to depth greater than sub directory depth limit
-        if self.maxSubDirDepth < 0:
-            self.maxSubDirDepth = self.subDirDepthLimit
-        else:
-            self.maxSubDirDepth = min(self.maxSubDirDepth, self.subDirDepthLimit)
+        self.maxSubDirDepth = properties.pop("subDirectoryDepth", -1)
+        self.folderPrefix = properties.pop("folderPrefix", False)
 
         if self.fileLocation is None:
             raise Exception("No file location for source") from AttributeError
+        
+        self.crawler = Crawler(self.databaseDir, self.regexMatch, self.downloadLink, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
 
-    def prepare(self, recrawl=False):
+    def prepare(self, recrawl: bool = False) -> None:
         localFilePath = self.databaseDir / self.localFile
+
         if not recrawl and localFilePath.exists():
             with open(localFilePath) as fp:
-                lines = fp.read().splitlines()
+                urls = fp.read().splitlines()
+        else:
+            localFilePath.unlink(True)
+            
+            self.crawler.crawl(self.fileLocation)
+            urls = self.crawler.getURLList()
 
-            for url in lines:
-                fileName = url.rsplit('/', 1)[1]
-                out = self.addDBFile(url, Path(fileName), self.globalProcessing)
-                for file in out:
-                    self.addPreDWCFile(file, self.fileProperties)
+            self.databaseDir.mkdir(parents=True, exist_ok=True) # Create base directory if it doesn't exist to put the file
+            with open(localFilePath, 'w') as fp:
+                fp.write("\n".join(urls))
 
-            return
+        for url in urls:
+            fileName = self.getFileNameFromURL(url)
+            self.systemManager.addDownloadURLStage(url, fileName, self.globalProcessing, self.fileProperties)
 
-        localFilePath.unlink(True)
-        print("Crawling...")
+        if self.combineProcessing:
+            self.systemManager.addCombineStage(self.combineProcessing)
 
-        foundFiles = cmn.crawl(self.fileLocation, self.regexMatch, self.maxSubDirDepth, user=self.user, password=self.password)
-        for file in foundFiles:
-            with open(localFilePath, 'a') as fp:
-                fp.write(file + "\n")
+        self.systemManager.pushPreDwC()
 
-            fileName = file.rsplit('/')[1]
-            out = self.addDBFile(file, Path(fileName), self.combineProcessing)
-            for outputFile in out:
-                self.addPreDWCFile(outputFile, self.fileProperties)
+    def getFileNameFromURL(self, url: str) -> str:
+        urlParts = url.split('/')
+        fileName = urlParts[-1]
 
-    def createPreDwC(self, firstFile, fileAmount):
-        for idx in range(firstFile, firstFile + fileAmount):
-            self.downloadFile(idx)
-            self.processFile(idx)
+        if not self.folderPrefix:
+            return fileName
 
-    def createDwC(self, firstFile, fileAmount):
-        self.createPreDwC(firstFile, fileAmount)
-        for idx in range(firstFile, firstFile + fileAmount):
-            self.convertDwC(idx)
+        folderName = urlParts[-2]
+        return f"{folderName}_{fileName}"
 
 class ScriptDB(Database):
 
-    def postInit(self, properties):
-        self.dbType = DBType.SCRIPT
+    def postInit(self, properties: dict) -> None:
+        self.dbType = DBType.SCRIPTDATA
         self.script = properties.pop("script", None)
 
         if self.script is None:
-            raise Exception("No provided files for source") from AttributeError
+            raise Exception("No script specified") from AttributeError
+        
+    def prepare(self) -> None:
+        self.systemManager.addRetrieveScriptStage(self.script, self.globalProcessing)
 
-    def prepare(self):
-        scriptPath = Path(self.script)
-        pathString = str(scriptPath.parent / scriptPath.stem)
-        pathString = pathString.replace("\\", ".")
-        module = importlib.import_module(pathString)
+        if self.combineProcessing:
+            self.systemManager.addCombineStage(self.combineProcessing)
+
+        self.systemManager.pushPreDwC()

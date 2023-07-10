@@ -1,0 +1,15 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/reefGenomics/processing.py",
+        "function": "build",
+        "args": [
+            "{PATH, DOWNLOAD}",
+            ["project", "organism"]
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, project.csv}",
+            "{PATH, DOWNLOAD, organism.csv}"
+        ]
+    }
+}

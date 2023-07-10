@@ -22,18 +22,31 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-# data folder
-data/*
+# Local Folders #
+data
+files/generated
+files/mapping
+src/unsortedFiles
+logs
+env
+
+# Data Files #
 *.tsv
 *.csv
 *.db
 *.db-journal
 *.xml
-generatedFiles/*
-logs
+
+# Test Data #
+src/tests/*/*.txt
+src/tests/*/*.json
+src/tests/*/testing.py
+
+# Hidden Files #
 .history
 .env
-env
-*__pycache__
 *.DS_Store
 *.code-workspace
+
+# Cached Files #
+*__pycache__

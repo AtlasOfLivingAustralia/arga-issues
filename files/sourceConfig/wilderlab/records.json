@@ -1,0 +1,22 @@
+{
+    "dbType": "specific",
+    "files" : [
+        {
+            "url": "https://s3.ap-southeast-2.amazonaws.com/wilderlab.publicdata/records3.csv",
+            "downloadedFile": "records.csv",
+            "processing": [
+                {
+                    "path": "sourceProcessing/wilderlab/processing.py",
+                    "function": "clean",
+                    "args": [
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, cleanedRecords.csv}"
+                    ],
+                    "outputs": [
+                        "{PATH, PROCESSING, cleanedRecords.csv}"
+                    ]
+                }
+            ]
+        }
+    ]
+}

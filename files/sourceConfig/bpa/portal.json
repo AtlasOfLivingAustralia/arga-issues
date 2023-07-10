@@ -1,0 +1,14 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/bpa/processing.py",
+        "function": "build",
+        "args": [
+            "{PATH, DOWNLOAD, bpa.csv}",
+            1000
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, bpa.csv}"
+        ]
+    }
+}

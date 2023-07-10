@@ -1,10 +1,12 @@
 {
-    "dataType": "source",
     "dbType": "specific",
     "files": [
         {
             "url": "https://www.ebi.ac.uk/ena/portal/api/search?result=assembly&fields=all&limit=0&format=tsv",
-            "downloadedFile": "ena_assembly_all_fields.tsv"
+            "downloadedFile": "ena_assembly_all_fields.tsv",
+            "fileProperties": {
+                "separator": "\t"
+            }
         }
     ]
 }

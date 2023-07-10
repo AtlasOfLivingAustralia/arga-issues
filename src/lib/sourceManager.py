@@ -20,20 +20,32 @@ class SourceManager:
 
             self.locations[location] = SourceLocation(location, databases)
 
+    def packDB(self, location: str, database: str) -> str:
+        return f"{location}-{database}"
+    
+    def unpackDB(self, source: str) -> tuple[str, str]:
+        location, database = source.split('-')
+        return (location, database)
+
     def choices(self) -> list:
         # return [f"{location}-{db}" for location, source in self.locations.items() for db in source.getDatabaseList()]
         output = []
         for locationName, sourceLocation in self.locations.items():
             for database in sourceLocation.getDatabaseList():
-                output.append(f"{locationName}-{database}")
+                output.append(self.packDB(locationName, database))
 
         return output
 
-    def getDB(self, source: str) -> Database:
-        location, database = source.split('-')
-        location = self.locations.get(location, None)
+    def getDB(self, sources: list[str]) -> list[Database]:
+        locations = []
 
-        if location is None:
-            raise Exception(f"Invalid location: {location}")
+        for source in sources:
+            location, database = self.unpackDB(source)
+            location = self.locations.get(location, None)
 
-        return location.loadDB(database)
+            if location is None:
+                raise Exception(f"Invalid location: {location}")
+
+            locations.append(location.loadDB(database))
+
+        return locations

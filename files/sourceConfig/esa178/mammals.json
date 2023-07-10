@@ -1,0 +1,21 @@
+{
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://www.esapubs.org/archive/ecol/E095/178/MamFuncDat.txt",
+            "downloadedFile": "mammalData.tsv",
+            "fileProperties": {
+                "separator": "\t",
+                "encoding": "cp1252"
+            }
+        },
+        {
+            "url": "https://www.esapubs.org/archive/ecol/E095/178/MamFuncDatSources.txt",
+            "downloadedFile": "mammalSources.tsv",
+            "fileProperties": {
+                "separator": "\t",
+                "encoding": "cp1252"
+            }
+        }
+    ]
+}

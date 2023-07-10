@@ -1,0 +1,25 @@
+{
+    "dbType": "location",
+    "dataLocation": "https://www.arb-silva.de/no_cache/download/archive/current/Exports/full_metadata/",
+    "downloadLink": "https://www.arb-silva.de/",
+    "regexMatch": ".*\\.gz$",
+    "subDirectoryDepth": 0,
+    "globalProcessing": [
+        {
+            "path": "lib/tools/extractor.py",
+            "function": "Extractor.extract",
+            "args": [
+                "{INPUT, 0, FILEPATH}",
+                "{PATH, PROCESSING}"
+            ],
+            "outputs": [
+                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM}"
+            ],
+            "outputProperties": {
+                "0": {
+                    "separator": "\t"
+                }
+            }
+        }
+    ]
+}

@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "specific",
     "files": [
         {
@@ -15,13 +14,17 @@
             "downloadedFile": "Unique_institution_codes.txt"
         } 
     ],
-    "combineProcessing": {
-        "script": "sourceProcessing/ncbi/compileBiocollections.py",
-        "args": [
-            "biocollections.csv"
-        ],
-        "outputs": [
-            "biocollections.csv"
-        ]
-    }
+    "combineProcessing": [
+        {
+            "path": "sourceProcessing/ncbi/compileBiocollections.py",
+            "function": "process",
+            "args": [
+                "{PATH, DOWNLOAD}",
+                "{PATH, PROCESSING, biocollections.csv}"
+            ],
+            "outputs": [
+                "{PATH, PROCESSING, biocollections.csv}"
+            ]
+        }
+    ]
 }

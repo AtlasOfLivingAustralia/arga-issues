@@ -2,16 +2,22 @@ import logging
 import csv
 import lib.config as cfg
 import json
-import requests
-import re
-from requests.auth import HTTPBasicAuth
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+import platform
+import subprocess
 
-def reverseLookup(lookupDict):
-    return {oldName: newName for newName, oldNameList in lookupDict.items() for oldName in oldNameList}
+def reverseLookup(lookup: dict) -> dict:
+    nameMap = {}
+
+    for newName, oldNameList in lookup.items():
+        for name in oldNameList:
+            if name not in nameMap:
+                nameMap[name]  = []
+            
+            nameMap[name].append(newName)
+
+    return nameMap
     
-def latlongToDecimal(latlong):
+def latlongToDecimal(latlong: str) -> str:
     """
     Paramters:
         latlong: string representation of both latitude and longitude
@@ -41,35 +47,37 @@ def loadLogger(filename):
 
     return logging.getLogger(__name__)
 
-def flatten(d):
+def flatten(inputDict: dict, parent: str = "") -> dict:
     res = {}
     
-    for key, value in d.items():
+    for key, value in inputDict.items():
+        addKey = key if not parent else f"{parent}_{key}"
+
         if isinstance(value, dict):
-            res.update(flatten(value))
+            res.update(flatten(value, parent=key))
         elif isinstance(value, list) or isinstance(value, tuple):
             for item in value:
                 if isinstance(item, dict):
-                    res.update(flatten(item))
+                    res.update(flatten(item, parent=key))
                 else:
-                    res[key] = item
+                    res[addKey] = item
         else:
-            res[key] = value
+            res[addKey] = value
 
     return res
 
-def getColumns(filepath, separator=',', headerRow=0):
-    with open(filepath, encoding='utf-8') as fp:
+def getColumns(filePath: str, separator: str = ',', headerRow: int = 0) -> str:
+    with open(filePath, encoding='utf-8') as fp:
         reader = csv.reader(fp, delimiter=separator)
         for idx, row in enumerate(reader):
             if idx == headerRow:
                 return row
 
-def extendUnique(lst, values):
+def extendUnique(lst: list, values: list) -> None:
     lst.extend([item for item in values if item not in lst])
     return lst
 
-def addUniqueEntry(dictionary, key, value, duplicateLimit=0):
+def addUniqueEntry(dictionary: dict, key: any, value: any, duplicateLimit: int = 0) -> None:
     if key not in dictionary:
         dictionary[key] = value
         return
@@ -82,53 +90,27 @@ def addUniqueEntry(dictionary, key, value, duplicateLimit=0):
             return
         suffixNum += 1
 
-def loadFromJson(path):
+def loadFromJson(path: str) -> dict:
     with open(path) as fp:
         return json.load(fp)
 
-def getMatches(location, regex, user="", password=""):
-    if not user:
-        rawHTML = requests.get(location)
+def dictListToCSV(dictList: list, columns: list, filePath: str) -> None:
+    with open(filePath, 'w', newline='', encoding='utf-8') as fp:
+        writer = csv.DictWriter(fp, columns)
+        writer.writeheader()
+
+        for d in dictList:
+            writer.writerow(d)
+
+def downloadFile(url: str, filePath: str, user: str = "", password: str = "", verbose: bool = True):
+    curl = "curl.exe" if platform.system() == 'Windows' else "curl"
+    args = [curl, url, "-o", filePath]
+    if user:
+        args.extend(["--user", f"{user}:{password}"])
+
+    if verbose:
+        print(f"Downloading from {url} to file {filePath}")
     else:
-        rawHTML = requests.get(location, auth=HTTPBasicAuth(user, password))
+        args.append("-s")
 
-    soup = BeautifulSoup(rawHTML.text, 'html.parser')
-    exp = re.compile(regex)
-
-    folders = []
-    matches = []
-    for link in soup.find_all('a'):
-        link = link.get('href')
-
-        if link is None:
-            continue
-        
-        fullLink = urljoin(location, link)
-        if fullLink.startswith(location) and fullLink != location and fullLink.endswith('/'): # Folder classification
-            folders.append(fullLink)
-
-        if exp.match(link):
-            matches.append(fullLink)
-
-    return folders, matches
-
-def crawl(url, regexMatch, maxDepth=0, user="", password=""):
-    subDirDepth = 0
-    folders = [url]
-    matchingFiles = []
-
-    while len(folders):
-        print(f"At depth: {subDirDepth}", end="\r")
-        newFolders = []
-
-        for folder in folders:
-            newSubFolders, newFiles = getMatches(folder, regexMatch, user, password)
-            matchingFiles.extend(newFiles)
-
-            if subDirDepth < maxDepth:
-                newFolders.extend(newSubFolders)
-            
-        folders = newFolders.copy()
-        subDirDepth += 1
-
-    return matchingFiles
+    subprocess.run(args)

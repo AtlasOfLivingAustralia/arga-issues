@@ -1,17 +1,19 @@
 {
-    "dataType": "source",
     "dbType": "location",
     "dataLocation": "https://db.anemone.bio/dist/",
     "auth": "auth.txt",
+    "folderPrefix": true,
     "regexMatch": ".*\\.tsv\\.xz",
-    "processing": [
+    "globalProcessing": [
         {
-            "script": "tools/processing/extract.py",
+            "path": "lib/tools/extractor.py",
+            "function": "Extractor.extract",
             "args": [
-                "{0}"
+                "{INPUT, 0}",
+                "{PATH, PROCESSING}"
             ],
             "outputs": [
-                "{0, STEM}"
+                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM}"
             ]
         }
     ],
@@ -19,6 +21,11 @@
         "separator": "\t"
     },
     "dwcProperties": {
-        "augmentScript": "sourceProcessing/anemone/postDWC.py"
+        "augment": [
+            {
+                "path": "sourceProcessing/anemone/postDWC.py",
+                "function": "augment"
+            }
+        ]
     }
 }

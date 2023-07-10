@@ -1,0 +1,21 @@
+{
+    "dbType": "specific",
+    "files": [
+        {
+            "url": "https://www.esapubs.org/archive/ecol/E095/178/BirdFuncDat.txt",
+            "downloadedFile": "birdData.tsv",
+            "fileProperties": {
+                "separator": "\t",
+                "encoding": "cp1252"
+            }
+        },
+        {
+            "url": "https://www.esapubs.org/archive/ecol/E095/178/BirdFuncDatSources.txt",
+            "downloadedFile": "birdSources.tsv",
+            "fileProperties": {
+                "separator": "\t",
+                "encoding": "cp1252"
+            }
+        }
+    ]
+}

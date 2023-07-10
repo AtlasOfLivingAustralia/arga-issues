@@ -1,5 +1,4 @@
 {
-    "dataType": "enrich",
     "dbType": "specific",
     "files": [
         {
@@ -7,17 +6,30 @@
             "downloadedFile": "bioproject.xml",
             "processing": [
                 {
-                    "script": "tools/processing/xmlProcess.py",
+                    "path": "tools/processing/xmlProcess.py",
+                    "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING, bioproject.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 100000,
-                        "onefile": "bioproject",
-                        "limitDuplicates": 1
+                        "subfileRows": 150000,
+                        "compressChild": [
+                            "ProjectDescr",
+                            "RepliconSet",
+                            "ProjectLinks",
+                            "AuthorSet",
+                            "Grant",
+                            "Description",
+                            "Morphology",
+                            "Objectives",
+                            "ProjectDataTypeSet",
+                            "BioSampleSet",
+                            "IntendedDataTypeSet"
+                        ]
                     },
                     "outputs": [
-                        "bioproject.csv"
+                        "{PATH, PROCESSING, bioproject.csv}"
                     ]
                 }
             ]

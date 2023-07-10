@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "specific",
     "files": [
         {
@@ -7,25 +6,28 @@
             "downloadedFile": "taxonomy.xml.gz",
             "processing": [
                 {
-                    "script": "tools/processing/extract.py",
+                    "path": "lib/tools/extractor.py",
+                    "function": "Extractor.extract",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING}"
                     ],
                     "outputs": [
-                        "taxonomy.xml"
+                        "{PATH, PROCESSING, taxonomy.xml}"
                     ]
                 },
                 {
-                    "script": "tools/processing/xmlProcess.py",
+                    "path": "tools/processing/xmlProcess.py",
+                    "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, taxonomy.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 1000000,
-                        "onefile": "taxonomy"
+                        "subfileRows": 100000
                     },
                     "outputs": [
-                        "taxonomy.csv"
+                        "{PATH, PROCESSING, taxonomy.csv}"
                     ]
                 }
             ]

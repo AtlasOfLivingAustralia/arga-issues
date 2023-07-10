@@ -1,5 +1,4 @@
 {
-    "dataType": "source",
     "dbType": "specific",
     "files": [
         {
@@ -7,16 +6,23 @@
             "downloadedFile": "genomeCollections.xml",
             "processing": [
                 {
-                    "script": "tools/processing/xmlProcess.py",
+                    "path": "tools/processing/xmlProcess.py",
+                    "function": "process",
                     "args": [
-                        "{0}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING, genomeCollections.csv}"
                     ],
                     "kwargs": {
-                        "subfileRows": 100000,
-                        "onefile": "genomeCollections"
+                        "subfileRows": 150000,
+                        "compressChild": [
+                            "CHROMOSOMES",
+                            "ASSEMBLY_LINKS",
+                            "ASSEMBLY_ATTRIBUTES",
+                            "ASSEMBLY"
+                        ]
                     },
                     "outputs": [
-                        "genomeCollections.csv"
+                        "{PATH, PROCESSING, genomeCollections.csv}"
                     ]
                 }
             ]
