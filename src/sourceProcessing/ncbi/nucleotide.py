@@ -17,6 +17,9 @@ def combine(folderPath: Path, outputFilePath: Path):
             print(f"Extracting file {filePath}")
             
         extractedFile = extractor.run(filePath)
+        if extractedFile is None:
+            print("Failed to extract file, skipping")
+            continue
 
         if verbose:
             print(f"Parsing file {extractedFile}")

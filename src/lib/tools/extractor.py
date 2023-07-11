@@ -46,21 +46,24 @@ class Extractor:
 
             extractType = ExtractTypes(filePath.suffix)
 
-            if extractType == ExtractTypes.ZIP:
-                with zipfile.ZipFile(filePath, 'r') as zip:
-                    zip.extractall(outputFile)
+            try:
+                if extractType == ExtractTypes.ZIP:
+                    with zipfile.ZipFile(filePath, 'r') as zip:
+                        zip.extractall(outputFile)
 
-            if extractType == ExtractTypes.GZIP:
-                with gzip.open(filePath, 'rb') as gz, open(outputFile, 'wb') as fp:
-                    shutil.copyfileobj(gz, fp)
+                if extractType == ExtractTypes.GZIP:
+                    with gzip.open(filePath, 'rb') as gz, open(outputFile, 'wb') as fp:
+                        shutil.copyfileobj(gz, fp)
 
-            if extractType == ExtractTypes.XZ:
-                with lzma.open(filePath) as xz, open(outputFile, 'wb') as fp:
-                    shutil.copyfileobj(xz, fp)
+                if extractType == ExtractTypes.XZ:
+                    with lzma.open(filePath) as xz, open(outputFile, 'wb') as fp:
+                        shutil.copyfileobj(xz, fp)
 
-            if extractType == ExtractTypes.TAR:
-                with tarfile.open(filePath, 'r') as tar:
-                    tar.extractall(outputFile)
+                if extractType == ExtractTypes.TAR:
+                    with tarfile.open(filePath, 'r') as tar:
+                        tar.extractall(outputFile)
+            except EOFError:
+                return None
 
             filePath = outputFile
 

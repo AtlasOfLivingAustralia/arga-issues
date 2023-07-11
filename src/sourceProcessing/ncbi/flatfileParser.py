@@ -14,14 +14,6 @@ class FlatFileParser:
         self.genbankBaseURL = "https://www.ncbi.nlm.nih.gov/nuccore/"
         self.fastaSuffix = "?report=fasta&format=text"
 
-        self.sectionParserCallbacks = {
-            Section.INFO: self.parseInfo,
-            Section.REFERENCE: self.parseReferences,
-            Section.COMMENT: self.parseComment,
-            Section.FEATURES: self.parseFeatures,
-            Section.ORIGIN: self.parseOrigin
-        }
-
     def parse(self, filePath: Path, verbose: bool = False) -> list[dict]:
         with open(filePath) as fp:
             try:
@@ -39,175 +31,167 @@ class FlatFileParser:
         for idx, entry in enumerate(data.split("//\n")[:-1], start=1): # Split into separate loci, exclude empty entry after last
             if verbose:
                 print(f"Parsing entry: {idx}", end="\r")
-            splitData = self.splitEntryBlocks(entry)
-            output = {}
-            for section, textBlock in splitData.items():
-                if section in [Section.ORIGIN]: # Skip origin section
-                    continue
 
-                callBack = self.sectionParserCallbacks[section]
-                output |= callBack(textBlock)
+            entryData = self.parseEntry(entry)
 
             # Attach seq file path and fasta file
             # output["seq_file"] = f"{self.seqBaseURL}{filePath.name}.gz"
-            version = output.get("version", "")
+            version = entryData.get("version", "")
             if version:
-                output["genbank_url"] = f"{self.genbankBaseURL}{output['version']}"
-                output["fasta_url"] = f"{self.genbankBaseURL}{output['version']}{self.fastaSuffix}"
-            records.append(output)
+                entryData["genbank_url"] = f"{self.genbankBaseURL}{version}"
+                entryData["fasta_url"] = f"{self.genbankBaseURL}{version}{self.fastaSuffix}"
+
+            # Add specimen field
+            for value in (entryData.get("specimen_voucher", None), entryData.get("isolate", None), f"NCBI_{entryData['accession']}_specimen"):
+                if value is not None:
+                    entryData["specimen"] = value
+                    break
+
+            records.append(entryData)
 
         if verbose:
             print()
 
         return records
-
-    def splitEntryBlocks(self, entryText: str) -> dict[Section, str]:
-        headers = [Section.REFERENCE.value, Section.COMMENT.value, Section.FEATURES.value, Section.ORIGIN.value]
-        referencesPos, commentPos, featuresPos, originPos = [entryText.find(header) for header in headers]
-
-        infoBlock = entryText[:referencesPos]
-        if commentPos > 0:
-            referencesBlock = entryText[referencesPos:commentPos]
-            commentBlock = entryText[commentPos:featuresPos]
-        else:
-            referencesBlock = entryText[referencesPos:featuresPos]
-            commentBlock = ""
-        featureBlock = entryText[featuresPos:originPos]
-        originBlock = entryText[originPos:]
-
-        blockData = {
-            Section.INFO: infoBlock,
-            Section.REFERENCE: referencesBlock,
-            Section.COMMENT: commentBlock,
-            Section.FEATURES: featureBlock,
-            Section.ORIGIN: originBlock   
-        }
-
-        return blockData
-
-    def getHeadingBlocks(self, textBlock: str, headings: list[str], skipJoining: list[str] = []) -> dict:
-        # Get heading positions in text block
-        foundHeadings = []
-        headingPositions = []
-        for heading in headings:
-            position = textBlock.find(heading)
-            if position >= 0:
-                foundHeadings.append(heading)
-                headingPositions.append(position)
-
-        # Split block text at heading positions
-        headingPositions.append(len(textBlock)) # Add length of block to end of positions to do string slicing
-        headingBlocks = {}
-        for idx, (head, startPos) in enumerate(zip(foundHeadings, headingPositions), start=1):
-            text = textBlock[startPos:headingPositions[idx]]
-            text = [line.strip() for line in text.split("\n")]
-            text[0] = text[0].replace(head, "").strip() # Clean off heading in block of text
-
-            if head not in skipJoining: # Create 1 line of text when joining
-                text = " ".join(text).strip()
-
-            headingBlocks[head.lower()] = text
-
-        return headingBlocks
     
-    def parseInfo(self, infoBlock: str) -> dict:
-        headings = ["LOCUS", "DEFINITION", "ACCESSION", "VERSION", "KEYWORDS", "SOURCE", "ORGANISM"]
+    def parseEntry(self, entryBlock: str) -> dict:
+        sections = self.getSections(entryBlock)
 
-        # Manually split ORGANISM so don't join automatically
-        info = self.getHeadingBlocks(infoBlock, headings, ["ORGANISM"])
-        try:
-            organism = info.pop("organism")
-            info["species"] = organism[0]
-            info["higherClassification"] = ''.join(organism[1:])
-        except:
-            print(infoBlock)
-            print(info)
-        
-        # Split the compacted locus line of values into separate values
-        locusHeadings = ["locus", "basepairs", "", "type", "shape", "val", "date"]
-        splitValues = [value.strip() for value in info["locus"].split()]
-        for name, value in zip(locusHeadings, splitValues):
-            if name: # If the new name exists, otherwise skip that value
-                info[name] = value
+        entryData = {}
+        for section in sections:
+            heading, data = section.split(" ", 1)
+            # headings = ["LOCUS", "DEFINITION", "ACCESSION", "VERSION", "DBLINK", "KEYWORDS", "SOURCE", "ORGANISM"]
 
-        return info
+            if heading == "LOCUS":
+                parameters = ["locus", "basepairs", "", "type", "shape", "seq_type", "date"]
+                entryData |= {param: value.strip() for param, value in zip(parameters, data.split()) if param}
 
-    def parseReferences(self, referencesBlock: str) -> dict:
-        headings = ["REFERENCE", "AUTHORS", "TITLE", "JOURNAL", "PUBMED"]
+            elif heading == "DEFINITION":
+                entryData["definition"] = self.flattenBlock(data)
 
-        references = []
-        for reference in referencesBlock.split(headings[0]):
-            reference = self.getHeadingBlocks(headings[0] + reference, headings)
-            splitRef = reference.pop("reference").split(' ', 1)
-            if len(splitRef) == 1: # no bases
-                base = ""
-            else:
-                base = splitRef[1].strip().lstrip('(bases').rstrip(')')
-            
-            if splitRef[0]:
-                references.append({"reference": splitRef[0], "bases": base} | reference)
+            elif heading in ("ACCESSION", "VERSION", "COMMENT"):
+                entryData[heading.lower()] = data.strip()
 
-        return {"referenes": references}
-    
-    def parseComment(self, commentBlock: str) -> dict:
-        return {"comment": commentBlock.replace("\n", " ")}
+            elif heading == "DBLINK":
+                dbs = {}
+                for line in data.split("\n"):
+                    if not line:
+                        continue
 
-    def parseFeatures(self, featureBlock: str) -> dict:
-        featureList = [] # A list of all features
-        lastKey = None # Last key updated for data over multiple lines
-        featureIndent = 21 # Amount of spaces that features information is indented
+                    key, value = line.split(":")
+                    dbs[key.strip().lower()] = value.strip()
 
-        for line in featureBlock.split('\n')[1:]: # Split by newline and ignore first line
-            data = line[featureIndent:]
-            data = data.replace('"', '')
+                entryData |= dbs
 
-            if not data:
-                continue
+            elif heading == "KEYWORDS":
+                if data.strip() == ".":
+                    entryData["keywords"] = ""
+                else:
+                    entryData["keywords"] = self.flattenBlock(data)
 
-            if not line.startswith(' ' * featureIndent): # Line contains a heading
-                heading = line[:featureIndent].strip()
-                featureList.append({"feature": heading, "range": data})
+            elif heading == "SOURCE":
+                source, leftover = self.getSections(data, 2)
+                organism, higherClassification = leftover.split("\n", 1)
 
-            else: # Data line with no heading
-                if data[0] == '/': # New data point
-                    data = data[1:]
-                    if '=' in data:
-                        key, value = data.split('=', 1)
+                entryData["source"] = source.strip()
+                entryData["organism"] = organism.split()[1].strip()
+                entryData["higher_classification"] = self.flattenBlock(higherClassification)
+
+            elif heading == "REFERENCE":
+                reference = {}
+                refInfo, properties = data.split("\n", 1)
+                refInfo = refInfo.strip().split(" ", 1)
+                if len(refInfo) == 1: # No bases specified
+                    reference["basesFrom"] = ""
+                    reference["basesTo"] = ""
+                else:
+                    baseRange = refInfo[1].strip().lstrip("(bases ").rstrip(")")
+                    basesFrom, basesTo = baseRange.split(" to ")
+                    reference["basesFrom"] = basesFrom
+                    reference["basesTo"] = basesTo
+
+                referenceSections = self.getSections(properties, 2)
+                for section in referenceSections:
+                    sectionName, sectionData = section.strip().split(" ", 1)
+                    reference[sectionName.lower()] = self.flattenBlock(sectionData)
+
+                if "references" not in entryData:
+                    entryData["references"] = []
+
+                entryData["references"].append(reference)
+
+            elif heading == "FEATURES":
+                featureBlocks = self.getSections(data, 5)
+                genes = {}
+                otherProperties = {}
+
+                for block in featureBlocks[1:]:
+                    sectionHeader, sectionData = block.lstrip().split(" ", 1)
+
+                    propertyList = self.flattenBlock(sectionData, "//").split("///")
+                    properties = {"bp_range": propertyList[0]}
+                    for property in propertyList[1:]: # base pair range is first property in list
+                        splitProperty = property.split("=")
+                        if len(splitProperty) == 2:
+                            key, value = splitProperty
+                        else:
+                            key = splitProperty[0]
+                            value = key
+
+                        properties[key] = value.strip('"')
+
+                    if sectionHeader == "source":
+                        value = properties.pop("organism", None)
+                        if value is not None:
+                            properties["features_organism"] = value
+
+                        entryData |= properties
+
                     else:
-                        key = "property"
-                        value = data
+                        gene = properties.get("gene", None)
+                        if gene is not None:  # If section is associated with a gene
+                            properties.pop("gene")
+                            if gene not in genes:
+                                genes[gene] = {}
 
-                    featureList[-1][key] = value
-                    lastKey = key
-                    
-                else: # Data value is part of value from previous line
-                    lastData = featureList[-1].setdefault(lastKey, "default")
-                    featureList[-1][lastKey] = lastData + data
+                            if sectionHeader not in genes[gene]:
+                                genes[gene][sectionHeader] = []
 
-        features = []
-        for featureDict in featureList:
-            feature = featureDict.pop("feature")
-            gene = featureDict.pop("gene", "default")
+                            genes[gene][sectionHeader].append(properties)
 
-            # geneInfo = features.setdefault(gene, {})
-            geneInfo = {}
+                        else: # Not associated with a gene
+                            if sectionHeader not in otherProperties:
+                                otherProperties[sectionHeader] = []
 
-            if feature != "gene":
-                featureDict = {f"{feature}_{key}": value for key, value in featureDict.items()}
+                            otherProperties[sectionHeader].append(properties)
+                
+                entryData["genes"] = genes
+                entryData["other_properties"] = otherProperties
 
-            features.append({"gene": gene} | geneInfo | featureDict)
+            elif heading == "ORIGIN":
+                pass # Skip adding of origin to output
 
-        return {"genes": features}
+            else:
+                print(f"Unhandled heading: {heading}")
 
-    def parseOrigin(self, originBlock: str) -> dict:
-        # origin = ""
-        # origin = []
-        # for line in originBlock.split('\n')[1:]:
-        #     if not line:
-        #         continue
-            
-        #     basepairs, seq = line.strip().split(" ", 1)
-        #     origin.append({"basepairs": basepairs, "seq": seq})
+        return entryData
 
-        origin = "".join(line.split(" ", 1)[1].replace(" ", "") for line in originBlock.split("\n")[1:-1])
-        return {"origin": origin}
+    def getSections(self, textBlock: str, leadingWhitespace: int = 0) -> list[str]:
+        sections = []
+        sectionText = ""
+        currentPos = 0
+        nextNewlinePos = textBlock.find("\n", currentPos)
+        while nextNewlinePos >= 0:
+            sectionText += textBlock[currentPos:nextNewlinePos+1]
+
+            if nextNewlinePos+1+leadingWhitespace >= len(textBlock) or textBlock[nextNewlinePos+1:nextNewlinePos+2+leadingWhitespace] != " "*(1+leadingWhitespace): # New heading follows next newline
+                sections.append(sectionText)
+                sectionText = ""
+
+            currentPos = nextNewlinePos + 1
+            nextNewlinePos = textBlock.find("\n", currentPos)
+
+        return sections
+    
+    def flattenBlock(self, textBlock: str, joiner: str = " ") -> str:
+        return joiner.join(line.strip() for line in textBlock.split("\n") if line)
