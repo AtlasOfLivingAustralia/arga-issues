@@ -105,10 +105,13 @@ class FlatFileParser:
                     reference["basesFrom"] = ""
                     reference["basesTo"] = ""
                 else:
-                    baseRange = refInfo[1].strip().lstrip("(bases ").rstrip(")")
-                    basesFrom, basesTo = baseRange.split(" to ")
-                    reference["basesFrom"] = basesFrom
-                    reference["basesTo"] = basesTo
+                    baseRanges = refInfo[1].strip().lstrip("(bases").rstrip(")")
+                    bases = []
+                    for baseRange in baseRanges.split(";"):
+                        basesFrom, basesTo = baseRange.split("to")
+                        bases.append(f"({basesFrom.strip()}) to {basesTo.strip()}")
+
+                    reference["bases"] = bases
 
                 referenceSections = self.getSections(properties, 2)
                 for section in referenceSections:
@@ -176,20 +179,20 @@ class FlatFileParser:
 
         return entryData
 
-    def getSections(self, textBlock: str, leadingWhitespace: int = 0) -> list[str]:
+    def getSections(self, textBlock: str, whitespace: int = 0) -> list[str]:
         sections = []
-        sectionText = ""
-        currentPos = 0
-        nextNewlinePos = textBlock.find("\n", currentPos)
+        sectionStart = 0
+        searchPos = 0
+        nextNewlinePos = textBlock.find("\n", searchPos)
         while nextNewlinePos >= 0:
-            sectionText += textBlock[currentPos:nextNewlinePos+1]
+            nextPlus1 = nextNewlinePos + 1
+            followingLineStart = textBlock[nextPlus1:nextPlus1+whitespace+1]
+            if nextPlus1+whitespace >= len(textBlock) or (not len(followingLineStart[:-1].strip()) and followingLineStart[-1].isalpha()):
+                sections.append(textBlock[sectionStart:nextPlus1])
+                sectionStart = nextPlus1
 
-            if nextNewlinePos+1+leadingWhitespace >= len(textBlock) or textBlock[nextNewlinePos+1:nextNewlinePos+2+leadingWhitespace] != " "*(1+leadingWhitespace): # New heading follows next newline
-                sections.append(sectionText)
-                sectionText = ""
-
-            currentPos = nextNewlinePos + 1
-            nextNewlinePos = textBlock.find("\n", currentPos)
+            searchPos = nextPlus1
+            nextNewlinePos = textBlock.find("\n", searchPos)
 
         return sections
     
