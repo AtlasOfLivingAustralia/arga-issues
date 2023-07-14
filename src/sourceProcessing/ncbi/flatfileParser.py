@@ -55,7 +55,7 @@ class FlatFileParser:
         return records
     
     def parseEntry(self, entryBlock: str) -> dict:
-        sections = self.getSections(entryBlock)
+        sections = self.getSections(entryBlock, allowDigits=False)
 
         entryData = {}
         for section in sections:
@@ -66,11 +66,8 @@ class FlatFileParser:
                 parameters = ["locus", "basepairs", "", "type", "shape", "seq_type", "date"]
                 entryData |= {param: value.strip() for param, value in zip(parameters, data.split()) if param}
 
-            elif heading == "DEFINITION":
-                entryData["definition"] = self.flattenBlock(data)
-
-            elif heading in ("ACCESSION", "VERSION", "COMMENT"):
-                entryData[heading.lower()] = data.strip()
+            elif heading in ("DEFINITION", "ACCESSION", "VERSION", "COMMENT"):
+                entryData[heading.lower()] = self.flattenBlock(data)
 
             elif heading == "DBLINK":
                 dbs = {}
@@ -99,22 +96,30 @@ class FlatFileParser:
 
             elif heading == "REFERENCE":
                 reference = {}
-                refInfo, properties = data.split("\n", 1)
-                refInfo = refInfo.strip().split(" ", 1)
-                if len(refInfo) == 1: # No bases specified
-                    reference["basesFrom"] = ""
-                    reference["basesTo"] = ""
+                refInfo = self.getSections(data, 2)
+                basesInfo = refInfo.pop(0)
+                basesInfo = basesInfo.strip(" \n").split(" ", 1)
+
+                if len(basesInfo) == 1: # Only reference number
+                    reference["bases"] = []
+                elif "bases" not in basesInfo[1]: # Bases not specified
+                    reference["bases"] = []
                 else:
-                    baseRanges = refInfo[1].strip().lstrip("(bases").rstrip(")")
+                    baseRanges = basesInfo[1].strip().lstrip("(bases").rstrip(")")
                     bases = []
                     for baseRange in baseRanges.split(";"):
-                        basesFrom, basesTo = baseRange.split("to")
-                        bases.append(f"({basesFrom.strip()}) to {basesTo.strip()}")
+                        if not baseRange:
+                            continue
+
+                        try:
+                            basesFrom, basesTo = baseRange.split("to")
+                            bases.append(f"({basesFrom.strip()}) to {basesTo.strip()}")
+                        except:
+                            print(f"{data}, ERROR: {baseRange}")
 
                     reference["bases"] = bases
 
-                referenceSections = self.getSections(properties, 2)
-                for section in referenceSections:
+                for section in refInfo:
                     sectionName, sectionData = section.strip().split(" ", 1)
                     reference[sectionName.lower()] = self.flattenBlock(sectionData)
 
@@ -179,20 +184,30 @@ class FlatFileParser:
 
         return entryData
 
-    def getSections(self, textBlock: str, whitespace: int = 0) -> list[str]:
+    def getSections(self, textBlock: str, whitespace: int = 0, allowDigits=True) -> list[str]:
         sections = []
         sectionStart = 0
         searchPos = 0
-        nextNewlinePos = textBlock.find("\n", searchPos)
-        while nextNewlinePos >= 0:
-            nextPlus1 = nextNewlinePos + 1
-            followingLineStart = textBlock[nextPlus1:nextPlus1+whitespace+1]
-            if nextPlus1+whitespace >= len(textBlock) or (not len(followingLineStart[:-1].strip()) and followingLineStart[-1].isalpha()):
-                sections.append(textBlock[sectionStart:nextPlus1])
-                sectionStart = nextPlus1
+        textBlock = textBlock.rstrip("\n") # Make sure block doesn't end with newlines
 
-            searchPos = nextPlus1
+        while True:
             nextNewlinePos = textBlock.find("\n", searchPos)
+            nextPlus1 = nextNewlinePos + 1
+
+            if nextNewlinePos < 0: # No next new line
+                sections.append(textBlock[sectionStart:])
+                break
+
+            if len(textBlock[nextPlus1:nextPlus1+whitespace+1].strip()) == 0: # No header on next line
+                searchPos = nextPlus1
+                continue
+
+            if not allowDigits and textBlock[nextPlus1+whitespace+1].isdigit(): # Check for digit leading next header
+                searchPos = nextPlus1
+                continue
+
+            sections.append(textBlock[sectionStart:nextNewlinePos])
+            sectionStart = searchPos = nextPlus1
 
         return sections
     
