@@ -11,7 +11,11 @@ def combine(inputFolder: Path, outputFilePath: Path):
         with open(filePath, encoding="utf-8") as fp:
             data = fp.read()
 
-        info, table = data.rsplit("#", 1)
+        splitData = data.rsplit("#", 1)
+        if len(splitData) == 1: # No # found, error reading file
+            continue
+        
+        info, table = splitData
 
         # Info parsing
         infoData = {}
