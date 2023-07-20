@@ -1,0 +1,19 @@
+{
+    "dbType": "location",
+    "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
+    "subDirectoryDepth": 0,
+    "regexMatch": "gbpat\\d+\\.seq\\.gz",
+    "combineProcessing": [
+        {
+            "path": "sourceProcessing/ncbi/nucleotide.py",
+            "function": "combine",
+            "args": [
+                "{PATH, DOWNLOAD}",
+                "{PATH, PROCESSING, nucPatent.csv}"
+            ],
+            "outputs": [
+                "{PATH, PROCESSING, nucPatent.csv}"
+            ]
+        }
+    ]
+}
