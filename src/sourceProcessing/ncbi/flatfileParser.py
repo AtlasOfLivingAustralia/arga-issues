@@ -71,12 +71,21 @@ class FlatFileParser:
 
             elif heading == "DBLINK":
                 dbs = {}
+                key = "unknown_db"
+
                 for line in data.split("\n"):
-                    if not line:
+                    if not line.strip():
                         continue
 
-                    key, value = line.split(":")
-                    dbs[key.strip().lower()] = value.strip()
+                    if ":" in line: # Line has a new key in it
+                        key, line = line.split(":")
+                        key = key.strip().lower()
+                        dbs[key] = []
+
+                    if key is "unknown_db": # Found a line before a db name
+                        dbs[key] = [] # Create a list for values with no db name
+                        
+                    dbs[key].extend([element.strip() for element in line.split(",")])
 
                 entryData |= dbs
 
