@@ -1,5 +1,4 @@
 {
-    "dataType": "enrich",
     "dbType": "location",
     "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/",
     "regexMatch": ".*assembly_stats\\.txt",
