@@ -75,7 +75,7 @@ class Remapper:
             mapValues.append(f"{self.location}_preserved_{column}")
 
         if not mapValues: # If no mapped value has been found yet
-            mapValues.append(f"{self.location}_{column}" if self.prefixMissing else column)
+            mapValues.append(f"{self.location}_unmapped_{column}" if self.prefixMissing else column)
         
         return mapValues
 
