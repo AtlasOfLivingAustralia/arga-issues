@@ -34,14 +34,18 @@ if __name__ == "__main__":
     documentID = "1dglYhHylG5_YvpslwuRWOigbF5qhU-uim11t_EE_cYE"
 
     sheetIDs = {
-        "ncbi-refseq": 2003682060,
         "42bp-genomeArk": 84855374,
         "anemone-db": 286004534,
         "bold-datapackage": 1154592624,
-        "ncbi-biosample": 109194600,
+        "bpa-portal": 1982878906,
+        "bvbrc-db": 685936034,
+        "dnazoo-db": 570069681,
         "ena-genomes": 1058330275,
-        "tsi-koala": 975794491,
-        "bpa-portal": 1982878906
+        "ncbi-biosample": 109194600,
+        "ncbi-nucleotide": 1759032197,
+        "ncbi-refseq": 2003682060,
+        "ncbi-taxonomy": 240630744,
+        "tsi-koala": 975794491
     }
 
     written = []
