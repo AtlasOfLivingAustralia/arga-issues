@@ -5,7 +5,7 @@ import pandas as pd
 def buildURL(keyword: str, perPage: int, page: int = 1) -> str:
     return f"https://collections.museumsvictoria.com.au/api/{keyword}?perpage={perPage}&page={page}"
 
-response = requests.get(buildURL("species", 0), headers={"User-Agent": ""})
+response = requests.get(buildURL("specimens", 50), headers={"User-Agent": ""})
 print(response.headers)
 data = response.json()
 

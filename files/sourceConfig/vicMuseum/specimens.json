@@ -4,11 +4,11 @@
         "path": "sourceProcessing/vicMuseum/processing.py",
         "function": "retrieve",
         "args": [
-            "species",
+            "specimens",
             "{PATH, DOWNLOAD}"
         ],
         "outputs": [
-            "{PATH, DOWNLOAD, species.csv}"
+            "{PATH, DOWNLOAD, specimens.csv}"
         ]
     }
 }
