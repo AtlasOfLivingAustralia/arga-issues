@@ -27,6 +27,9 @@ def getPortalData(outputFilePath: Path) -> None:
         data = response.json()
         records.extend(data["dataCollections"])
 
+    for record in records:
+        record |= record.pop("spatialParameters", {})
+
     df = pd.DataFrame.from_records(records)
     # idDf = df["id"].apply(lambda x: dict(x)).apply(pd.Series)
     # df.drop("id", axis=1, inplace=True)
