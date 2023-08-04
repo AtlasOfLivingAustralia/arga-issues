@@ -6,8 +6,7 @@ from lib.processing.stageFile import StageFile
 from lib.tools.remapper import Remapper
 import random
 
-def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int, samples: int) -> dict:
-    remapper = Remapper(location)
+def collectFields(stageFile: StageFile, remapper: Remapper, entryLimit: int, chunkSize: int, samples: int) -> dict:
     chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
 
     data = {}
@@ -35,8 +34,7 @@ def collectFields(stageFile: StageFile, location: str, entryLimit: int, chunkSiz
 
     return data
 
-def collectRecords(stageFile: StageFile, location: str, entryLimit: int, chunkSize: int, samples: int, seed: int) -> dict:
-    remapper = Remapper(location)
+def collectRecords(stageFile: StageFile, remapper: Remapper, entryLimit: int, chunkSize: int, samples: int, seed: int) -> dict:
     chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
 
     data = {}
@@ -77,6 +75,8 @@ if __name__ == '__main__':
         #     continue
 
         stageFiles = source.getPreDWCFiles(selectedFiles)
+        remapper = source.systemManager.dwcProcessor.remapper
+
         for stageFile in stageFiles:
             if not stageFile.filePath.exists():
                 print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
@@ -91,10 +91,10 @@ if __name__ == '__main__':
         random.seed(seed)
 
         if args.uniques:
-            data = collectFields(stageFile, source.location, args.entries, args.chunksize, samples)
+            data = collectFields(stageFile, remapper, args.entries, args.chunksize, samples)
             output = outputDir / f"fieldExamples_{args.chunksize}_{seed}.{extension}"
         else:
-            data = collectRecords(stageFile, source.location, args.entries, args.chunksize, samples, seed)
+            data = collectRecords(stageFile, remapper, args.entries, args.chunksize, samples, seed)
             output = outputDir / f"recordExamples_{args.chunksize}_{seed}.{extension}"
 
         print(f"Writing to file {output}")
