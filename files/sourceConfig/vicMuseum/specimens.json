@@ -5,7 +5,8 @@
         "function": "retrieve",
         "args": [
             "specimens",
-            "{PATH, DOWNLOAD}"
+            "{PATH, DOWNLOAD}",
+            1000
         ],
         "outputs": [
             "{PATH, DOWNLOAD, specimens.csv}"
