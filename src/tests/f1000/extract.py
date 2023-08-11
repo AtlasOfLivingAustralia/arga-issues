@@ -28,6 +28,11 @@ for file in directory.iterdir():
 
     authors = []
     contributorData = articleData.find("contrib-group")
+
+    affiliations = {}
+    for affiliation in contributorData.find_all("aff"):
+        affiliations[affiliation.attrs["id"]] = affiliation.contents[-1]
+
     for contributor in contributorData.find_all("contrib"):
         if "contrib-type" not in contributor.attrs or contributor.attrs["contrib-type"] != "author":
             continue
@@ -36,7 +41,14 @@ for file in directory.iterdir():
         names = nameInfo.find("given-names").text
         surname = nameInfo.find("surname").text
 
-        author = {"name": names, "surname": surname}
+        affils = []
+        for ref in contributor.find_all("xref"):
+            if ref.attrs["ref-type"] != "aff" or "rid" not in ref.attrs:
+                continue
+
+            affils.append(affiliations.get(ref.attrs["rid"], ""))
+
+        author = {"name": names, "surname": surname, "affiliations": affils}
         authors.append(author)
 
     record["authors"] = authors
@@ -60,9 +72,29 @@ for file in directory.iterdir():
         publications.append({"pubType": pubType, "pubDate": date})
 
     record["publication"] = publications
+
+    refs = []
+    references = soup.find("ref-list")
+    for reference in references.find_all("ref"):
+        ref = {}
+
+        citation = reference.find("mixed-citation")
+        ref["type"] = citation.attrs["publication-type"]
+
+        pubID = reference.find("pub-id")
+        if pubID is not None and "pub-id-type" in pubID.attrs:
+            reference[pubID.attrs["pub-id-type"]] = pubID.text
+
+        authors = []
+        authorList = reference.find_all("name")
+        for auth in authorList:
+            name = auth.find("given-names")
+            surname = auth.find("surname")
+            authors.append(f"{name.text} {surname.text}")
+        ref["authors"] = authors
+
+        refs.append(ref)
+
+    record["references"] = refs
     print(record)
     break
-
-# for idx, front in enumerate(front, start=1):
-#     for idx2, front2 in enumerate(fronts[idx:], start=1):
-#         print(idx, idx+idx2, front == front2)
