@@ -8,23 +8,19 @@ def getPropertyValue(node, value, default=""):
         return result.text
     return default
 
-directory = Path("./output")
-fronts = []
-
-for file in directory.iterdir():
-    with open(file) as fp:
-        data = fp.read()
-
+def parse(data: str) -> dict:
     record = {}
     soup = BeautifulSoup(data, "xml")
 
     articleData = soup.find("article-meta")
 
     title = articleData.find("article-title")
-    record["title"] = title.contents[0].strip()
+    if title is not None:
+        record["title"] = title.contents[0].strip()
 
     species = title.find("italic")
-    record["species"] = species.contents[0].strip()
+    if species is not None:
+        record["species"] = species.contents[0].strip()
 
     authors = []
     contributorData = articleData.find("contrib-group")
@@ -90,11 +86,14 @@ for file in directory.iterdir():
         for auth in authorList:
             name = auth.find("given-names")
             surname = auth.find("surname")
-            authors.append(f"{name.text} {surname.text}")
+
+            name = name.text if name is not None else ""
+            surname = surname.text if surname is not None else ""
+            
+            authors.append(f"{name} {surname}".strip())
         ref["authors"] = authors
 
         refs.append(ref)
 
     record["references"] = refs
-    print(record)
-    break
+    return record

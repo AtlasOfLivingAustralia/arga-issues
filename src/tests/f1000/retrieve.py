@@ -1,25 +1,33 @@
 import requests
-from xml.dom import minidom
 from bs4 import BeautifulSoup
 from pathlib import Path
+# from extract import parse
+import pandas as pd
 
-# requestURL = "https://f1000research.com/extapi/search?q=*"
-requestURL = "https://f1000research.com/extapi/search?q=R_TY:\"GENOME_NOTE\""
-outputFolder = Path("./output")
+requestURL = "https://f1000research.com/extapi/search?q=R_TY:GENOME_NOTE"
 response = requests.get(requestURL)
 
-outputFiles = []
+with open("response.xml", "w") as fp:
+    fp.write(response.text)
+
+records = []
 soup = BeautifulSoup(response.text, "xml")
-for idx, doi in enumerate(soup.find_all("doi"), start=1):
-    outputFile = Path("output.xml")
-    # print(f"https://doi.org/{doi.text}")
-    doiData = f"https://f1000research.com/extapi/article/xml?doi={doi.text}"
-    response = requests.get(doiData)
+output = soup.find_all("doi")
+# print(output)
+with open("dois.txt", "w") as fp:
+    fp.write("\n".join(doi.text for doi in output))
 
-    outputPath = outputFolder / f"output_{idx}.xml"
-    with open(outputPath, "w") as fp:
-        fp.write(response.text)
-    outputFiles.append(outputPath)
+# for idx, doi in enumerate(soup.find_all("doi"), start=1):
+#     print(f"At doi: {idx}", end="\r")
+#     outputFile = Path("output.xml")
+#     # print(f"https://doi.org/{doi.text}")
+#     doiData = f"https://f1000research.com/extapi/article/xml?doi={doi.text}"
+#     response = requests.get(doiData)
 
-    if idx >= 5:
-        break
+#     record = parse(response.text)
+#     record["doi"] = doi.text
+#     records.append(record)
+
+# print("\nSaving to output.csv...")
+# df = pd.DataFrame.from_records(records)
+# df.to_csv("output.csv", index=False)
