@@ -35,6 +35,9 @@ class StageFile:
     def exists(self) -> bool:
         return self.filePath.exists()
     
+    def updateStage(self, stage: StageFileStep) -> None:
+        self.stage = stage
+    
     def loadDataFrame(self) -> pd.DataFrame:
         return pd.read_csv(self.filePath, sep=self.separator, header=self.firstRow, encoding=self.encoding)
     
