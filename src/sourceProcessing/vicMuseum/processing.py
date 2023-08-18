@@ -2,6 +2,7 @@ from pathlib import Path
 import requests
 import math
 import pandas as pd
+import ast
 
 def buildURL(keyword: str, perPage: int, page: int = 1) -> str:
     return f"https://collections.museumsvictoria.com.au/api/{keyword}?perpage={perPage}&page={page}"
@@ -20,10 +21,15 @@ def retrieve(dataset: str, outputFolder: Path, recordsPerPage: int) -> None:
         data = response.json()
         records.extend(data)
 
-    if "taxonomy" in data[0]: # If taxonomy is a field, expand it
-        for record in data:
-            record |= record.pop("taxonomy", {}) # Expand taxonomy field into separate pieces of data
-
     df = pd.DataFrame.from_records(records)
     df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["", ""], regex=True, inplace=True)
     df.to_csv(outputFolder / f"{dataset}.csv", index=False)
+
+def expandTaxa(filePath: Path, outputPath: Path):
+    df = pd.read_csv(filePath)
+    df2 = df["taxonomy"].fillna("{}")
+    df2 = pd.json_normalize(df2.apply(ast.literal_eval))
+    
+    df.drop("taxonomy", axis=1, inplace=True)
+    df = df.join(df2)
+    df.to_csv(outputPath, index=False)
