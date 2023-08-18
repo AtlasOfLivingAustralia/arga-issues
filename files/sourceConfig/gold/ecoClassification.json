@@ -6,13 +6,17 @@
             "downloadedFile": "GOLDs5levelEcosystemClassificationPaths.xlsx",
             "processing": [
                 {
-                    "script": "tools/processing/excelProcess.py",
-                    "function": "process",
+                    "path": "lib/tools/excelProcessor.py",
+                    "function": "ExcelProcessor.splitSheets",
                     "args": [
-                        "{INPUT, 0, FILEPATH}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING}",
+                        [
+                            "siteData"
+                        ]
                     ], 
                     "outputs": [
-                        "{SCRIPT}"
+                        "{PATH, PROCESSING, siteData.csv}"
                     ]
                 }
             ]
