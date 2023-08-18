@@ -100,7 +100,10 @@ class SystemManager:
         for idx, stage in enumerate(fileStages[:-1], start=1):
             nextStage = fileStages[idx]
             if self.stages[stage] and not self.stages[nextStage]: # If this stage has files and next doesn't
-                self.stages[nextStage] = self.stages[stage].copy()
+                for stageFile in self.stages[stage].copy():
+                    stageFile.updateStage(nextStage)
+                    self.stages[nextStage].append(stageFile)
+                    
                 if verbose:
                     print(f"Pushed files {stage.name} --> {nextStage.name}")
 
