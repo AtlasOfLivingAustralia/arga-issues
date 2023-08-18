@@ -1,0 +1,28 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/vicMuseum/processing.py",
+        "function": "retrieve",
+        "args": [
+            "species",
+            "{PATH, DOWNLOAD}",
+            50
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, species.csv}"
+        ]
+    },
+    "globalProcessing": [
+        {
+            "path": "sourceProcessing/vicMuseum/processing.py",
+            "function": "expandTaxa",
+            "args": [
+                "{INPUT, 0, FILEPATH}",
+                "{PATH, PROCESSING, species.csv}"
+            ],
+            "outputs": [
+                "{PATH, PROCESSING, species.csv}"
+            ]
+        }
+    ]
+}
