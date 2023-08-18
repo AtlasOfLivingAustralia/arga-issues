@@ -82,7 +82,7 @@ class FlatFileParser:
                         key = key.strip().lower()
                         dbs[key] = []
 
-                    if key is "unknown_db": # Found a line before a db name
+                    if key == "unknown_db": # Found a line before a db name
                         dbs[key] = [] # Create a list for values with no db name
                         
                     dbs[key].extend([element.strip() for element in line.split(",")])
@@ -100,7 +100,7 @@ class FlatFileParser:
                 organism, higherClassification = leftover.split("\n", 1)
 
                 entryData["source"] = source.strip()
-                entryData["organism"] = organism.split()[1].strip()
+                entryData["organism"] = organism.split(" ", 1)[1].strip()
                 entryData["higher_classification"] = self.flattenBlock(higherClassification)
 
             elif heading == "REFERENCE":
@@ -130,6 +130,12 @@ class FlatFileParser:
 
                 for section in refInfo:
                     sectionName, sectionData = section.strip().split(" ", 1)
+                    if sectionName == "JOURNAL":
+                        if "PUBMED" in sectionData:
+                            sectionData, pubmed = sectionData.split("PUBMED")
+                            reference["journal"] = self.flattenBlock(sectionData)
+                            reference["pubmed"] = pubmed.strip()
+
                     reference[sectionName.lower()] = self.flattenBlock(sectionData)
 
                 if "references" not in entryData:
