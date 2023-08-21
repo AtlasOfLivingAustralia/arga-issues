@@ -4,7 +4,7 @@ from pathlib import Path
 # from extract import parse
 import pandas as pd
 
-requestURL = "https://f1000research.com/extapi/search?q=R_TY:GENOME_NOTE"
+requestURL = "https://f1000research.com/extapi/search?q=R_TY:\"GENOME_NOTE\" OR R_TY:\"DATA_NOTE\" OR R_TY:\"RESEARCH_ARTICLE\" OR R_TY:\"BRIEF_REPORT\""
 response = requests.get(requestURL)
 
 with open("response.xml", "w") as fp:
