@@ -36,11 +36,7 @@ env
 *.db
 *.db-journal
 *.xml
-
-# Test Data #
-src/tests/*/*.txt
-src/tests/*/*.json
-src/tests/*/testing.py
+*.txt
 
 # Hidden Files #
 .history
