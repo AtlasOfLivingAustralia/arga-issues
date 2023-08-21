@@ -1,0 +1,25 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/ala/profiles.py",
+        "function": "collect",
+        "args": [
+            "{PATH, DOWNLOAD}",
+            [
+                "kamilaroi",
+                "noongar",
+                "southeastarnhemland",
+                "mangrovewatch",
+                "weeds-australia"
+            ],
+            "{PATH, ROOT, token.json}"
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, kamilaroi.csv}",
+            "{PATH, DOWNLOAD, noongar.csv}",
+            "{PATH, DOWNLOAD, southeastarnhemland.csv}",
+            "{PATH, DOWNLOAD, mangrovewatch.csv}",
+            "{PATH, DOWNLOAD, weeds-australia.csv}"
+        ]
+    }
+}

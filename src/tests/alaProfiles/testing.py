@@ -15,6 +15,7 @@ endpoint = f"/api/opus/{profile}/profile?pageSize=1000"
 
 response = requests.get(baseURL + endpoint, headers={"Authorization": f"Bearer {bearerToken}"})
 data = response.json()
+print(data)
 print(f"Found {len(data)} records")
 
 records = []
