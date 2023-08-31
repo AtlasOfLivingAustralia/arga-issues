@@ -2,6 +2,7 @@ import requests
 from pathlib import Path
 import pandas as pd
 import json
+import lib.dataframeFuncs as dff
 
 def getUrl(entryCount: int, page: int) -> str:
     baseURL = "https://api.algaebase.org/v1.3/"
@@ -37,4 +38,5 @@ def build(outputFile: Path, apiKeyPath: Path) -> None:
         records.extend(data["result"])
 
     df = pd.DataFrame.from_records(records)
+    df = dff.removeSpaces(df)
     df.to_csv(outputFile, index=False)
