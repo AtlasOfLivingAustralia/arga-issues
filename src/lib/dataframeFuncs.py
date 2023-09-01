@@ -50,3 +50,7 @@ def chunkGenerator(filePath: str, chunkSize: int, sep: str = ",", header: int = 
     with pd.read_csv(filePath, on_bad_lines="skip", chunksize=chunkSize, sep=sep, header=header, encoding=encoding, dtype=object) as reader:
         for chunk in reader:
             yield chunk
+
+def removeSpaces(df: pd.DataFrame) -> pd.DataFrame:
+    df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["", ""], regex=True, inplace=True)
+    return df

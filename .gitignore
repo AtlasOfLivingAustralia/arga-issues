@@ -30,6 +30,9 @@ src/unsortedFiles
 logs
 env
 
+# Tests #
+src/tests/**/*.json
+
 # Data Files #
 *.tsv
 *.csv
@@ -37,6 +40,8 @@ env
 *.db-journal
 *.xml
 *.txt
+*.parquet
+*.seq
 
 # Hidden Files #
 .history
