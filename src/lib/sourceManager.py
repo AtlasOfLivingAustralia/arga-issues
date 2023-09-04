@@ -27,7 +27,7 @@ class SourceManager:
         location, database = source.split('-')
         return (location, database)
 
-    def choices(self) -> list:
+    def choices(self) -> list[str]:
         # return [f"{location}-{db}" for location, source in self.locations.items() for db in source.getDatabaseList()]
         output = []
         for locationName, sourceLocation in self.locations.items():
@@ -35,6 +35,9 @@ class SourceManager:
                 output.append(self.packDB(locationName, database))
 
         return output
+    
+    def getLocations(self) -> dict[str, SourceLocation]:
+        return self.locations
 
     def getDB(self, sources: list[str]) -> list[Database]:
         locations = []

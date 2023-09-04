@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import lib.commonFuncs as cmn
 import pandas as pd
+from typing import Generator
 
 def getColumnEmptyCount(df: pd.DataFrame, column: str) -> int:
     if column not in df.columns:
@@ -46,7 +47,11 @@ def applyExclusions(df: pd.DataFrame, exclusionMap: dict) -> pd.DataFrame:
     
     return df
 
-def chunkGenerator(filePath: str, chunkSize: int, sep: str = ",", header: int = 0, encoding: str = "utf-8") -> pd.DataFrame:
+def chunkGenerator(filePath: str, chunkSize: int, sep: str = ",", header: int = 0, encoding: str = "utf-8") -> Generator[pd.DataFrame, None, None]:
     with pd.read_csv(filePath, on_bad_lines="skip", chunksize=chunkSize, sep=sep, header=header, encoding=encoding, dtype=object) as reader:
         for chunk in reader:
             yield chunk
+
+def removeSpaces(df: pd.DataFrame) -> pd.DataFrame:
+    df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["", ""], regex=True, inplace=True)
+    return df
