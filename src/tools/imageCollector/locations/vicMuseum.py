@@ -80,7 +80,7 @@ def run():
             entries.extend(processEntry(entry))
 
     df = pd.DataFrame.from_records(entries)
-    df.to_csv("images.csv", index=False)
+    df.to_csv("vicMuseumImages.csv", index=False)
 
 if __name__ == "__main__":
     run()
