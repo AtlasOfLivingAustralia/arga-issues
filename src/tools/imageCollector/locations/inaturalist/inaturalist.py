@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
 import lib.dataframeFuncs as dff
-import numpy as np
+from lib.tools.subfileWriter import Writer
 
 def run():
     dataFolder = Path("./inaturalist-open-data-20230827")
@@ -21,34 +21,44 @@ def run():
     observers["creator"] = observers["name"].fillna(observers["login"])
     observers.drop(["name", "login"], axis=1, inplace=True)
 
+    writer = Writer(Path("."), "chunks", "chunk")
+
     photosGen = dff.chunkGenerator(photos, 100, "\t")
     for idx, df in enumerate(photosGen, start=1):
-        print(f"At chunk: {idx}", end="\r")
         df.drop(df[df["license"] == "CC-BY-NC-ND"].index, inplace=True)
-    
+
+        df["taxon_id"] = "" # Add empty taxon_id column for filling with observations
         obsvGen = dff.chunkGenerator(observations, 1024*1024, "\t")
-        for subIdx, obsv in enumerate(obsvGen):
+
+        print(" "*50, end="\r")
+        for subIdx, obsv in enumerate(obsvGen, start=1):
+            print(f"At: chunk {idx} | sub chunk {subIdx}", end="\r")
             obsv.drop(obsv[obsv["quality_grade"] != "research"].index, inplace=True)
-            obsv.drop(["latitude" , "longitude", "positional_accuracy", "quality_grade", "observer_id", "observed_on"], axis=1, inplace=True)
-            df = pd.merge(df, obsv, "left", on="observation_uuid")
-            # df = df.combine_first(obsv[["observation_uuid"]])
+            obsv = obsv[["observation_uuid", "taxon_id"]] # Only columns needed
+            # obsv.drop(["latitude" , "longitude", "positional_accuracy", "quality_grade", "observer_id", "observed_on"], axis=1, inplace=True)
+            df["taxon_id"] = (df.set_index("observation_uuid")["taxon_id"].fillna(obsv.set_index("observation_uuid")["taxon_id"]).reset_index(drop=True))
+            break
 
-            if subIdx >= 5:
-                break
-
-        try:
-            df = pd.merge(df, taxonomy, "left", on="taxon_id")
-        except KeyError:
-            print("TaxonID error")
-
-        try:
-            df = pd.merge(df, observers, "left", on="observer_id")
-        except KeyError:
-            print("ObserverID error")
-
-        df.drop(["position", "taxon_id", "observer_id"], axis=1, inplace=True)
-        df.to_csv("testing.csv", index=False)
+        df.to_csv("before.csv", index=False)
+        df = pd.merge(df, taxonomy, "left", on="taxon_id")
+        df = pd.merge(df, observers, "left", on="observer_id")
+        df.to_csv("after.csv", index=False)
         break
+        # df.drop(["position", "taxon_id", "observer_id", "observation_uuid"], axis=1, inplace=True)
+        
+        # # Renaming fields
+        # df.rename({
+        #     "extension": "format",
+        #     "photo_uuid": "datasetID"
+        #     "taxon_"
+        # })
+        # df["type"] = "image"
+        
+        # # Missing fields:
+        
+        # writer.writeDF(df)
+    
+    print()
 
 if __name__ == "__main__":
     # downloadURL = "https://inaturalist-open-data.s3.amazonaws.com/metadata/inaturalist-open-data-latest.tar.gz"
