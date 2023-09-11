@@ -16,7 +16,6 @@ def run():
     taxonomy = pd.read_csv(taxa, dtype=object, sep="\t")
     taxonomy.drop(taxonomy[taxonomy["rank"] != "species"].index, inplace=True)
     taxonomy.drop(["ancestry", "rank_level", "rank", "active"], axis=1, inplace=True)
-    taxonomy.to_csv("taxonomy.csv", index=False)
 
     # Prepare observers for getting creator name
     observers = pd.read_csv(observers, dtype=object, sep="\t")
@@ -25,11 +24,10 @@ def run():
 
     writer = Writer(Path("."), "subfiles", "chunk")
 
-    photosGen = dff.chunkGenerator(photos, 1024*1024*4, "\t")
+    photosGen = dff.chunkGenerator(photos, 1024*1024*2, "\t")
     for idx, df in enumerate(photosGen, start=1):
         df.drop(df[df["license"] == "CC-BY-NC-ND"].index, inplace=True)
 
-        df["extension"] = df["extension"].str.lower()
         df["identifier"] = "https://inaturalist-open-data.s3.amazonaws.com/photos/" + df["photo_id"] + "/original." + df["extension"]
  
         # Add empty taxon_id and observed_on columns for filling with observations
@@ -46,11 +44,13 @@ def run():
             for column in ("taxon_id", "observed_on"):
                 df[column] = (df.set_index("observation_uuid")[column].fillna(obsv.set_index("observation_uuid")[column]).reset_index(drop=True))
 
+        df["taxon_id"] = df["taxon_id"].astype(object) # Fixes an issue where taxon_id is sometimes float
+
         df = pd.merge(df, taxonomy, "left", on="taxon_id")
         df = pd.merge(df, observers, "left", on="observer_id")
 
         df.drop(["position", "taxon_id", "observer_id", "observation_uuid", "photo_id"], axis=1, inplace=True)
-        df["license"] = "©" + df["creator"] + ", some rights reserved (" + df["license"] + ")"
+        df["license"] = "© " + df["creator"] + ", some rights reserved (" + df["license"] + ")"
 
         # Renaming fields
         df.rename({
@@ -67,7 +67,7 @@ def run():
         writer.writeDF(df)
     
     print()
-    writer.oneFile("inaturalist.csv")
+    writer.oneFile(Path("./inaturalist.csv"))
 
 if __name__ == "__main__":
     # downloadURL = "https://inaturalist-open-data.s3.amazonaws.com/metadata/inaturalist-open-data-latest.tar.gz"
