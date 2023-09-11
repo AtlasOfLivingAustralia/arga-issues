@@ -8,60 +8,69 @@ import pyarrow
 
 class Format(Enum):
     CSV = "csv"
+    TSV = "tsv"
     PARQUET = "parquet"
 
 class Subfile:
-    def __init__(self, folderPath: Path, fileName: str, fileFormat: Format):
-        self.folderPath = folderPath
-        self.fileName = fileName
-        self.fileFormat = fileFormat
 
-        self.fullPath = folderPath / f"{fileName}.{Format(fileFormat).value}"
+    fileFormat = Format.CSV
+
+    def __new__(cls, fileFormat):
+        subclassMap = {subclass.fileFormat for subclass in cls.__subclasses__()}
+        subclass = subclassMap.get(fileFormat, cls)
+        return super().__new__(subclass)
+
+    def __init__(self, filePath: Path) -> 'Subfile':
+        self.filePath = filePath
 
     def __repr__(self) -> str:
-        return self.fullPath
+        return self.filePath
     
-    @classmethod
-    def fromFilePath(cls: 'Subfile', filePath: Path) -> 'Subfile':
-        folderPath = filePath.parent
-        fileName = filePath.name
-        fileFormat = Format(filePath.suffix)
-
-        return cls(folderPath, fileName, fileFormat)
-
     def write(self, df: pd.DataFrame) -> None:
-        if self.fileFormat == Format.CSV:
-            df.to_csv(self.fullPath, index=False)
-            return
-        
-        if self.fileFormat == Format.PARQUET:
-            df.to_parquet(self.fullPath, "pyarrow", index=False)
-            return
-
+        df.to_csv(self.fullPath, index=False)
+    
     def read(self) -> pd.DataFrame:
-        if self.fileFormat == Format.CSV:
-            return pd.read_csv(self.fullPath)
-        
-        if self.fileFormat == Format.PARQUET:
-            return pd.read_parquet(self.fullPath, "pyarrow")
-        
+        return pd.read_csv(self.fullPath)
+
     def rename(self, newFilePath: Path) -> None:
         newFileFormat = Format(newFilePath.suffix)
 
         if newFileFormat == self.fileFormat:
-            self.fullPath.rename(newFilePath)
+            self.filePath.rename(newFilePath)
             return
         
         if self.newFileFormat == Format.CSV:
-            self.read().to_csv(newFilePath, index=False)
+            df = self.read()
+            df.to_csv(newFilePath, index=False)
             
         elif self.newFileFormat == Format.PARQUET:
-            self.read().to_parquet(newFilePath, "pyarrow", index=False)
+            df = self.read()
+            df.to_parquet(newFilePath, "pyarrow", index=False)
 
         self.remove()
         
     def remove(self) -> None:
-        self.fullPath.unlink()
+        self.filePath.unlink()   
+
+class TSVSubfile(Subfile):
+
+    fileFormat = Format.TSV
+
+    def write(self, df: pd.DataFrame) -> None:
+        df.to_csv(self.filePath, sep="\t", index=False)
+
+    def read(self) -> pd.DataFrame:
+        return pd.read_csv(self.filePath, sep="\t")
+    
+class PARQUETSubfile(Subfile):
+
+    fileFormat = Format.PARQUET
+
+    def write(self, df: pd.DataFrame) -> None:
+        df.to_parquet(self.filePath, "pyarrow", index=False)
+
+    def read(self) -> pd.DataFrame:
+        return pd.read_parquet(self.filePath, "pyarrow")
 
 class BigFileWriter:
     def __init__(self, outputFile: Path, subDirName: str = "chunks", sectionPrefix: str = "chunk", subfileType: Format = Format.PARQUET) -> 'BigFileWriter':
