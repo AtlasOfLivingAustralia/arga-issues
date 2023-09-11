@@ -20,6 +20,14 @@ class Subfile:
 
     def __repr__(self) -> str:
         return self.fullPath
+    
+    @classmethod
+    def fromFilePath(cls: 'Subfile', filePath: Path) -> 'Subfile':
+        folderPath = filePath.parent
+        fileName = filePath.name
+        fileFormat = Format(filePath.suffix)
+
+        return cls(folderPath, fileName, fileFormat)
 
     def write(self, df: pd.DataFrame) -> None:
         if self.fileFormat == Format.CSV:
@@ -38,14 +46,19 @@ class Subfile:
             return pd.read_parquet(self.fullPath, "pyarrow")
         
     def rename(self, newFilePath: Path) -> None:
-        if self.fileFormat == Format.CSV:
+        newFileFormat = Format(newFilePath.suffix)
+
+        if newFileFormat == self.fileFormat:
             self.fullPath.rename(newFilePath)
             return
         
-        if self.fileFormat == Format.PARQUET:
+        if self.newFileFormat == Format.CSV:
             self.read().to_csv(newFilePath, index=False)
-            self.remove()
-            return
+            
+        elif self.newFileFormat == Format.PARQUET:
+            self.read().to_parquet(newFilePath, "pyarrow", index=False)
+
+        self.remove()
         
     def remove(self) -> None:
         self.fullPath.unlink()
