@@ -27,6 +27,7 @@ def run():
     photosGen = dff.chunkGenerator(photos, 1024*1024*2, "\t")
     for idx, df in enumerate(photosGen, start=1):
         df.drop(df[df["license"] == "CC-BY-NC-ND"].index, inplace=True)
+        df.drop_duplicates("photo_uuid", inplace=True)
 
         df["identifier"] = "https://inaturalist-open-data.s3.amazonaws.com/photos/" + df["photo_id"] + "/original." + df["extension"]
  
