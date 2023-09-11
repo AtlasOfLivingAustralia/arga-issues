@@ -28,8 +28,6 @@ def run():
     for idx, df in enumerate(photosGen, start=1):
         df.drop(df[df["license"] == "CC-BY-NC-ND"].index, inplace=True)
         df.drop_duplicates("photo_uuid", inplace=True)
-
-        df["identifier"] = "https://inaturalist-open-data.s3.amazonaws.com/photos/" + df["photo_id"] + "/original." + df["extension"]
  
         # Add empty taxon_id and observed_on columns for filling with observations
         df["taxon_id"] = np.NaN
@@ -49,9 +47,11 @@ def run():
 
         df = pd.merge(df, taxonomy, "left", on="taxon_id")
         df = pd.merge(df, observers, "left", on="observer_id")
-
+        
         df.drop(["position", "taxon_id", "observer_id", "observation_uuid", "photo_id"], axis=1, inplace=True)
+        
         df["license"] = "© " + df["creator"] + ", some rights reserved (" + df["license"] + ")"
+        df["identifier"] = "https://inaturalist-open-data.s3.amazonaws.com/photos/" + df["photo_id"] + "/original." + df["extension"]
 
         # Renaming fields
         df.rename({
