@@ -45,35 +45,25 @@ else:
 obsvIDs = Path("./observationIDs.txt")
 if not obsvIDs.exists():
     chunkGen = dff.chunkGenerator(observations, 1024*1024*4, "\t", usecols=["taxon_id", "observation_uuid"])
-    # df = dd.read_csv(observations, sep="\t", usecols=["taxon_id", "observation_uuid"], dtype={"taxon_id": 'float64'})
-    # observationIDs = pd.DataFrame(columns=["observation_uuid"])
 
-    # writer = BigFileWriter(obsvIDs, "obsv")
     for idx, df in enumerate(chunkGen, start=1):
         print(f"At chunk: {idx}", end="\r")
-    # df = df[df["taxon_id"].compute().isin(ids)]
-    # df.to_csv(obsvIDs, index=False)
 
-        # writer.writeDF(df["observation_uuid"].to_frame())
         with open(obsvIDs, "a") as fp:
             fp.write("\n".join(df["observation_uuid"].tolist()))
-    
-    # writer.oneFile()
-    print()
-# else:
-#     df = dd.read_csv(obsvIDs)
+            fp.write("\n")
 
-# photoIDs = []
+    print()
+
 photoIDs = Path("./photoIDs.txt")
 
 lengthBefore = 0
 lengthAfter = 0
-# photosDF = dd.read_csv(photos, sep="\t", usecols=["photo_uuid", "observation_uuid"])
+
 chunkGen = dff.chunkGenerator(photos, 1024*1024*4, sep="\t", usecols=["photo_uuid", "observation_uuid"])
 readBytes = 1024*1024*256
 
 for idx, df in enumerate(chunkGen, start=1):
-    # print(f"At chunk: {idx}", end="\r")
     lengthBefore += len(df)
 
     with open(obsvIDs) as fp:
@@ -91,12 +81,10 @@ for idx, df in enumerate(chunkGen, start=1):
 
             with open(photoIDs, "a") as fp2:
                 fp2.write("\n".join(photoUUIDs))
+                fp2.write("\n")
 
             observationIDs = fp.readlines(readBytes)
             subIdx += 1
-#     photoIDs.extend(df["photo_uuid"].to_list())
 
-# photoIDs = photosDF[photosDF["observation_uuid"].isin(df["observation_uuid"])]
-# photoIDs.to_csv("photoIDs.csv", index=False)
 print()
 print(lengthBefore, lengthAfter)
