@@ -4,7 +4,6 @@ import lib.commonFuncs as cmn
 import pandas as pd
 import sys
 from enum import Enum
-import pyarrow
 
 class Format(Enum):
     CSV = "csv"
@@ -15,16 +14,23 @@ class Subfile:
 
     fileFormat = Format.CSV
 
-    def __new__(cls, fileFormat):
-        subclassMap = {subclass.fileFormat for subclass in cls.__subclasses__()}
-        subclass = subclassMap.get(fileFormat, cls)
+    def __new__(cls, *args):
+        subclassMap = {subclass.fileFormat: subclass for subclass in cls.__subclasses__()}
+        subclass = subclassMap.get(args[-1], cls)
         return super().__new__(subclass)
 
-    def __init__(self, filePath: Path) -> 'Subfile':
-        self.filePath = filePath
+    def __init__(self, location: Path, fileName: str, format: Format) -> 'Subfile':
+        self.filePath = location / f"{fileName}.{Format(format).value}"
 
     def __repr__(self) -> str:
         return self.filePath
+    
+    @classmethod
+    def fromFilePath(cls, filePath: Path) -> 'Subfile':
+        fileFormat = Format(filePath.suffix)
+        instance = cls(Path(), "", fileFormat)
+        instance.filePath = filePath
+        return instance
     
     def write(self, df: pd.DataFrame) -> None:
         df.to_csv(self.fullPath, index=False)
