@@ -6,7 +6,7 @@
             "downloadedFile": "cvs.xlsx",
             "processing": [
                 {
-                    "script": "tools/processing/excelProcess.py",
+                    "path": "tools/processing/excelProcess.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0, FILEPATH}"

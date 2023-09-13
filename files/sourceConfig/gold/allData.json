@@ -6,13 +6,26 @@
             "downloadedFile": "goldData.xlsx",
             "processing": [
                 {
-                    "script": "tools/processing/excelProcess.py",
-                    "function": "process",
+                    "path": "lib/tools/excelProcessor.py",
+                    "function": "ExcelProcessor.splitSheets",
                     "args": [
-                        "{INPUT, 0, FILEPATH}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING}",
+                        [
+                            "",
+                            "study",
+                            "biosample",
+                            "organism",
+                            "sequencingProject",
+                            "analysisProject"
+                        ]
                     ], 
                     "outputs": [
-                        "{SCRIPT}"
+                        "{PATH, PROCESSING, study.csv}",
+                        "{PATH, PROCESSING, biosample.csv}",
+                        "{PATH, PROCESSING, organism.csv}",
+                        "{PATH, PROCESSING, sequencingProject.csv}",
+                        "{PATH, PROCESSING, analysisProject.csv}"
                     ]
                 }
             ]

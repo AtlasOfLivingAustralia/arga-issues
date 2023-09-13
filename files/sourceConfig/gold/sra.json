@@ -6,13 +6,17 @@
             "downloadedFile": "sraBiomeImg.xlsx",
             "processing": [
                 {
-                    "script": "tools/processing/excelProcess.py",
-                    "function": "process",
+                    "path": "lib/tools/excelProcessor.py",
+                    "function": "ExcelProcessor.splitSheets",
                     "args": [
-                        "{INPUT, 0, FILEPATH}"
+                        "{INPUT, 0, FILEPATH}",
+                        "{PATH, PROCESSING}",
+                        [
+                            "sra"
+                        ]
                     ], 
                     "outputs": [
-                        "{SCRIPT}"
+                        "{PATH, PROCESSING, sra.csv}"
                     ]
                 }
             ]
