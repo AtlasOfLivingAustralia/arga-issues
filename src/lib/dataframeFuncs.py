@@ -47,8 +47,8 @@ def applyExclusions(df: pd.DataFrame, exclusionMap: dict) -> pd.DataFrame:
     
     return df
 
-def chunkGenerator(filePath: str, chunkSize: int, sep: str = ",", header: int = 0, encoding: str = "utf-8") -> Generator[pd.DataFrame, None, None]:
-    with pd.read_csv(filePath, on_bad_lines="skip", chunksize=chunkSize, sep=sep, header=header, encoding=encoding, dtype=object) as reader:
+def chunkGenerator(filePath: str, chunkSize: int, sep: str = ",", header: int = 0, encoding: str = "utf-8", usecols: list = None) -> Generator[pd.DataFrame, None, None]:
+    with pd.read_csv(filePath, on_bad_lines="skip", chunksize=chunkSize, sep=sep, header=header, encoding=encoding, dtype=object, usecols=usecols) as reader:
         for chunk in reader:
             yield chunk
 
