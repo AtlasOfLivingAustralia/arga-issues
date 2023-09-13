@@ -1,0 +1,22 @@
+{
+    "dbType": "specific",
+    "files" : [
+        {
+            "url": "https://ftp.ensembl.org/pub/rapid-release/species_metadata.json",
+            "downloadedFile": "species_metadata.json",
+            "processing": [
+                {
+                    "path": "sourceProcessing/ensembl/processing.py",
+                    "function": "convert",
+                    "args": [
+                        "{INPUT, 0}",
+                        "{PATH, PROCESSING, metadata.csv}"
+                    ],
+                    "outputs": [
+                        "{PATH, PROCESSING, metadata.csv}"
+                    ]
+                }
+            ]
+        }
+    ]
+}
