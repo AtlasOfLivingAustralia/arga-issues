@@ -12,7 +12,7 @@ def run():
     photos = dataFolder / "photos.csv" # Large
     taxa = dataFolder / "taxa.csv"
 
-    photoIDs = Path("./photoIDs.txt")
+    photoIDs = Path("./createdFiles/photoIDs.txt")
 
     # Prepare taxonomy for getting species name
     taxonomy = pd.read_csv(taxa, dtype=object, sep="\t")

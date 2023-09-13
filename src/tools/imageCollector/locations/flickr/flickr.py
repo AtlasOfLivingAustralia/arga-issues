@@ -1,8 +1,8 @@
 import requests
-import json
 import math
 import pandas as pd
 import concurrent.futures
+from pathlib import Path
 
 def buildURL(apiKey, method, **kwargs):
     baseURL = "https://api.flickr.com/services/rest/?method="
@@ -58,10 +58,12 @@ def processPhoto(apiKey: str, licenses: dict, photo: dict) -> dict:
     }
 
 def run():
-    with open("flickrkey.txt") as fp:
+    baseDir = Path(__file__)
+
+    with open(baseDir / "flickrkey.txt") as fp:
         apiKeyData = fp.read()
 
-    with open("flickrusers.txt") as fp:
+    with open(baseDir / "flickrusers.txt") as fp:
         users = fp.read()
 
     apiKey, secret = apiKeyData.rstrip("\n").split("\n")
@@ -111,7 +113,7 @@ def run():
             print()
 
         df = pd.DataFrame.from_records(photos)
-        df.to_csv(f"{user}_flickrImages.csv", index=False)
+        df.to_csv(baseDir / "userImages" / f"{user}.csv", index=False)
 
 if __name__ == "__main__":
     run()

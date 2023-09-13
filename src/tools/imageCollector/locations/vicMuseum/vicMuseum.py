@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import math
+from pathlib import Path
 
 def buildURL(keyword: str, perPage: int, page: int = 1) -> str:
     return f"https://collections.museumsvictoria.com.au/api/{keyword}?perpage={perPage}&page={page}&hasimages=yes"
@@ -59,6 +60,8 @@ def processEntry(entry: dict) -> list[dict]:
     return images
 
 def run():
+    baseDir = Path(__file__).parent
+
     keywords = ["species", "specimens"]
     entriesPerPage = 100
 
@@ -80,7 +83,7 @@ def run():
             entries.extend(processEntry(entry))
 
     df = pd.DataFrame.from_records(entries)
-    df.to_csv("vicMuseumImages.csv", index=False)
+    df.to_csv(baseDir / "vicMuseumImages.csv", index=False)
 
 if __name__ == "__main__":
     run()
