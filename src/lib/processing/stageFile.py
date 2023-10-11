@@ -29,6 +29,9 @@ class StageFile:
         self.firstRow = fileProperties.pop("firstrow", 0)
         self.encoding = fileProperties.pop("encoding", "utf-8")
 
+    def __repr__(self) -> str:
+        return str(self.filePath)
+
     def getFilePath(self) -> Path:
         return self.filePath
     
@@ -44,14 +47,16 @@ class StageFile:
     def loadDataFrameIterator(self, chunkSize: int = 1024 * 1024) ->  Iterator[pd.DataFrame]:
         return dff.chunkGenerator(self.filePath, chunkSize, self.separator, self.firstRow, self.encoding)
 
-    def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0) -> None:
+    def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0) -> bool:
         if self.filePath.exists():
             if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE):
-                return
+                print(self.stage, overwriteStage)
+                return False
             
             elif overwriteAmount <= 0:
                 print(f"{self.filePath} already exists")
-                return
+                return False
         
         self.filePath.parent.mkdir(parents=True, exist_ok=True)
         self.parentScript.run(overwriteStage, overwriteAmount)
+        return True

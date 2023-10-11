@@ -2,6 +2,7 @@ import lib.config as cfg
 from pathlib import Path
 from enum import Enum, auto
 from lib.sourceObjs.systemManager import SystemManager
+from lib.sourceObjs.timeManager import TimeManager
 from lib.processing.stageFile import StageFile, StageFileStep
 from lib.tools.crawler import Crawler
 
@@ -27,6 +28,7 @@ class Database:
         self.locationDir = cfg.folderPaths.data / location
         self.databaseDir = self.locationDir / database
         self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.authFile)
+        self.timeManager = TimeManager(self.databaseDir)
 
         self.postInit(properties)
         self.checkLeftovers(properties)
@@ -44,13 +46,19 @@ class Database:
         raise NotImplementedError
     
     def download(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
-        self.systemManager.create(StageFileStep.RAW, fileNumbers, overwrite)
+        print(fileNumbers, overwrite)
+        self._create(StageFileStep.RAW, fileNumbers, overwrite)
 
     def createPreDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
-        self.systemManager.create(StageFileStep.PRE_DWC, fileNumbers, overwrite)
+        self._create(StageFileStep.PRE_DWC, fileNumbers, overwrite)
 
     def createDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
-        self.systemManager.create(StageFileStep.DWC, fileNumbers, overwrite)
+        self._create(StageFileStep.DWC, fileNumbers, overwrite)
+
+    def _create(self, stage: StageFileStep, fileNumbers: list[int], overwrite: int) -> None:
+        success = self.systemManager.create(stage, fileNumbers, overwrite)
+        if success:
+            self.timeManager.update(stage)
 
     def createDirectory(self) -> None:
         print(f"Creating directory for data: {str(self.databaseDir)}")

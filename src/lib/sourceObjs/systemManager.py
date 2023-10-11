@@ -31,40 +31,47 @@ class SystemManager:
         self.parser = SelectorParser(self.rootDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
         self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.dwcDir)
 
-        self.stages = {stage: [] for stage in StageFileStep}
+        self.stages: dict[StageFileStep, list[StageFile]] = {stage: [] for stage in StageFileStep}
 
     def getFiles(self, stage: StageFileStep) -> list[StageFile]:
         return self.stages[stage]
     
-    def create(self, stage: StageFileStep, fileNumbers: list[int] = [], overwrite: int = 0, maxWorkers: int = 100):
+    def create(self, stage: StageFileStep, fileNumbers: list[int] = [], overwrite: int = 0, maxWorkers: int = 100) -> bool:
+        files: list[StageFile] = []
+        
         if not fileNumbers: # Create all files:
             files = self.stages[stage] # All stage files
         else:
-            files = []
             for number in fileNumbers:
                 if number >= 0 and number <= len(self.stages[stage]):
                     files.append(self.stages[stage][number])
                 else:
                     print(f"Invalid number provided: {number}")
 
-        if len(files) <= 10:
-            for file in files:
-                file.create(stage, overwrite) # Skip threadpool if only 1 file being processed
-            return
+        print(files)
+        if len(files) <= 10: # Skip threadpool if only 1 file being processed
+            return any(file.create(stage, overwrite) for file in files) # Return if any files were created
 
         print("Using concurrency for large quantity of tasks")
+        createdFile = False # Check if any new files were actually created
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             futures = (executor.submit(file.create, (stage, overwrite)) for file in files)
             try:
                 for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
-                    future.result()
-                    print(f"Created file: {idx} of {len(files)}", end="\r")
+                    success = future.result()
+
+                    if success:
+                        print(f"Created file: {idx} of {len(files)}", end="\r")
+                        createdFile = True
+                    
             except KeyboardInterrupt:
                 print("\nExiting...")
                 executor.shutdown(cancel_futures=True)
-                return
+                return False
             
             print()
+
+        return createdFile
 
     def buildProcessingChain(self, processingSteps: list[dict], initialInputs: list[StageFile], finalStage: StageFileStep) -> None:
         inputs = initialInputs.copy()
