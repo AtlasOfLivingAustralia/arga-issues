@@ -1,9 +1,16 @@
 import lib.config as cfg
 from pathlib import Path
-from lib.sourceObjs.dbTypes import DBType
+from enum import Enum, auto
 from lib.sourceObjs.systemManager import SystemManager
 from lib.processing.stageFile import StageFile, StageFileStep
 from lib.tools.crawler import Crawler
+
+class DBType(Enum):
+    UNKNOWN = auto()
+    SPECIFIC = auto()
+    LOCATION = auto()
+    SCRIPTURL = auto()
+    SCRIPTDATA = auto()
 
 class Database:
     def __init__(self, location: str, database: str, properties: dict = {}):
