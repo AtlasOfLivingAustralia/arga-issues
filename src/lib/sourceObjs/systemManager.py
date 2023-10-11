@@ -3,6 +3,7 @@ from lib.processing.stageFile import StageFileStep, StageFile
 from lib.processing.stageScript import StageDownloadScript, StageScript, StageDWCConversion
 from lib.processing.parser import SelectorParser
 from lib.processing.dwcProcessor import DWCProcessor
+from copy import deepcopy
 import concurrent.futures
 
 class SystemManager:
@@ -49,7 +50,6 @@ class SystemManager:
                 else:
                     print(f"Invalid number provided: {number}")
 
-        print(files)
         if len(files) <= 10: # Skip threadpool if only 1 file being processed
             return any(file.create(stage, overwrite) for file in files) # Return if any files were created
 
@@ -108,7 +108,7 @@ class SystemManager:
         for idx, stage in enumerate(fileStages[:-1], start=1):
             nextStage = fileStages[idx]
             if self.stages[stage] and not self.stages[nextStage]: # If this stage has files and next doesn't
-                for stageFile in self.stages[stage].copy():
+                for stageFile in deepcopy(self.stages[stage]):
                     stageFile.updateStage(nextStage)
                     self.stages[nextStage].append(stageFile)
                     

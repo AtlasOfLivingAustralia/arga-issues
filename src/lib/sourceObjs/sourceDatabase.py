@@ -46,7 +46,6 @@ class Database:
         raise NotImplementedError
     
     def download(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
-        print(fileNumbers, overwrite)
         self._create(StageFileStep.RAW, fileNumbers, overwrite)
 
     def createPreDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
