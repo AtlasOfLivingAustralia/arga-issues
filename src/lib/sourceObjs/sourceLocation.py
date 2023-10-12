@@ -36,5 +36,4 @@ class SourceLocation:
             databaseInfo = json.load(fp)
 
         db = self.createDB(database, databaseInfo)
-        db.prepare()
         return db

@@ -2,7 +2,7 @@ import pandas as pd
 import json
 import lib.dataframeFuncs as dff
 from lib.sourceObjs.argParseWrapper import SourceArgParser
-from lib.processing.stageFile import StageFile
+from lib.processing.stageFile import StageFile, StageFileStep
 from lib.tools.remapper import Remapper
 import random
 
@@ -74,6 +74,7 @@ if __name__ == '__main__':
         #     print(f"Output file {output} already exists, please run with overwrite flag (-o) to overwrite")
         #     continue
 
+        source.prepareStage(StageFileStep.PRE_DWC)
         stageFiles = source.getPreDWCFiles(selectedFiles)
         remapper = source.systemManager.dwcProcessor.remapper
 
