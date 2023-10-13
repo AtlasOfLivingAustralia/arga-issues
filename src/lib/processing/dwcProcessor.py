@@ -3,6 +3,7 @@ from pathlib import Path
 from lib.tools.subfileWriter import Writer
 from lib.tools.remapper import Remapper
 import lib.processing.processingFuncs as pFuncs
+import pandas as pd
 
 class DWCProcessor:
 
@@ -40,7 +41,7 @@ class DWCProcessor:
         self.writer.oneFile(outputFilePath)
         return outputFilePath
 
-    def applyAugments(self, df):
+    def applyAugments(self, df: pd.DataFrame) -> pd.DataFrame:
         for augment in self.augmentSteps:
             df = augment.process(df)
         return df
@@ -60,6 +61,6 @@ class Augment:
         if self.function is None:
             raise Exception("No script function specified") from AttributeError
 
-    def process(self, df):
+    def process(self, df: pd.DataFrame) -> None:
         processFunction = pFuncs.importFunction(self.path, self.function)
         return processFunction(df, *self.args, **self.kwargs)
