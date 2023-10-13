@@ -3,7 +3,7 @@
     "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
     "subDirectoryDepth": 0,
     "regexMatch": "gbpri\\d+\\.seq\\.gz",
-    "combineProcessing": [
+    "finalProcessing": [
         {
             "path": "sourceProcessing/ncbi/nucleotide.py",
             "function": "combine",

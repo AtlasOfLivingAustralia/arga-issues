@@ -10,7 +10,7 @@
             "{PATH, DOWNLOAD, rawgoat.csv}"
         ]
     },
-    "globalProcessing": [
+    "perFileProcessing": [
         {
             "path": "sourceProcessing/goat/processing.py",
             "function": "clean",
