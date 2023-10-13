@@ -8,10 +8,10 @@ def filterEntry(value: any) -> list:
     if not isinstance(value, str): # Ignore float/int
         return []
     
-    if value in ("0", "1", "nan", "NaN", np.nan, np.NaN, np.NAN): # Ignore these values
+    if value in ("", "0", "1", "nan", "NaN", np.nan, np.NaN, np.NAN): # Ignore these values
         return []
     
-    if any(value.startswith(val) for val in ("ARGA", '"')): # Ignore values with these prefixes
+    if any(value.startswith(val) for val in ("ARGA", '"', "/")): # Ignore values with these prefixes
         return []
 
     return [elem.strip() for elem in value.split(",")]
@@ -35,16 +35,23 @@ if __name__ == "__main__":
 
     sheetIDs = {
         "42bp-genomeArk": 84855374,
+        "ala-avh": 404635334,
         "anemone-db": 286004534,
         "bold-datapackage": 1154592624,
+        "bold-tsv": 78385490,
+        "bold-xml": 984983691,
         "bpa-portal": 1982878906,
         "bvbrc-db": 685936034,
+        "csiro-dap": 16336602,
+        "csiro-genomes": 215504073,
         "dnazoo-db": 570069681,
         "ena-genomes": 1058330275,
         "ncbi-biosample": 109194600,
         "ncbi-nucleotide": 1759032197,
         "ncbi-refseq": 2003682060,
         "ncbi-taxonomy": 240630744,
+        "ncbi-genbank": 1632006425,
+        "tern-portal": 1651969444,
         "tsi-koala": 975794491
     }
 
@@ -79,7 +86,7 @@ if __name__ == "__main__":
             if keyword not in columnMap:
                 columnMap[keyword] = names
             else:
-                columnMap[keyword].extend(names)
+                columnMap[keyword].extend(name for name in names if name not in columnMap[keyword])
 
         with open(mapFile, "w") as fp:
             json.dump(columnMap, fp, indent=4)
