@@ -72,10 +72,10 @@ class Remapper:
         mapValues.extend(self.customReverseLookup.get(column, [])) # Apply custom mapping
 
         if column in self.map and self.preserveDwCMatch: # If column matches mapped value and preserve
-            mapValues.append(f"{self.location}_preserved_{column}")
+            mapValues.append(f"preserved_{self.location}_{column}")
 
         if not mapValues: # If no mapped value has been found yet
-            mapValues.append(f"{self.location}_unmapped_{column}" if self.prefixMissing else column)
+            mapValues.append(f"unmapped_{self.location}_{column}" if self.prefixMissing else column)
         
         return mapValues
 
