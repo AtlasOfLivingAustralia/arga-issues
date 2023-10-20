@@ -5,25 +5,25 @@ from lib.sourceObjs.sourceDatabase import Database
 class SourceManager:
     
     def __init__(self):
-        self.locations = {}
+        self.locations: dict[str, SourceLocation] = {}
         
-        for locationPath in cfg.folderPaths.sources.iterdir():
+        for locationPath in cfg.folders.datasources.iterdir():
             if locationPath.is_file(): # Ignore files in directory
                 continue
 
             location = locationPath.stem
 
             databases = {}
-            for databaseSettingsPath in locationPath.iterdir():
-                databaseName = databaseSettingsPath.stem
-                databases[databaseName] = databaseSettingsPath
+            for databaseFolder in locationPath.iterdir():
+                databaseName = databaseFolder.stem
+                databases[databaseName] = databaseFolder / "config.json"
 
             self.locations[location] = SourceLocation(location, databases)
 
-    def packDB(self, location: str, database: str) -> str:
+    def _packDB(self, location: str, database: str) -> str:
         return f"{location}-{database}"
     
-    def unpackDB(self, source: str) -> tuple[str, str]:
+    def _unpackDB(self, source: str) -> tuple[str, str]:
         location, database = source.split('-')
         return (location, database)
 
@@ -32,7 +32,7 @@ class SourceManager:
         output = []
         for locationName, sourceLocation in self.locations.items():
             for database in sourceLocation.getDatabaseList():
-                output.append(self.packDB(locationName, database))
+                output.append(self._packDB(locationName, database))
 
         return output
     
@@ -43,7 +43,7 @@ class SourceManager:
         locations = []
 
         for source in sources:
-            location, database = self.unpackDB(source)
+            location, database = self._unpackDB(source)
             location = self.locations.get(location, None)
 
             if location is None:

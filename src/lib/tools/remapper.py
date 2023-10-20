@@ -19,7 +19,7 @@ class Remapper:
 
     def loadMaps(self, customMapPath: Path = None) -> None:
         # DWC map
-        mapPath = cfg.folderPaths.mapping / f"{self.location}.json"
+        mapPath = cfg.folders.mapping / f"{self.location}.json"
         if mapPath.exists():
             self.map = cmn.loadFromJson(mapPath)
         else:
