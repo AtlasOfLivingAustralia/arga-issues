@@ -4,7 +4,7 @@
     "auth": "auth.txt",
     "folderPrefix": true,
     "regexMatch": ".*\\.tsv\\.xz",
-    "globalProcessing": [
+    "perFileProcessing": [
         {
             "path": "lib/tools/extractor.py",
             "function": "Extractor.extract",

@@ -14,7 +14,7 @@
             "downloadedFile": "Unique_institution_codes.txt"
         } 
     ],
-    "combineProcessing": [
+    "finalProcessing": [
         {
             "path": "sourceProcessing/ncbi/compileBiocollections.py",
             "function": "process",

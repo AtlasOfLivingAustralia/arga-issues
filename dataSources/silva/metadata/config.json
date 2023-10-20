@@ -4,7 +4,7 @@
     "downloadLink": "https://www.arb-silva.de/",
     "regexMatch": ".*\\.gz$",
     "subDirectoryDepth": 0,
-    "globalProcessing": [
+    "perFileProcessing": [
         {
             "path": "lib/tools/extractor.py",
             "function": "Extractor.extract",

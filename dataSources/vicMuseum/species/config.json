@@ -12,7 +12,7 @@
             "{PATH, DOWNLOAD, species.csv}"
         ]
     },
-    "globalProcessing": [
+    "finalProcessing": [
         {
             "path": "sourceProcessing/vicMuseum/processing.py",
             "function": "expandTaxa",

@@ -1,5 +1,5 @@
 from lib.sourceObjs.argParseWrapper import SourceArgParser
-import pandas as pd
+from lib.processing.stageFile import StageFileStep
 
 if __name__ == '__main__':
     parser = SourceArgParser(description="View portion of DWC file")
@@ -10,6 +10,7 @@ if __name__ == '__main__':
     
     sources, selectedFiles, args = parser.parse_args()
     for source in sources:
+        source.prepareStage(StageFileStep.DWC)
         dwcFiles = source.getDWCFiles(selectedFiles)
         for file in dwcFiles:
             if not file.filePath.exists():

@@ -1,17 +1,17 @@
 import lib.config as cfg
 from pathlib import Path
-from enum import Enum, auto
+from enum import Enum
 from lib.sourceObjs.systemManager import SystemManager
 from lib.sourceObjs.timeManager import TimeManager
 from lib.processing.stageFile import StageFile, StageFileStep
 from lib.tools.crawler import Crawler
 
 class DBType(Enum):
-    UNKNOWN = auto()
-    SPECIFIC = auto()
-    LOCATION = auto()
-    SCRIPTURL = auto()
-    SCRIPTDATA = auto()
+    UNKNOWN    = -1
+    SPECIFIC   = 0
+    LOCATION   = 1
+    SCRIPTURL  = 2
+    SCRIPTDATA = 3
 
 class Database:
     def __init__(self, location: str, database: str, properties: dict = {}):
@@ -21,8 +21,8 @@ class Database:
 
         # Standard properties
         self.authFile = properties.pop("auth", "")
-        self.globalProcessing = properties.pop("globalProcessing", [])
-        self.combineProcessing = properties.pop("combineProcessing", [])
+        self.perFileProcessing = properties.pop("perFileProcessing", [])
+        self.finalProcessing = properties.pop("finalProcessing", [])
         self.dwcProperties = properties.pop("dwcProperties", {})
 
         self.locationDir = cfg.folders.datasources / location
@@ -30,7 +30,7 @@ class Database:
         self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.authFile)
         self.timeManager = TimeManager(self.databaseDir)
 
-        self.postInit(properties)
+        self._postInit(properties)
         self.checkLeftovers(properties)
 
     def __str__(self):
@@ -39,15 +39,28 @@ class Database:
     def __repr__(self):
         return str(self)
 
-    def postInit(self, properties: dict) -> None:
-        raise NotImplementedError
-
-    def prepare(self) -> None:
+    def _postInit(self, properties: dict) -> None:
         raise NotImplementedError
     
+    def _prepare(self, buildProcessing: bool = True, **kwargs) -> None:
+        raise NotImplementedError
+    
+    def prepareStage(self, stage: StageFileStep) -> None:
+        buildProcessing = stage != StageFileStep.DOWNLOADED # Do not build processing if stage file step is only for downloaded
+        self._prepare(buildProcessing=buildProcessing)
+
+        if stage == StageFileStep.PROCESSED:
+            return
+        
+        self.systemManager.addFinalStage(self.finalProcessing)
+
+        if stage == StageFileStep.PRE_DWC:
+            return
+        
+        self.systemManager.prepareDwC()
+    
     def download(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
-        print(fileNumbers, overwrite)
-        self._create(StageFileStep.RAW, fileNumbers, overwrite)
+        self._create(StageFileStep.DOWNLOADED, fileNumbers, overwrite)
 
     def createPreDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
         self._create(StageFileStep.PRE_DWC, fileNumbers, overwrite)
@@ -100,14 +113,15 @@ class Database:
 
 class SpecificDB(Database):
 
-    def postInit(self, properties: dict) -> None:
+    def _postInit(self, properties: dict) -> None:
         self.dbType = DBType.SPECIFIC
         self.files = properties.pop("files", None)
 
         if self.files is None:
             raise Exception("No provided files for source") from AttributeError
 
-    def prepare(self) -> None:
+    def _prepare(self, buildProcessing: bool = True) -> None:
+        print("RUNNING PREPARE")
         for file in self.files:
             url = file.get("url", None)
             fileName = file.get("downloadedFile", None)
@@ -120,16 +134,11 @@ class SpecificDB(Database):
             if fileName is None:
                 raise Exception("No filename provided to download to") from AttributeError
             
-            self.systemManager.addDownloadURLStage(url, fileName, processingSteps, fileProperties)
-
-        if self.combineProcessing:
-            self.systemManager.addCombineStage(self.combineProcessing)
-        
-        self.systemManager.pushPreDwC()
+            self.systemManager.addDownloadURLStage(url, fileName, processingSteps, fileProperties, buildProcessing=buildProcessing)
 
 class LocationDB(Database):
 
-    def postInit(self, properties: dict) -> None:
+    def _postInit(self, properties: dict) -> None:
         self.dbType = DBType.LOCATION
         self.localFile = "files.txt"
 
@@ -145,7 +154,7 @@ class LocationDB(Database):
         
         self.crawler = Crawler(self.databaseDir, self.regexMatch, self.downloadLink, self.maxSubDirDepth, user=self.systemManager.user, password=self.systemManager.password)
 
-    def prepare(self, recrawl: bool = False) -> None:
+    def _prepare(self, buildProcessing: bool = True, recrawl: bool = False) -> None:
         localFilePath = self.databaseDir / self.localFile
 
         if not recrawl and localFilePath.exists():
@@ -163,12 +172,7 @@ class LocationDB(Database):
 
         for url in urls:
             fileName = self.getFileNameFromURL(url)
-            self.systemManager.addDownloadURLStage(url, fileName, self.globalProcessing, self.fileProperties)
-
-        if self.combineProcessing:
-            self.systemManager.addCombineStage(self.combineProcessing)
-
-        self.systemManager.pushPreDwC()
+            self.systemManager.addDownloadURLStage(url, fileName, self.perFileProcessing, self.fileProperties, buildProcessing=buildProcessing)
 
     def getFileNameFromURL(self, url: str) -> str:
         urlParts = url.split('/')
@@ -182,17 +186,12 @@ class LocationDB(Database):
 
 class ScriptDB(Database):
 
-    def postInit(self, properties: dict) -> None:
+    def _postInit(self, properties: dict) -> None:
         self.dbType = DBType.SCRIPTDATA
         self.script = properties.pop("script", None)
 
         if self.script is None:
             raise Exception("No script specified") from AttributeError
         
-    def prepare(self) -> None:
-        self.systemManager.addRetrieveScriptStage(self.script, self.globalProcessing)
-
-        if self.combineProcessing:
-            self.systemManager.addCombineStage(self.combineProcessing)
-
-        self.systemManager.pushPreDwC()
+    def prepare(self, buildProcessing: bool = True) -> None:
+        self.systemManager.addRetrieveScriptStage(self.script, self.perFileProcessing, buildProcessing=buildProcessing)

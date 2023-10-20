@@ -10,12 +10,11 @@ if TYPE_CHECKING:
     from lib.processing.stageScript import StageScript
 
 class StageFileStep(Enum):
-    RAW          = 0
-    INTERMEDIATE = 1
-    PROCESSED    = 2
-    COMBINED     = 3
-    PRE_DWC      = 4
-    DWC          = 5
+    DOWNLOADED   = 0
+    PROCESSED    = 1
+    PRE_DWC      = 2
+    DWC          = 3
+    INTERMEDIATE = 4
 
 class StageFile:
     def __init__(self, filePath: Path, fileProperties: dict, parentScript: StageScript, stage: StageFileStep):

@@ -1,5 +1,4 @@
 import argparse
-from typing import IO
 from lib.sourceManager import SourceManager
 from lib.sourceObjs.sourceDatabase import Database
 
