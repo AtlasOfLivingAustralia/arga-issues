@@ -23,12 +23,13 @@ class SystemManager:
             self.user = data[0].split('=')[1]
             self.password = data[1].split('=')[1]
 
-        self.downloadDir = self.rootDir / "raw"
-        self.processingDir = self.rootDir / "processing"
-        self.preConversionDir = self.rootDir / "preConversion"
-        self.dwcDir = self.rootDir / "dwc"
+        self.dataDir = self.rootDir / "data"
+        self.downloadDir = self.dataDir / "raw"
+        self.processingDir = self.dataDir / "processing"
+        self.preConversionDir = self.dataDir / "preConversion"
+        self.dwcDir = self.dataDir / "dwc"
         
-        self.parser = SelectorParser(self.rootDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
+        self.parser = SelectorParser(self.rootDir, self.dataDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
         self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.dwcDir)
 
         self.stages: dict[StageFileStep, list[StageFile]] = {stage: [] for stage in StageFileStep}

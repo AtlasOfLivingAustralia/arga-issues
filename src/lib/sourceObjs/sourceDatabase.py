@@ -25,7 +25,7 @@ class Database:
         self.combineProcessing = properties.pop("combineProcessing", [])
         self.dwcProperties = properties.pop("dwcProperties", {})
 
-        self.locationDir = cfg.folderPaths.data / location
+        self.locationDir = cfg.folders.datasources / location
         self.databaseDir = self.locationDir / database
         self.systemManager = SystemManager(self.location, self.databaseDir, self.dwcProperties, self.authFile)
         self.timeManager = TimeManager(self.databaseDir)

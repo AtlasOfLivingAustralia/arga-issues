@@ -1,33 +1,28 @@
 import toml
 from pathlib import Path
+from dataclasses import make_dataclass, dataclass
 
-class PathCollection:
-    def __init__(self, pathDict, rootDirPath):
-        for pathKey, pathValue in pathDict.items():
-            pathValue.rstrip('/')
-
-            if pathValue.startswith('./'):
-                path = rootDirPath / Path(pathValue[2:])
-            else:
-                path = Path(pathValue)
-
-            setattr(self, pathKey, path)
-
+rootDir = Path(__file__).parents[2] # Parent of absolute path to src folder
 configFile = "config.toml"
 
-rootDirPath = Path(__file__).parents[2] # Parent of absolute path to src folder
+configPath = rootDir / configFile
+if not configPath.exists():
+    raise Exception("No config file found!") from FileNotFoundError
 
-with open(rootDirPath / Path(configFile)) as fp:
-    rawConfig = toml.load(fp)
+with open(rootDir / configFile) as fp:
+    config: dict[str, dict[str, str]] = toml.load(fp)
 
-defaultFiles = rawConfig["default"]["files"]
-defaultFolders = rawConfig["default"]["folders"]
+files = []
+for file, path in config["files"].items():
+    path = rootDir / path if path.startswith("./") else Path(path)
+    files.append((file, Path, path))
 
-customFiles = rawConfig["custom"]["files"]
-customFolders = rawConfig["custom"]["folders"]
+files = make_dataclass("Files", files)
 
-files = {key: customFiles.get(key, value) for key, value in defaultFiles.items()}
-paths = {key: customFolders.get(key, value) for key, value in defaultFolders.items()}
+folders = []
+for folder, path in config["folders"].items():
+    path = path.rstrip("/")
+    path = rootDir / path if path.startswith("./") else Path(path)
+    folders.append((folder, Path, path))
 
-filePaths = PathCollection(files, rootDirPath)
-folderPaths = PathCollection(paths, rootDirPath)
+folders = make_dataclass("Folders", folders)
