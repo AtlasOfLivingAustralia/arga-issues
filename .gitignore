@@ -24,14 +24,15 @@ hs_err_pid*
 
 # Local Folders #
 src/unsortedFiles
+src/tests
 mapping
 logs
 env
+
+# Data source template
 datasources/*/*/data
 datasources/*/*/examples
-
-# Tests #
-src/tests/**/*.json
+datasources/*/*/lastUpdate.json
 
 # Data Files #
 *.tsv
