@@ -6,7 +6,7 @@
             "downloadedFile": "species_metadata.json",
             "processing": [
                 {
-                    "path": "sourceProcessing/ensembl/processing.py",
+                    "path": "sourceProcessing/ensembl.py",
                     "function": "convert",
                     "args": [
                         "{INPUT, 0}",

@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/ala/avh.py",
+        "path": "sourceProcessing/ala.py",
         "function": "build",
         "args": [
             "{PATH, DOWNLOAD, avh.csv}"

@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/dnazoo/processing.py",
+        "path": "sourceProcessing/dnazoo.py",
         "function": "build",
         "args": [
             "{PATH, DOWNLOAD, dnazoo.csv}"

@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/reefGenomics/processing.py",
+        "path": "sourceProcessing/reefgenomics.py",
         "function": "build",
         "args": [
             "{PATH, DOWNLOAD}",

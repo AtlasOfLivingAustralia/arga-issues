@@ -6,7 +6,7 @@
             "downloadedFile": "records.csv",
             "processing": [
                 {
-                    "path": "sourceProcessing/wilderlab/processing.py",
+                    "path": "sourceProcessing/wilderlab.py",
                     "function": "clean",
                     "args": [
                         "{INPUT, 0}",

@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
+import numpy as np
 import pandas as pd
 from pathlib import Path
 
@@ -22,3 +23,10 @@ def cleanUp(folderPath: Path, outputFilePath: Path):
         file.unlink()
 
     folderPath.rmdir() # Cleanup remaining folder
+
+def augment(df: pd.DataFrame):
+    clusterPrefix = "http://www.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri="
+    df['species'] = df['species'].fillna("sp. {" + df['bold_bin_uri'].astype(str) + "}")
+    df['bold_bin_uri'] = np.where(df['bold_bin_uri'].notna(), clusterPrefix + df['bold_bin_uri'], df['bold_bin_uri'])
+
+    return df

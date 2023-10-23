@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/algaeBase/api.py",
+        "path": "sourceProcessing/algaebase.py",
         "function": "build",
         "args": [
             "{PATH, DOWNLOAD, algaeBase.csv}",

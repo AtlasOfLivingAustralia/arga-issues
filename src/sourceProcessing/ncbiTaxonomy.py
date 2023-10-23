@@ -1,5 +1,6 @@
 import pickle
 import pandas as pd
+import argparse
 from pathlib import Path
 
 class Tree:
@@ -106,3 +107,14 @@ def process(folderPath: Path, outputFilePath: Path):
     print(f"Writing to file {outputFilePath}")
     outputFilePath.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(outputFilePath)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Get taxonomic tree for ncbi taxon ID's")
+    parser.add_argument('id', type=int)
+    args = parser.parse_args()
+
+    with open("../generatedFiles/taxonTree", "rb") as fp:
+        tree = pickle.load(fp)
+
+    for line in tree.getTaxonomy(args.id):
+        print(line)

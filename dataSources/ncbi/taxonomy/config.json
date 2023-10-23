@@ -17,7 +17,7 @@
                     ]
                 },
                 {
-                    "path": "sourceProcessing/ncbi/buildTaxonomyTree.py",
+                    "path": "sourceProcessing/ncbiTaxonomy.py",
                     "function": "process",
                     "args": [
                         "{INPUT, 0, FILEPATH}",

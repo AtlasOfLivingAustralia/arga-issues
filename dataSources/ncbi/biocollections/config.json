@@ -16,8 +16,8 @@
     ],
     "finalProcessing": [
         {
-            "path": "sourceProcessing/ncbi/compileBiocollections.py",
-            "function": "process",
+            "path": "sourceProcessing/ncbi.py",
+            "function": "compileBiocollections",
             "args": [
                 "{PATH, DOWNLOAD}",
                 "{PATH, PROCESSING, biocollections.csv}"

@@ -16,7 +16,7 @@
             ]
         },
         {
-            "path": "sourceProcessing/ncbi/flatfileParser.py",
+            "path": "sourceProcessing/ncbiFlatfileParser.py",
             "function": "process",
             "args": [
                 "{INPUT, 0, FILEPATH}"
