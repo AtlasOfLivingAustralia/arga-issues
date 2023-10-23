@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/ensembl/processing.py",
+        "path": "sourceProcessing/ensembl.py",
         "function": "speciesDownload",
         "args": [
             "{PATH, DOWNLOAD, species.csv}"

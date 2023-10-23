@@ -9,7 +9,7 @@
     "dwcProperties": {
         "augment": [
             {
-                "path": "sourceProcessing/tsi/dwcAugment.py",
+                "path": "sourceProcessing/tsi.py",
                 "function": "mouseAugment"
             }
         ]

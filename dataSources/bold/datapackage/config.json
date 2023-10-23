@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/bold/datapackage.py",
+        "path": "sourceProcessing/bold.py",
         "function": "retrieve",
         "args": [
             "{PATH, DOWNLOAD, datapackage.tar.gz}"
@@ -23,7 +23,7 @@
             ]
         },
         {
-            "path": "sourceProcessing/bold/datapackage.py",
+            "path": "sourceProcessing/bold.py",
             "function": "cleanUp",
             "args": [
                 "{INPUT, 0, FILEPATH}",

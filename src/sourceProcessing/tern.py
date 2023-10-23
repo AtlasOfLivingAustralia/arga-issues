@@ -1,9 +1,9 @@
 import requests
-import json
 import math
 import pandas as pd
+from pathlib import Path
 
-def build(outputFilePath):
+def build(outputFilePath: Path) -> None:
     baseURL = "https://portal.tern.org.au/search/filter/"
 
     parameters = {

@@ -5,8 +5,8 @@
     "regexMatch": "gbtsa\\d+\\.seq\\.gz",
     "finalProcessing": [
         {
-            "path": "sourceProcessing/ncbi/nucleotide.py",
-            "function": "combine",
+            "path": "sourceProcessing/ncbi.py",
+            "function": "compileNucleotide",
             "args": [
                 "{PATH, DOWNLOAD}",
                 "{PATH, PROCESSING, nucTranscriptome.csv}"

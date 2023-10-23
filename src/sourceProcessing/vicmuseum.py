@@ -25,7 +25,7 @@ def retrieve(dataset: str, outputFolder: Path, recordsPerPage: int) -> None:
     df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["", ""], regex=True, inplace=True)
     df.to_csv(outputFolder / f"{dataset}.csv", index=False)
 
-def expandTaxa(filePath: Path, outputPath: Path):
+def expandTaxa(filePath: Path, outputPath: Path) -> None:
     df = pd.read_csv(filePath)
     df2 = df["taxonomy"].fillna("{}")
     df2 = pd.json_normalize(df2.apply(ast.literal_eval))

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def augment(df: pd.DataFrame):
+def dwcAugment(df: pd.DataFrame) -> pd.DataFrame:
 
     matching = df['source_mat_id'].apply(lambda x: df.index[df['source_mat_id'] == x].tolist())
     df['haplotype'] = [lst.index(idx)+1 for idx, lst in enumerate(matching)]

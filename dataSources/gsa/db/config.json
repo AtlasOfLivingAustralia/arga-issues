@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/gsa/processing.py",
+        "path": "sourceProcessing/gsa.py",
         "function": "build",
         "args": [
             "{PATH, DOWNLOAD, gsa.csv}"

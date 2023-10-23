@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/goat/processing.py",
+        "path": "sourceProcessing/goat.py",
         "function": "build",
         "args": [
             "{PATH, DOWNLOAD, rawgoat.csv}"
@@ -12,10 +12,10 @@
     },
     "perFileProcessing": [
         {
-            "path": "sourceProcessing/goat/processing.py",
+            "path": "sourceProcessing/goat.py",
             "function": "clean",
             "args": [
-                "{INPUT, 0}",
+                "{INPUT, 0, FILEPATH}",
                 "{PATH, PROCESSING, cleanedgoat.csv}"
             ],
             "outputs": [

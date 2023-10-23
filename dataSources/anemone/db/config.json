@@ -23,8 +23,8 @@
     "dwcProperties": {
         "augment": [
             {
-                "path": "sourceProcessing/anemone/postDWC.py",
-                "function": "augment"
+                "path": "sourceProcessing/anemone.py",
+                "function": "dwcAugment"
             }
         ]
     }

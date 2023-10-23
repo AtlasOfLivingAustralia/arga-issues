@@ -58,8 +58,8 @@
     "dwcProperties": {
         "augment": [
             {
-                "path": "sourceProcessing/ncbi/postDWC.py",
-                "function": "biosample"
+                "path": "sourceProcessing/ncbi.py",
+                "function": "augmentBiosample"
             }
         ]
     }

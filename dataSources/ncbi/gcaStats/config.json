@@ -4,8 +4,8 @@
     "regexMatch": ".*assembly_stats\\.txt",
     "finalProcessing": [
         {
-            "path": "sourceProcessing/ncbi/assemblyStats.py",
-            "function": "combine",
+            "path": "sourceProcessing/ncbi.py",
+            "function": "compileAssemblyStats",
             "args": [
                 "{PATH, DOWNLOAD}",
                 "{PATH, PROCESSING, gcaStats.csv}"

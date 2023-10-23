@@ -2,8 +2,9 @@ import pandas as pd
 import requests
 import json
 import math
+from pathlib import Path
 
-def build(outputFilePath):
+def build(outputFilePath: Path) -> None:
     baseURL = "https://biocache-ws.ala.org.au/ws/occurrences/search?q=*%3A*&disableAllQualityFilters=true&qualityProfile=AVH&fq=type_status%3A*&fq=country%3A%22Australia%22&qc=data_hub_uid%3Adh9"
     firstCall = baseURL + "&pageSize=0"
     readSize = 1000

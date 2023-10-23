@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/csiro/processing.py",
+        "path": "sourceProcessing/csiro.py",
         "function": "build",
         "args": [
             "genomes",
