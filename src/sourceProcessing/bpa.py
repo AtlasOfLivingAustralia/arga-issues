@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import math
 
-def build(outputFilePath: Path, entriesPerPage: int):
+def build(outputFilePath: Path, entriesPerPage: int) -> None:
     url = "https://data.bioplatforms.com/api/3/action/package_search?q=*:*&rows="
 
     initialRequest = requests.get(f"{url}{0}")

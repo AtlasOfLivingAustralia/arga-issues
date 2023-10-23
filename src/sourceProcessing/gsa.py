@@ -1,7 +1,8 @@
 from lib.tools.crawler import Crawler
 import pandas as pd
+from pathlib import Path
 
-def build(outputFilePath):
+def build(outputFilePath: Path) -> None:
     url = "http://download.cncb.ac.cn/gsa/"
     regexMatch = ".*\\.gz"
 

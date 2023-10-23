@@ -2,10 +2,11 @@ import pickle
 import pandas as pd
 import argparse
 from pathlib import Path
+from typing import Self
 
 class Tree:
     class Node:
-        def __init__(self, id):
+        def __init__(self, id: int):
             self.id = id
             self.parent = None
             self.rank = "Unknown"
@@ -13,17 +14,17 @@ class Tree:
             self.name = ""
             self.taxInfo = {}
         
-        def setParent(self, parent):
+        def setParent(self, parent: Self) -> None:
             if self.id != parent.id:
                 self.parent = parent
 
-        def setRank(self, rank):
+        def setRank(self, rank: str) -> None:
             self.rank = rank
 
-        def setName(self, name):
+        def setName(self, name: str) -> None:
             self.name = name
 
-        def getTaxInfo(self, includeOwn=False):
+        def getTaxInfo(self, includeOwn: bool = False) -> dict[str, str]:
             info = {}
             if self.parent is not None:
                 info = self.parent.getTaxInfo(True)
@@ -38,10 +39,10 @@ class Tree:
     def __init__(self):
         self.nodes = {}
 
-    def exists(self, taxID):
+    def exists(self, taxID: int) -> bool:
         return taxID in self.nodes
 
-    def addNode(self, taxID, parentTaxID, rank):
+    def addNode(self, taxID: int, parentTaxID: int, rank: str) -> None:
         if parentTaxID not in self.nodes:
             self.nodes[parentTaxID] = self.Node(parentTaxID)
 
@@ -51,13 +52,13 @@ class Tree:
         self.nodes[taxID].setParent(self.nodes[parentTaxID])
         self.nodes[taxID].setRank(rank)
 
-    def getNode(self, taxID):
+    def getNode(self, taxID: int) -> Node:
         return self.nodes[taxID]
 
-    def getTaxonomy(self, taxID):
+    def getTaxonomy(self, taxID: int) -> dict[str, str]:
         return self.nodes[taxID].getTaxInfo()
 
-    def toDataframe(self, rankColumns):
+    def toDataframe(self, rankColumns: str) -> pd.DataFrame:
         dataDict = {}
         for taxID, node in self.nodes.items():
             taxInfo = node.getTaxInfo()
@@ -69,10 +70,10 @@ class Tree:
         df.index.name = "taxonID"
         return df
 
-def splitLine(line):
+def splitLine(line: str) -> list[str]:
     return [element.strip('\t') for element in line.rstrip('|\n').split('|')]
 
-def process(folderPath: Path, outputFilePath: Path):
+def process(folderPath: Path, outputFilePath: Path) -> None:
     tree = Tree()
     
     print("Adding nodes")

@@ -4,17 +4,17 @@ import lib.dataframeFuncs as dff
 from pathlib import Path
 from lib.tools.subfileWriter import Writer
 import concurrent.futures
-from sourceProcessing.ncbi.flatfileParser import FlatFileParser
+from sourceProcessing.ncbiFlatfileParser import FlatFileParser
 from lib.tools.subfileWriter import Writer
 from lib.tools.extractor import Extractor
 
-def splitLine(line, endingDivider=True):
+def splitLine(line: str, endingDivider: bool = True) -> list[str]:
     cleanLine = line.rstrip('\n').rstrip()
     if endingDivider:
         cleanLine = cleanLine.rstrip('|')
     return [element.strip() for element in cleanLine.split('|')]
 
-def compileBiocollections(fileDir, outputFilePath):
+def compileBiocollections(fileDir: Path, outputFilePath: Path) -> None:
     collCodes = fileDir / "Collection_codes.txt"
     instCodes = fileDir /"Institution_codes.txt"
     uInstCodes = fileDir / "Unique_institution_codes.txt"
@@ -42,7 +42,7 @@ def compileBiocollections(fileDir, outputFilePath):
     output.dropna(how='all', axis=1, inplace=True)
     output.to_csv(outputFilePath, index=False)
 
-def augmentBiosample(df):
+def augmentBiosample(df: pd.DataFrame) -> pd.DataFrame:
     return dff.splitField(df, "ncbi_lat long", cmn.latlongToDecimal, ["decimalLatitude", "decimalLongitude"])
 
 def parseStats(filePath: Path) -> pd.DataFrame | None:
@@ -90,7 +90,7 @@ def parseStats(filePath: Path) -> pd.DataFrame | None:
 
     return df
 
-def compileAssemblyStats(inputFolder: Path, outputFilePath: Path):
+def compileAssemblyStats(inputFolder: Path, outputFilePath: Path) -> None:
     writer = Writer(outputFilePath.parent, "assemblySections", "section")
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
@@ -105,7 +105,7 @@ def compileAssemblyStats(inputFolder: Path, outputFilePath: Path):
     print()
     writer.oneFile(outputFilePath)
 
-def compileNucleotide(folderPath: Path, outputFilePath: Path):
+def compileNucleotide(folderPath: Path, outputFilePath: Path) -> None:
     writer = Writer(outputFilePath.parent, "seqChunks", "chunk")
     extractor = Extractor(outputFilePath.parent)
 

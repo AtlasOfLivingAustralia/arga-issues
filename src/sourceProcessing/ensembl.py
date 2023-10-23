@@ -1,15 +1,16 @@
 import json
 import pandas as pd
 import requests
+from pathlib import Path
 
-def convert(stageFile, outputFilePath):
-    with open(stageFile.filePath) as fp:
+def convert(filePath: Path, outputFilePath: Path) -> None:
+    with open(filePath) as fp:
         data = json.load(fp)
 
     df = pd.DataFrame.from_records(data)
     df.to_csv(outputFilePath, index=False)
 
-def speciesDownload(outputFilePath):
+def speciesDownload(outputFilePath: Path) -> None:
     url = "https://rest.ensembl.org/info/species?"
     request = requests.get(url, headers={ "Content-Type" : "application/json"})
  

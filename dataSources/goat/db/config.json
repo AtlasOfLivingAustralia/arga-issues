@@ -15,7 +15,7 @@
             "path": "sourceProcessing/goat.py",
             "function": "clean",
             "args": [
-                "{INPUT, 0}",
+                "{INPUT, 0, FILEPATH}",
                 "{PATH, PROCESSING, cleanedgoat.csv}"
             ],
             "outputs": [

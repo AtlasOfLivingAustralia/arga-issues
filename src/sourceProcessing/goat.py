@@ -2,13 +2,14 @@ import requests
 from urllib.parse import quote
 import pandas as pd
 import subprocess
+from pathlib import Path
 
-def buildCall(size, query, tidy):
+def buildCall(size: int, query: str, tidy: bool) -> str:
     baseURL = "https://goat.genomehubs.org/api/v2/"
     fullURL = f"{baseURL}search?query={quote(query)}&result=taxon&includeEstimates=true&size={size}&tidyData={'true' if tidy else 'false'}"
     return fullURL
 
-def build(outputFilePath):
+def build(outputFilePath: Path) -> None:
     query = "tax_name(*) AND tax_rank(species)"
 
     response = requests.get(buildCall(0, query, False))
@@ -18,8 +19,8 @@ def build(outputFilePath):
 
     subprocess.run(["curl.exe", "-X", "GET", buildCall(hits, query, True), "-H", "accept: text/csv", "-o", outputFilePath])
 
-def clean(stageFile, outputFilePath):
-    df = pd.read_csv(stageFile.filePath)
+def clean(filePath: Path, outputFilePath: Path) -> None:
+    df = pd.read_csv(filePath)
 
     df["aggregation_source"] = df["aggregation_source"].apply(lambda x: x.replace('"', ''))
     combineFields = ["field", "value", "aggregation_source", "aggregation_method"]
