@@ -1,12 +1,11 @@
-import lib.dataframeFuncs as dff
-from pathlib import Path
-from lib.tools.bigFileWriter import BigFileWriter
-from lib.tools.remapper import Remapper
-import lib.processing.processingFuncs as pFuncs
 import pandas as pd
+from pathlib import Path
+import lib.dataframeFuncs as dff
+import lib.processing.processingFuncs as pFuncs
+from lib.tools.bigFileWriter import BigFileWriter
+from lib.processing.dwcMapping import Remapper
 
 class DWCProcessor:
-
     def __init__(self, location: str, dwcProperties: dict, outputDir: Path):
         self.location = location
         self.dwcProperties = dwcProperties
@@ -15,7 +14,7 @@ class DWCProcessor:
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)
 
-        self.augmentSteps = [Augment(augProperties) for augProperties in self.augments]
+        self.augmentSteps = [DWCAugment(augProperties) for augProperties in self.augments]
         self.remapper = Remapper(location)
 
     def process(self, inputPath: Path, outputFileName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False) -> Path:
@@ -28,7 +27,7 @@ class DWCProcessor:
         preGenerator = dff.chunkGenerator(inputPath, 1, sep, header, encoding)
         headerChunk = next(preGenerator)
         mappings = self.remapper.createMappings(headerChunk.columns)
-        print("MAPPINGS")
+
         print(mappings)
 
         writer = BigFileWriter(outputFilePath, "dwcConversion", "dwcChunk")
@@ -36,9 +35,8 @@ class DWCProcessor:
             print(f"At chunk: {idx}", end='\r')
 
             df = self.remapper.applyMap(chunk, False)
-            # df = dff.applyExclusions(df, self.exclude)
             df = self.applyAugments(df)
-            # df = dff.dropEmptyColumns(df)
+            df = dff.dropEmptyColumns(df)
 
             writer.writeDF(df)
 
@@ -50,7 +48,7 @@ class DWCProcessor:
             df = augment.process(df)
         return df
 
-class Augment:
+class DWCAugment:
     def __init__(self, augmentProperties: list[dict]):
         self.augmentProperties = augmentProperties.copy()
 
