@@ -26,7 +26,6 @@ class DWCProcessor:
         # Get columns and create mappings
         preGenerator = dff.chunkGenerator(inputPath, 1, sep, header, encoding)
         headerChunk = next(preGenerator)
-        print(headerChunk.columns)
         self.remapper.createMappings(headerChunk.columns)
         
         if not self.remapper.verifyUnique():
@@ -34,7 +33,11 @@ class DWCProcessor:
         
         events = self.remapper.getEvents()
 
-        writers = {event: BigFileWriter(outputFolderPath / f"{event.lower().replace(' ', '_')}.csv") for event in events}
+        writers = {}
+        for event in events:
+            cleanedName = event.lower().replace(" ", "_")
+            writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
+
         for idx, chunk in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             print(f"At chunk: {idx}", end='\r')
 
