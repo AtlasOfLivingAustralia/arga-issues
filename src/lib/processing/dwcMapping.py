@@ -13,14 +13,13 @@ class Remapper:
         self.preserveDwCMatch = preserveDwCMatch
         self.prefixMissing = prefixMissing
 
-        self.mappedColumns = {}
-        
-        self.loadMaps(customMapPath)
+        self.mappedColumns: dict[str, list] = {}
+        self._loadMaps(customMapPath)
 
     def getMappings(self) -> dict:
         return self.mappedColumns
 
-    def loadMaps(self, customMapPath: Path = None) -> None:
+    def _loadMaps(self, customMapPath: Path = None) -> None:
         # DWC map
         mapPath = cfg.folders.mapping / f"{self.location}.json"
         if mapPath.exists():
@@ -29,7 +28,7 @@ class Remapper:
             print(f"WARNING: No DWC map found for location {self.location}")
             self.map = {}
         
-        self.reverseLookup = self.buildReverseLookup(self.map)
+        self.reverseLookup = self._buildReverseLookup(self.map)
 
         # Exit early if no custom path specified
         if customMapPath is None:
@@ -42,63 +41,76 @@ class Remapper:
         else:
             raise Exception(f"No custom map found for location: {customMapPath}") from FileNotFoundError
 
-        self.customReverseLookup = self.buildReverseLookup(self.customLookup)
+        self.customReverseLookup = self._buildReverseLookup(self.customLookup)
 
-    def buildReverseLookup(self, lookup: dict) -> dict:
+    def _buildReverseLookup(self, lookup: dict) -> dict[str, list]:
         reverse = {}
 
-        for newName, oldNameList in lookup.items():
-            for name in oldNameList:
-                if name not in reverse:
-                    reverse[name] = [newName]
-                else:
-                    reverse[name].append(newName)
+        for eventName, columnMap in lookup.items():
+            for newName, oldNameList in columnMap.items():
+                for oldName in oldNameList:
+                    if oldName not in reverse:
+                        reverse[oldName] = [(eventName, newName)]
+                    else:
+                        reverse[oldName].append((eventName, newName))
 
         return reverse
-
-    def createMappings(self, columns: list, skipRemap: list = []) -> dict:
-        # self.mappedColumns = {column: (self.mapColumn[column] if column not in skipRemap else []) for column in columns}
+    
+    def createMappings(self, columns: list, skipRemap: list = []) -> None:
         self.mappedColumns = {} # Clear mapped columns
 
         for column in columns:
             if column in skipRemap:
-                self.mappedColumns[column] = []
                 continue
 
-            self.mappedColumns[column] = self.mapColumn(column)
+            self.mappedColumns[column] = []
+            self.mappedColumns[column].extend(self.reverseLookup.get(column, [])) # Apply DWC mapping
+            self.mappedColumns[column].extend(self.customReverseLookup.get(column, [])) # Apply custom mapping
 
-        return self.mappedColumns
+            # If column matches an output column name
+            if column in self.map and self.preserveDwCMatch:
+                self.mappedColumns[column].append(("Preserved", f"{self.location}_{column}"))
 
-    def mapColumn(self, column: str) -> list:
-        mapValues = [] 
-        mapValues.extend(self.reverseLookup.get(column, [])) # Apply DWC mapping
-        mapValues.extend(self.customReverseLookup.get(column, [])) # Apply custom mapping
+            # If no mapped value has been found yet
+            if not self.mappedColumns[column]:
+                self.mappedColumns[column].append(("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column))
 
-        if column in self.map and self.preserveDwCMatch: # If column matches mapped value and preserve
-            mapValues.append(f"preserved_{self.location}_{column}")
+        with open(cfg.folders.mapping / "test_mapped_columns.json", "w") as fp:
+            json.dump(self.mappedColumns, fp, indent=4)
 
-        if not mapValues: # If no mapped value has been found yet
-            mapValues.append(f"unmapped_{self.location}_{column}" if self.prefixMissing else column)
-        
-        return mapValues
+    def getEvents(self) -> list[str]:
+        return list(set([eventName for mappings in self.mappedColumns.values() for eventName, _ in mappings]))
 
-    def applyMap(self, df: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
-        for column, newColumnNames in self.mappedColumns.items():
-            if not newColumnNames:
-                continue
+    def verifyUnique(self) -> bool:
+        uniqueMappings = {}
 
-            for colName in newColumnNames[1:]: # Create copies of all column names beyond first
-                df[colName] = df[column]
+        for oldColumn, eventInfoList in self.mappedColumns.items():
+            for item in eventInfoList:
+                if item not in uniqueMappings:
+                    uniqueMappings[item] = oldColumn
+                    continue
+                else:
+                    print(f"Found mapping for column '{oldColumn}' that matches initial mapping '{uniqueMappings[item]}' in event '{item[0]}'")
+                    return False
+                
+        return True
 
-                if verbose:
-                    print(f"Copied column '{column}' to '{colName}'")
+    def applyMap(self, df: pd.DataFrame) -> pd.DataFrame:
+        eventColumns = {}
 
-            df.rename({column: newColumnNames[0]}, axis=1, inplace=True) # Rename column to first new name in list
+        for column in df.columns:
+            for eventName, newName in self.mappedColumns[column]:
+                if eventName not in eventColumns:
+                    eventColumns[eventName] = {}
 
-            if verbose:
-                print(f"Renamed column '{column}' to '{newColumnNames[0]}'")
+                eventColumns[eventName][column] = newName
 
-        return df
+        for eventName, colMap in eventColumns.items():
+            subDF: pd.DataFrame = df[colMap.keys()].copy() # Select only relevant columns
+            subDF.rename(colMap, axis=1, inplace=True)
+            eventColumns[eventName] = subDF
+
+        return pd.concat(eventColumns.values(), keys=eventColumns.keys(), axis=1)
 
 class MapRetriever:
     def __init__(self):
@@ -133,7 +145,7 @@ class MapRetriever:
             print(f"Reading {database}")
 
             try:
-                df = pd.read_csv(self.retrieveURL + sheetID, keep_default_na=False)
+                df = pd.read_csv(self.retrieveURL + str(sheetID), keep_default_na=False)
             except urllib.error.HTTPError:
                 print(f"Unable to read sheet for {database}")
                 continue
@@ -154,11 +166,12 @@ class MapRetriever:
             with open(mapFile) as fp:
                 columnMap = json.load(fp)
 
-            for keyword, names in mappings.items():
-                if keyword not in columnMap:
-                    columnMap[keyword] = names
-                else:
-                    columnMap[keyword].extend(name for name in names if name not in columnMap[keyword])
+            for eventName, dwcMap in mappings.items():
+                for keyword, names in dwcMap.items():
+                    if keyword not in columnMap[eventName]:
+                        columnMap[eventName][keyword] = names
+                    else:
+                        columnMap[eventName][keyword].extend(name for name in names if name not in columnMap[eventName][keyword])
 
             with open(mapFile, "w") as fp:
                 json.dump(columnMap, fp, indent=4)
@@ -167,17 +180,20 @@ class MapRetriever:
             if location not in written:
                 written.append(location)
 
-    def getMappings(self, df: pd.DataFrame) -> dict:
+    def cleanColumn(self, column: str) -> str:
+        return column.split(":")[1].strip()
+
+    def getMappings(self, df: pd.DataFrame) -> dict[str, dict]:
         fields = "Field Name"
         eventColumns = [col for col in df.columns if col[0] == "T" and col[1].isdigit()]
+        mappings = {self.cleanColumn(eventCol): {} for eventCol in eventColumns}
 
-        mappings = {}
         for column in eventColumns:
             subDF = df[[fields, column]]
             for _, row in subDF.iterrows():
-                filteredValue = self.filterEntry(row[column])
-                if filteredValue:
-                    mappings[f"{column[1]}:{row[fields]}"] = filteredValue
+                filteredValues = self.filterEntry(row[column])
+                if filteredValues:
+                    mappings[self.cleanColumn(column)][row[fields]] = filteredValues
 
         return mappings
     

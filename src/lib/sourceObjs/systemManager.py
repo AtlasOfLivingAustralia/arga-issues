@@ -2,7 +2,7 @@ from pathlib import Path
 from lib.processing.stageFile import StageFileStep, StageFile
 from lib.processing.stageScript import StageDownloadScript, StageScript, StageDWCConversion
 from lib.processing.parser import SelectorParser
-from lib.processing.dwcProcessor import DWCProcessor
+from lib.processing.dwcProcessing import DWCProcessor
 from copy import deepcopy
 import concurrent.futures
 

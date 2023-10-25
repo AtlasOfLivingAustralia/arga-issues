@@ -121,7 +121,6 @@ class SpecificDB(Database):
             raise Exception("No provided files for source") from AttributeError
 
     def _prepare(self, buildProcessing: bool = True) -> None:
-        print("RUNNING PREPARE")
         for file in self.files:
             url = file.get("url", None)
             fileName = file.get("downloadedFile", None)

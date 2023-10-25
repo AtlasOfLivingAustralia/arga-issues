@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from pathlib import Path
-from lib.processing.dwcProcessor import DWCProcessor
+from lib.processing.dwcProcessing import DWCProcessor
 import lib.processing.processingFuncs as pFuncs
 import lib.commonFuncs as cmn
 
@@ -101,10 +101,10 @@ class StageDWCConversion:
     def __init__(self, input: StageFile, dwcProcessor: DWCProcessor):
         self.input = input
         self.dwcProcessor = dwcProcessor
-        self.outputFileName = f"{self.input.filePath.stem}-dwc.csv"
+        self.outputFolderName = f"{self.input.filePath.stem}-dwc"
 
     def getOutput(self) -> Path:
-        return self.dwcProcessor.outputDir / self.outputFileName
+        return self.dwcProcessor.outputDir / self.outputFolderName
 
     def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = True):
         outputPath = self.getOutput()
@@ -116,7 +116,7 @@ class StageDWCConversion:
         print(f"Creating DWC from preDWC file {self.input.filePath}")
         self.dwcProcessor.process(
             self.input.filePath,
-            self.outputFileName,
+            self.outputFolderName,
             self.input.separator,
             self.input.firstRow,
             self.input.encoding,

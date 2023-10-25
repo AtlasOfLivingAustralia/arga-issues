@@ -17,31 +17,37 @@ class DWCProcessor:
         self.augmentSteps = [DWCAugment(augProperties) for augProperties in self.augments]
         self.remapper = Remapper(location)
 
-    def process(self, inputPath: Path, outputFileName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False) -> Path:
-        outputFilePath = self.outputDir / outputFileName
-        if outputFilePath.exists() and not overwrite:
-            print(f"{outputFilePath} already exists, exiting...")
+    def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False) -> Path:
+        outputFolderPath = self.outputDir / outputFolderName
+        if outputFolderPath.exists() and not overwrite:
+            print(f"{outputFolderPath} already exists, exiting...")
             return
         
         # Get columns and create mappings
         preGenerator = dff.chunkGenerator(inputPath, 1, sep, header, encoding)
         headerChunk = next(preGenerator)
-        mappings = self.remapper.createMappings(headerChunk.columns)
+        print(headerChunk.columns)
+        self.remapper.createMappings(headerChunk.columns)
+        
+        if not self.remapper.verifyUnique():
+            return
+        
+        events = self.remapper.getEvents()
 
-        print(mappings)
-
-        writer = BigFileWriter(outputFilePath, "dwcConversion", "dwcChunk")
+        writers = {event: BigFileWriter(outputFolderPath / f"{event.lower().replace(' ', '_')}.csv") for event in events}
         for idx, chunk in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             print(f"At chunk: {idx}", end='\r')
 
-            df = self.remapper.applyMap(chunk, False)
+            df = self.remapper.applyMap(chunk)
             df = self.applyAugments(df)
-            df = dff.dropEmptyColumns(df)
 
-            writer.writeDF(df)
+            for eventColumn in df.columns.levels[0]:
+                writers[eventColumn].writeDF(df[eventColumn])
 
-        writer.oneFile(outputFilePath)
-        return outputFilePath
+        for writer in writers.values():
+            writer.oneCSV()
+
+        return outputFolderPath
 
     def applyAugments(self, df: pd.DataFrame) -> pd.DataFrame:
         for augment in self.augmentSteps:
