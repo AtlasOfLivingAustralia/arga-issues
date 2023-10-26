@@ -39,9 +39,9 @@ class Remapper:
         if customMapPath.exists():
             self.customMap = cmn.loadFromJson(customMapPath)
         else:
-            raise Exception(f"No custom map found for location: {customMapPath}") from FileNotFoundError
+            raise Exception(f"No custom map found at location: {customMapPath}") from FileNotFoundError
 
-        self.customReverseLookup = self._buildReverseLookup(self.customLookup)
+        self.customReverseLookup = self._buildReverseLookup(self.customMap)
 
     def _buildReverseLookup(self, lookup: dict) -> dict[str, list]:
         reverse = {}
@@ -138,6 +138,17 @@ class MapRetriever:
             "tsi-koala": 975794491
         }
 
+        self.eventNames = [
+            "collections",
+            "accessions",
+            "subsamples",
+            "dna_extractions",
+            "sequences",
+            "assemblies",
+            "annotations",
+            "depositions",
+        ]
+
     def run(self) -> None:
         written = []
         for database, sheetID in self.sheetIDs.items():
@@ -180,20 +191,17 @@ class MapRetriever:
             if location not in written:
                 written.append(location)
 
-    def cleanColumn(self, column: str) -> str:
-        return column.split(":")[1].strip()
-
     def getMappings(self, df: pd.DataFrame) -> dict[str, dict]:
         fields = "Field Name"
         eventColumns = [col for col in df.columns if col[0] == "T" and col[1].isdigit()]
-        mappings = {self.cleanColumn(eventCol): {} for eventCol in eventColumns}
+        mappings = {eventCol: {} for eventCol in self.eventNames}
 
-        for column in eventColumns:
+        for column, eventName in zip(eventColumns, self.eventNames):
             subDF = df[[fields, column]]
             for _, row in subDF.iterrows():
                 filteredValues = self.filterEntry(row[column])
                 if filteredValues:
-                    mappings[self.cleanColumn(column)][row[fields]] = filteredValues
+                    mappings[eventName][row[fields]] = filteredValues
 
         return mappings
     

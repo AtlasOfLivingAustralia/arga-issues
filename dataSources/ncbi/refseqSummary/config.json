@@ -9,5 +9,8 @@
                 "firstrow": 1
             }
         }
-    ]
+    ],
+    "dwcProperties": {
+        "customMap": "{PATH, ROOT, customColumns.json}"
+    }
 }

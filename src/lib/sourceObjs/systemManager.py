@@ -23,15 +23,9 @@ class SystemManager:
 
             self.user = data[0].split('=')[1]
             self.password = data[1].split('=')[1]
-
-        self.dataDir = self.rootDir / "data"
-        self.downloadDir = self.dataDir / "raw"
-        self.processingDir = self.dataDir / "processing"
-        self.preConversionDir = self.dataDir / "preConversion"
-        self.dwcDir = self.dataDir / "dwc"
         
-        self.parser = SelectorParser(self.rootDir, self.dataDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
-        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.dwcDir)
+        self.parser = SelectorParser(self.rootDir)
+        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.parser)
 
         self.stageFiles: dict[StageFileStep, list[StageFile]] = {stage: [] for stage in StageFileStep}
 
@@ -84,7 +78,7 @@ class SystemManager:
         self.stageFiles[finalStage].extend(inputs)
 
     def addDownloadURLStage(self, url: str, fileName: str, processing: list[dict], fileProperties: dict = {}, buildProcessing: bool =True):
-        downloadedFile = self.downloadDir / fileName # downloaded files go into download directory
+        downloadedFile = self.parser.downloadDir / fileName # downloaded files go into download directory
         downloadScript = StageDownloadScript(url, downloadedFile, self.parser, self.user, self.password)
         
         rawFile = StageFile(downloadedFile, fileProperties.copy(), downloadScript, StageFileStep.DOWNLOADED)

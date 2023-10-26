@@ -4,18 +4,21 @@ import lib.dataframeFuncs as dff
 import lib.processing.processingFuncs as pFuncs
 from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.dwcMapping import Remapper
+from lib.processing.parser import SelectorParser
 
 class DWCProcessor:
-    def __init__(self, location: str, dwcProperties: dict, outputDir: Path):
+    def __init__(self, location: str, dwcProperties: dict, parser: SelectorParser):
         self.location = location
         self.dwcProperties = dwcProperties
-        self.outputDir = outputDir
+        self.parser = parser
+        self.outputDir = self.parser.dwcDir
 
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)
+        self.customMapPath = self.parser.parseArg(dwcProperties.pop("customMap", None), [])
 
         self.augmentSteps = [DWCAugment(augProperties) for augProperties in self.augments]
-        self.remapper = Remapper(location)
+        self.remapper = Remapper(location, self.customMapPath)
 
     def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False) -> Path:
         outputFolderPath = self.outputDir / outputFolderName
@@ -33,7 +36,7 @@ class DWCProcessor:
         
         events = self.remapper.getEvents()
 
-        writers = {}
+        writers: dict[str, BigFileWriter] = {}
         for event in events:
             cleanedName = event.lower().replace(" ", "_")
             writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
@@ -48,7 +51,7 @@ class DWCProcessor:
                 writers[eventColumn].writeDF(df[eventColumn])
 
         for writer in writers.values():
-            writer.oneCSV()
+            writer.oneFile()
 
         return outputFolderPath
 
@@ -72,6 +75,6 @@ class DWCAugment:
         if self.function is None:
             raise Exception("No script function specified") from AttributeError
 
-    def process(self, df: pd.DataFrame) -> None:
+    def process(self, df: pd.DataFrame) -> pd.DataFrame:
         processFunction = pFuncs.importFunction(self.path, self.function)
         return processFunction(df, *self.args, **self.kwargs)
