@@ -5,6 +5,17 @@ import json
 import lib.config as cfg
 import lib.commonFuncs as cmn
 from pathlib import Path
+from enum import Enum
+
+class Events(Enum):
+    COLLECTIONS = "collections"
+    ACCESSIONS = "accessions"
+    SUBSAMPLES = "subsamples"
+    EXTRACTIONS = "dna_extractions"
+    SEQUENCES = "sequences"
+    ASSEMBLIES = "assemblies"
+    ANNOTATIONS = "annotations"
+    DEPOSITIONS = "depositions"
 
 class Remapper:
     def __init__(self, location: str, customMapPath: Path = None, preserveDwCMatch: bool = False, prefixMissing: bool = True) -> 'Remapper':
@@ -138,17 +149,6 @@ class MapRetriever:
             "tsi-koala": 975794491
         }
 
-        self.eventNames = [
-            "collections",
-            "accessions",
-            "subsamples",
-            "dna_extractions",
-            "sequences",
-            "assemblies",
-            "annotations",
-            "depositions",
-        ]
-
     def run(self) -> None:
         written = []
         for database, sheetID in self.sheetIDs.items():
@@ -194,9 +194,9 @@ class MapRetriever:
     def getMappings(self, df: pd.DataFrame) -> dict[str, dict]:
         fields = "Field Name"
         eventColumns = [col for col in df.columns if col[0] == "T" and col[1].isdigit()]
-        mappings = {eventCol: {} for eventCol in self.eventNames}
+        mappings = {event.value: {} for event in Events}
 
-        for column, eventName in zip(eventColumns, self.eventNames):
+        for column, eventName in zip(eventColumns, mappings.keys()):
             subDF = df[[fields, column]]
             for _, row in subDF.iterrows():
                 filteredValues = self.filterEntry(row[column])

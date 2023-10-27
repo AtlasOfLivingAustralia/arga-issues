@@ -11,6 +11,24 @@
         }
     ],
     "dwcProperties": {
-        "customMap": "{PATH, ROOT, customColumns.json}"
+        "customMap": "{PATH, ROOT, customColumns.json}",
+        "setNA": [
+            "na"
+        ],
+        "fillNA": {
+            "assemblies": {
+                "datasetID": {
+                    "assemblies": [
+                        "sequence_id"
+                    ],
+                    "annotations": [
+                        "sequence_id"
+                    ],
+                    "depositions": [
+                        "sequence_id"
+                    ]
+                }
+            }
+        }
     }
 }

@@ -1,9 +1,10 @@
 import pandas as pd
+import numpy as np
 from pathlib import Path
 import lib.dataframeFuncs as dff
 import lib.processing.processingFuncs as pFuncs
 from lib.tools.bigFileWriter import BigFileWriter
-from lib.processing.dwcMapping import Remapper
+from lib.processing.dwcMapping import Remapper, Events
 from lib.processing.parser import SelectorParser
 
 class DWCProcessor:
@@ -15,6 +16,8 @@ class DWCProcessor:
 
         self.augments = dwcProperties.pop("augment", [])
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)
+        self.setNA = dwcProperties.pop("setNA", [])
+        self.fillNA = ColumnFiller(dwcProperties.pop("fillNA", {}))
         self.customMapPath = self.parser.parseArg(dwcProperties.pop("customMap", None), [])
 
         self.augmentSteps = [DWCAugment(augProperties) for augProperties in self.augments]
@@ -44,7 +47,11 @@ class DWCProcessor:
         for idx, chunk in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             print(f"At chunk: {idx}", end='\r')
 
-            df = self.remapper.applyMap(chunk)
+            df = self.remapper.applyMap(chunk) # Returns a multi-index dataframe
+            for na in self.setNA:
+                df.replace(na, np.NaN, inplace=True)
+
+            df = self.fillNA.apply(df)
             df = self.applyAugments(df)
 
             for eventColumn in df.columns.levels[0]:
@@ -59,6 +66,31 @@ class DWCProcessor:
         for augment in self.augmentSteps:
             df = augment.process(df)
         return df
+    
+class ColumnFiller:
+    def __init__(self, fillProperties: dict[str, dict]):
+        self.fillProperties = fillProperties
+
+        for event, columns in self.fillProperties.items():
+            if not self._validEvent(event):
+                raise Exception(f"Unknown event: {event}") from AttributeError
+            
+            for mapToDict in columns.values():
+                for mapToEvent in mapToDict:
+                    if not self._validEvent(mapToEvent):
+                        raise Exception(f"Unknown mapTo event: {event}") from AttributeError
+
+    def _validEvent(self, event: str) -> bool:
+        return event in Events._value2member_map_
+    
+    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+        for event, columns in self.fillProperties.items():
+            for columnName, mapTo in columns.items():
+                for mapToEvent, mapToColumnList in mapTo.items():
+                    for mapToColumn in mapToColumnList:
+                        df[(mapToEvent, mapToColumn)].fillna(df[(event, columnName)], inplace=True)
+
+        return df
 
 class DWCAugment:
     def __init__(self, augmentProperties: list[dict]):
@@ -68,13 +100,24 @@ class DWCAugment:
         self.function = self.augmentProperties.pop("function", None)
         self.args = self.augmentProperties.pop("args", [])
         self.kwargs = self.augmentProperties.pop("kwargs", {})
+        self.events = self.augmentProperties.pop("events", [])
 
         if self.path is None:
             raise Exception("No script path specified") from AttributeError
         
         if self.function is None:
             raise Exception("No script function specified") from AttributeError
+        
+        for event in self.events:
+            if event not in Events._value2member_map_:
+                raise Exception(f"No event: {event}") from AttributeError
 
     def process(self, df: pd.DataFrame) -> pd.DataFrame:
         processFunction = pFuncs.importFunction(self.path, self.function)
-        return processFunction(df, *self.args, **self.kwargs)
+
+        if not self.events:
+            processFunction(df, *self.args, **self.kwargs)
+        else:
+            for event in self.events:
+                processFunction(df[event], *self.args, **self.kwargs)
+    
