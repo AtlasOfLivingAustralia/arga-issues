@@ -100,25 +100,13 @@ class DWCAugment:
         self.function = self.augmentProperties.pop("function", None)
         self.args = self.augmentProperties.pop("args", [])
         self.kwargs = self.augmentProperties.pop("kwargs", {})
-        # self.events = self.augmentProperties.pop("events", [])
 
         if self.path is None:
             raise Exception("No script path specified") from AttributeError
         
         if self.function is None:
             raise Exception("No script function specified") from AttributeError
-        
-        # for event in self.events:
-        #     if event not in Events._value2member_map_:
-        #         raise Exception(f"No event: {event}") from AttributeError
 
     def process(self, df: pd.DataFrame) -> pd.DataFrame:
         processFunction = pFuncs.importFunction(self.path, self.function)
         return processFunction(df, *self.args, **self.kwargs)
-
-        # if not self.events:
-        #     return processFunction(df, *self.args, **self.kwargs)
-        # else:
-        #     for event in self.events:
-        #         processFunction(df[event], *self.args, **self.kwargs)
-    

@@ -145,6 +145,7 @@ class MapRetriever:
             "ncbi-refseq": 2003682060,
             "ncbi-taxonomy": 240630744,
             "ncbi-genbank": 1632006425,
+            "ncbi-assemblyStats": 1145358378,
             "tern-portal": 1651969444,
             "tsi-koala": 975794491
         }
