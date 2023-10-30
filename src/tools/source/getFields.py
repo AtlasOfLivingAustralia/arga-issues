@@ -3,10 +3,10 @@ import json
 import lib.dataframeFuncs as dff
 from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile, StageFileStep
-from lib.tools.remapper import Remapper
+from lib.processing.dwcMapping import Remapper
 import random
 
-def collectFields(stageFile: StageFile, remapper: Remapper, entryLimit: int, chunkSize: int, samples: int) -> dict:
+def _collectFields(stageFile: StageFile, remapper: Remapper, entryLimit: int, chunkSize: int, samples: int) -> dict:
     chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
 
     data = {}
@@ -14,11 +14,11 @@ def collectFields(stageFile: StageFile, remapper: Remapper, entryLimit: int, chu
         print(f"Scanning chunk: {idx}", end='\r')
 
         if idx == 0:
-            mappings = remapper.createMappings(chunk.columns)
-            data = {column: {"Maps to": mappings[column], "values": []} for column in chunk.columns}
+            remapper.createMappings(chunk.columns)
+            data = {column: {"Maps to": [{"Event": mapEvent, "Column": mapColumn} for mapEvent, mapColumn in mapping], "Values": []} for column, mapping in remapper.mappedColumns.items()}
 
         for column in chunk.columns:
-            columnValues = data[column]["values"] # Reference pointer to values
+            columnValues = data[column]["Values"] # Reference pointer to values
             seriesValues = list(set(chunk[column].dropna().tolist())) # Convert column to list of unique values
         
             if len(seriesValues) <= samples:
@@ -29,12 +29,12 @@ def collectFields(stageFile: StageFile, remapper: Remapper, entryLimit: int, chu
 
     # Shuffle entries and take only up to entry limit
     for column, properties in data.items():
-        random.shuffle(list(set(properties["values"]))) # Shuffle items inplace
-        properties["values"] = properties["values"][:entryLimit] # Only keep up to entry limit
+        random.shuffle(list(set(properties["Values"]))) # Shuffle items inplace
+        properties["Values"] = properties["Values"][:entryLimit] # Only keep up to entry limit
 
     return data
 
-def collectRecords(stageFile: StageFile, remapper: Remapper, entryLimit: int, chunkSize: int, samples: int, seed: int) -> dict:
+def _collectRecords(stageFile: StageFile, remapper: Remapper, entryLimit: int, chunkSize: int, samples: int, seed: int) -> dict:
     chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
 
     data = {}
@@ -48,9 +48,9 @@ def collectRecords(stageFile: StageFile, remapper: Remapper, entryLimit: int, ch
     indexes = [idx for idx, _ in sorted(emptyDF.items(), key=lambda x: x[1])]
     
     reducedDF = df.loc[indexes[:entryLimit]]
-    mappings = remapper.createMappings(reducedDF.columns)
+    remapper.createMappings(reducedDF.columns)
 
-    data = {column: {"Maps to": mappings[column], "values": reducedDF[column].tolist()} for column in reducedDF.columns}
+    data = {column: {"Maps to": [{"Event": mapEvent, "Column": mapColumn} for mapEvent, mapColumn in mapping], "Values": reducedDF[column].tolist()} for column, mapping in remapper.mappedColumns.items()}
     return data
 
 if __name__ == '__main__':
@@ -66,14 +66,11 @@ if __name__ == '__main__':
     entryLimit = args.entries
 
     for source in sources:
-        outputDir = source.getBaseDir()
+        outputDir = source.getBaseDir() / "examples"
+        if not outputDir.exists():
+            outputDir.mkdir()
+
         extension = "tsv" if args.tsv else "json"
-        # output = outputDir / f"fieldExamples.{extension}"
-
-        # if output.exists() and args.overwrite <= 0:
-        #     print(f"Output file {output} already exists, please run with overwrite flag (-o) to overwrite")
-        #     continue
-
         source.prepareStage(StageFileStep.PRE_DWC)
         stageFiles = source.getPreDWCFiles(selectedFiles)
         remapper = source.systemManager.dwcProcessor.remapper
@@ -92,15 +89,15 @@ if __name__ == '__main__':
         random.seed(seed)
 
         if args.uniques:
-            data = collectFields(stageFile, remapper, args.entries, args.chunksize, samples)
+            data = _collectFields(stageFile, remapper, args.entries, args.chunksize, samples)
             output = outputDir / f"fieldExamples_{args.chunksize}_{seed}.{extension}"
         else:
-            data = collectRecords(stageFile, remapper, args.entries, args.chunksize, samples, seed)
+            data = _collectRecords(stageFile, remapper, args.entries, args.chunksize, samples, seed)
             output = outputDir / f"recordExamples_{args.chunksize}_{seed}.{extension}"
 
         print(f"Writing to file {output}")
         if args.tsv:
-            dfData = {k: v["values"] + ["" for _ in range(entryLimit - len(v["values"]))] for k, v in data.items()}
+            dfData = {k: v["Values"] + ["" for _ in range(entryLimit - len(v["Values"]))] for k, v in data.items()}
             df = pd.DataFrame.from_dict(dfData)
             df.index += 1 # Increment index so output is 1-indexed numbers
             df.to_csv(output, sep="\t", index_label="Example #")

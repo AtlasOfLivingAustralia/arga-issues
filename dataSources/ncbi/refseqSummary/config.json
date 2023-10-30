@@ -26,6 +26,9 @@
                     ],
                     "depositions": [
                         "sequence_id"
+                    ],
+                    "sequences": [
+                        "record_id"
                     ]
                 }
             }

@@ -49,7 +49,6 @@ class StageFile:
     def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0) -> bool:
         if self.filePath.exists():
             if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE):
-                print(self.stage, overwriteStage)
                 return False
             
             elif overwriteAmount <= 0:
