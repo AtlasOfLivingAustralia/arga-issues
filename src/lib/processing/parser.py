@@ -14,8 +14,14 @@ class SelectorParser:
         self.preDwcDir = self.dataDir / "preConversion"
         self.dwcDir = self.dataDir / "dwc"
 
-        self.dirKeywords = ("ROOT", "DATA", "DOWNLOAD", "PROCESSING", "PREDWC", "DWC")
-        self.mapping = {keyword: directory for keyword, directory in zip(self.dirKeywords, (rootDir, self.downloadDir, self.processingDir, self.preDwcDir, self.dwcDir))}
+        self.mapping = {
+            "ROOT": self.rootDir,
+            "DATA": self.dataDir,
+            "DOWNLOAD": self.downloadDir,
+            "PROCESSING": self.processingDir,
+            "PREDWC": self.preDwcDir,
+            "DWC": self.dwcDir
+        }
 
     def parseArg(self, arg: str, inputs: list) -> Path|str:
         if self.validSelector(arg):
@@ -79,7 +85,7 @@ class SelectorParser:
         if directory is None:
             raise Exception("No directory specified") from AttributeError
         
-        if directory not in self.dirKeywords:
+        if directory not in self.mapping:
             raise Exception(f"Invalid directory selected: {directory}") from AttributeError
         
         selectedDir = self.mapping[directory]
