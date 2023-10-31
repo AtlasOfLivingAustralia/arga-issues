@@ -1,0 +1,25 @@
+{
+    "sequences": {
+        "dna_extraction_id": [
+            "biosample"
+        ],
+        "record_id": [
+            "wgs_master"
+        ]
+    },
+    "assemblies": {
+        "sequence_id": [
+            "wgs_master"
+        ]
+    },
+    "annotations": {
+        "sequence_id": [
+            "wgs_master"
+        ]
+    },
+    "depositions": {
+        "sequence_id": [
+            "wgs_master"
+        ]
+    }
+}

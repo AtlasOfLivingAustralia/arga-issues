@@ -8,10 +8,10 @@
             "function": "compileAssemblyStats",
             "args": [
                 "{PATH, DOWNLOAD}",
-                "{PATH, PROCESSING, gcaStats.csv}"
+                "{PATH, PREDWC, gcaStats.csv}"
             ],
             "outputs": [
-                "{PATH, PROCESSING, gcaStats.csv}"
+                "{PATH, PREDWC, gcaStats.csv}"
             ]
         }
     ]

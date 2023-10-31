@@ -6,16 +6,22 @@ if TYPE_CHECKING:
     from lib.processing.stageFile import StageFile
 
 class SelectorParser:
-    def __init__(self, rootDir: Path, dataDir: Path, downloadDir: Path, processingDir: Path, predwcDir: Path, dwcDir: Path):
+    def __init__(self, rootDir: Path):
         self.rootDir = rootDir
-        self.dataDir = dataDir
-        self.downloadDir = downloadDir
-        self.processingDir = processingDir
-        self.predwcDir = predwcDir
-        self.dwcDir = dwcDir
+        self.dataDir = self.rootDir / "data"
+        self.downloadDir = self.dataDir / "raw"
+        self.processingDir = self.dataDir / "processing"
+        self.preDwcDir = self.dataDir / "preConversion"
+        self.dwcDir = self.dataDir / "dwc"
 
-        self.dirKeywords = ("ROOT", "DATA", "DOWNLOAD", "PROCESSING", "PREDWC", "DWC")
-        self.mapping = {keyword: directory for keyword, directory in zip(self.dirKeywords, (rootDir, downloadDir, processingDir, predwcDir, dwcDir))}
+        self.mapping = {
+            "ROOT": self.rootDir,
+            "DATA": self.dataDir,
+            "DOWNLOAD": self.downloadDir,
+            "PROCESSING": self.processingDir,
+            "PREDWC": self.preDwcDir,
+            "DWC": self.dwcDir
+        }
 
     def parseArg(self, arg: str, inputs: list) -> Path|str:
         if self.validSelector(arg):
@@ -79,7 +85,7 @@ class SelectorParser:
         if directory is None:
             raise Exception("No directory specified") from AttributeError
         
-        if directory not in self.dirKeywords:
+        if directory not in self.mapping:
             raise Exception(f"Invalid directory selected: {directory}") from AttributeError
         
         selectedDir = self.mapping[directory]

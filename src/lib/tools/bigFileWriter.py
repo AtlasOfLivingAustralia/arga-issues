@@ -35,10 +35,10 @@ class Subfile:
         return instance
     
     def write(self, df: pd.DataFrame) -> None:
-        df.to_csv(self.fullPath, index=False)
+        df.to_csv(self.filePath, index=False)
     
     def read(self) -> pd.DataFrame:
-        return pd.read_csv(self.fullPath)
+        return pd.read_csv(self.filePath)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
         if newFileFormat == self.fileFormat:
@@ -131,15 +131,15 @@ class BigFileWriter:
 
         print("Combining into one file")
         if self.outputFileType in (Format.CSV, Format.TSV):
-            self.oneCSV(removeOld)
+            self._oneCSV(removeOld)
         elif self.outputFileType == Format.PARQUET:
-            self.oneParquet(removeOld)
+            self._oneParquet(removeOld)
 
         print(f"\nCreated a single file at {self.outputFile}")
         self.subfileDir.rmdir()
         self.writtenFiles.clear()
 
-    def oneCSV(self, removeOld: bool = True):
+    def _oneCSV(self, removeOld: bool = True):
         delim = "\t" if self.outputFileType == Format.TSV else ","
 
         with open(self.outputFile, 'w', newline='', encoding='utf-8') as fp:
@@ -157,7 +157,7 @@ class BigFileWriter:
                 if removeOld:
                     file.remove()
         
-    def oneParquet(self, removeOld: bool = True):
+    def _oneParquet(self, removeOld: bool = True):
         schema = pa.schema([(column, pa.string()) for column in self.globalColumns])
         with pq.ParquetWriter(self.outputFile, schema=schema) as writer:
             for file in self.writtenFiles:

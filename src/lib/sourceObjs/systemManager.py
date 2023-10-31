@@ -2,17 +2,16 @@ from pathlib import Path
 from lib.processing.stageFile import StageFileStep, StageFile
 from lib.processing.stageScript import StageDownloadScript, StageScript, StageDWCConversion
 from lib.processing.parser import SelectorParser
-from lib.processing.dwcProcessor import DWCProcessor
+from lib.processing.dwcProcessing import DWCProcessor
 from copy import deepcopy
 import concurrent.futures
 
 class SystemManager:
-    def __init__(self, location: str, rootDir: Path, dwcProperties: dict, enrichDBs: dict, authFileName: str = ""):
+    def __init__(self, location: str, rootDir: Path, dwcProperties: dict, authFileName: str = ""):
         self.location = location
         self.rootDir = rootDir
         self.authFileName = authFileName
         self.dwcProperties = dwcProperties
-        self.enrichDBs = enrichDBs
 
         self.user = ""
         self.password = ""
@@ -23,15 +22,9 @@ class SystemManager:
 
             self.user = data[0].split('=')[1]
             self.password = data[1].split('=')[1]
-
-        self.dataDir = self.rootDir / "data"
-        self.downloadDir = self.dataDir / "raw"
-        self.processingDir = self.dataDir / "processing"
-        self.preConversionDir = self.dataDir / "preConversion"
-        self.dwcDir = self.dataDir / "dwc"
         
-        self.parser = SelectorParser(self.rootDir, self.dataDir, self.downloadDir, self.processingDir, self.preConversionDir, self.dwcDir)
-        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.dwcDir)
+        self.parser = SelectorParser(self.rootDir)
+        self.dwcProcessor = DWCProcessor(self.location, self.dwcProperties, self.parser)
 
         self.stageFiles: dict[StageFileStep, list[StageFile]] = {stage: [] for stage in StageFileStep}
 
@@ -84,7 +77,7 @@ class SystemManager:
         self.stageFiles[finalStage].extend(inputs)
 
     def addDownloadURLStage(self, url: str, fileName: str, processing: list[dict], fileProperties: dict = {}, buildProcessing: bool =True):
-        downloadedFile = self.downloadDir / fileName # downloaded files go into download directory
+        downloadedFile = self.parser.downloadDir / fileName # downloaded files go into download directory
         downloadScript = StageDownloadScript(url, downloadedFile, self.parser, self.user, self.password)
         
         rawFile = StageFile(downloadedFile, fileProperties.copy(), downloadScript, StageFileStep.DOWNLOADED)
@@ -98,7 +91,7 @@ class SystemManager:
         outputs = [StageFile(filePath, properties, scriptStep, StageFileStep.DOWNLOADED) for filePath, properties in scriptStep.getOutputs()]
         self.stageFiles[StageFileStep.DOWNLOADED].extend(outputs)
 
-        if not buildProcessing:
+        if buildProcessing:
             self.buildProcessingChain(processing, outputs, StageFileStep.PROCESSED)
     
     def addFinalStage(self, processing):
