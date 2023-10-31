@@ -35,10 +35,10 @@ class Subfile:
         return instance
     
     def write(self, df: pd.DataFrame) -> None:
-        df.to_csv(self.fullPath, index=False)
+        df.to_csv(self.filePath, index=False)
     
     def read(self) -> pd.DataFrame:
-        return pd.read_csv(self.fullPath)
+        return pd.read_csv(self.filePath)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
         if newFileFormat == self.fileFormat:
