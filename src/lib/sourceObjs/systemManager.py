@@ -7,12 +7,11 @@ from copy import deepcopy
 import concurrent.futures
 
 class SystemManager:
-    def __init__(self, location: str, rootDir: Path, dwcProperties: dict, enrichDBs: dict, authFileName: str = ""):
+    def __init__(self, location: str, rootDir: Path, dwcProperties: dict, authFileName: str = ""):
         self.location = location
         self.rootDir = rootDir
         self.authFileName = authFileName
         self.dwcProperties = dwcProperties
-        self.enrichDBs = enrichDBs
 
         self.user = ""
         self.password = ""
@@ -92,7 +91,7 @@ class SystemManager:
         outputs = [StageFile(filePath, properties, scriptStep, StageFileStep.DOWNLOADED) for filePath, properties in scriptStep.getOutputs()]
         self.stageFiles[StageFileStep.DOWNLOADED].extend(outputs)
 
-        if not buildProcessing:
+        if buildProcessing:
             self.buildProcessingChain(processing, outputs, StageFileStep.PROCESSED)
     
     def addFinalStage(self, processing):

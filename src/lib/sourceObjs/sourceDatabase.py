@@ -192,5 +192,5 @@ class ScriptDB(Database):
         if self.script is None:
             raise Exception("No script specified") from AttributeError
         
-    def prepare(self, buildProcessing: bool = True) -> None:
+    def _prepare(self, buildProcessing: bool = True) -> None:
         self.systemManager.addRetrieveScriptStage(self.script, self.perFileProcessing, buildProcessing=buildProcessing)
