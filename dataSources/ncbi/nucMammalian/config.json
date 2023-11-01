@@ -15,5 +15,12 @@
                 "{PATH, PROCESSING, nucMammalian.csv}"
             ]
         }
-    ]
+    ],
+    "dwcProperties": {
+        "skipRemap": [
+            "accession",
+            "version",
+            "fasta_url"
+        ]
+    }
 }

@@ -19,6 +19,7 @@ class DWCProcessor:
         self.chunkSize = dwcProperties.pop("chunkSize", 100000)
         self.setNA = dwcProperties.pop("setNA", [])
         self.fillNA = ColumnFiller(dwcProperties.pop("fillNA", {}))
+        self.skipRemap = dwcProperties.pop("skipRemap", [])
         self.customMapPath = self.parser.parseArg(dwcProperties.pop("customMap", None), [])
 
         self.augmentSteps = [DWCAugment(augProperties) for augProperties in self.augments]
@@ -33,7 +34,7 @@ class DWCProcessor:
         # Get columns and create mappings
         preGenerator = dff.chunkGenerator(inputPath, 1, sep, header, encoding)
         headerChunk = next(preGenerator)
-        self.remapper.createMappings(headerChunk.columns)
+        self.remapper.createMappings(headerChunk.columns, self.skipRemap)
         
         if not self.remapper.allUnique(): # If there are non unique columns
             if not kwargs["ignoreRemapErrors"]:
