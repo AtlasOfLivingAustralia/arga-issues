@@ -16,7 +16,17 @@
             ]
         }
     ],
-    "fileProperties": {
-        "separator": "\t"
-    }
+    "finalProcessing": [
+        {
+            "path": "sourceProcessing/ena.py",
+            "function": "compile",
+            "args": [
+                "{PATH, PROCESSING}",
+                "{PATH, PREDWC, enaVariant.csv}"
+            ],
+            "outputs": [
+                "{PATH, PREDWC, enaVariant.csv}"
+            ]
+        }
+    ]
 }
