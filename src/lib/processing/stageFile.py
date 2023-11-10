@@ -5,6 +5,7 @@ from enum import Enum
 import pandas as pd
 import lib.dataframeFuncs as dff
 from collections.abc import Iterator
+from lib.tools.logger import logger
 
 if TYPE_CHECKING:
     from lib.processing.stageScript import StageScript
@@ -52,7 +53,7 @@ class StageFile:
                 return False
             
             elif overwriteAmount <= 0:
-                print(f"{self.filePath} already exists")
+                logger.info(f"{self.filePath} already exists")
                 return False
         
         self.filePath.parent.mkdir(parents=True, exist_ok=True)

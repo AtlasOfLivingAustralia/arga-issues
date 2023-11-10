@@ -5,6 +5,7 @@ from lib.sourceObjs.systemManager import SystemManager
 from lib.sourceObjs.timeManager import TimeManager
 from lib.processing.stageFile import StageFile, StageFileStep
 from lib.tools.crawler import Crawler
+from lib.tools.logger import logger
 
 class DBType(Enum):
     UNKNOWN    = -1
@@ -74,12 +75,12 @@ class Database:
             self.timeManager.update(stage)
 
     def createDirectory(self) -> None:
-        print(f"Creating directory for data: {str(self.databaseDir)}")
+        logger.info(f"Creating directory for data: {str(self.databaseDir)}")
         self.databaseDir.mkdir(parents=True, exist_ok=True)
 
     def checkLeftovers(self, properties: dict) -> None:
         for property in properties:
-            print(f"{self.location}-{self.database} unknown property: {property}")
+            logger.debug(f"{self.location}-{self.database} unknown property: {property}")
 
     def getDBType(self) -> str:
         return self.dbType
@@ -108,7 +109,7 @@ class Database:
             else:
                 invalidIndexes.append(index)
 
-        print(f"Invalid {stage} files selected: {invalidIndexes}")
+        logger.error(f"Invalid {stage} files selected: {invalidIndexes}")
         return selectedFiles
 
 class SpecificDB(Database):

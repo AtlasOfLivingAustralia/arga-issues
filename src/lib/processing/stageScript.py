@@ -4,6 +4,7 @@ from pathlib import Path
 from lib.processing.dwcProcessing import DWCProcessor
 import lib.processing.processingFuncs as pFuncs
 import lib.commonFuncs as cmn
+from lib.tools.logger import logger
 
 if TYPE_CHECKING:
     from lib.processing.stageFile import StageFile, StageFileStep
@@ -34,7 +35,7 @@ class StageScript:
         self.outputs = self.parser.parseMultipleArgs(self.outputs, self.inputs)
 
         for parameter in self.processingStep:
-            print(f"Unknown step parameter: {parameter}")
+            logger.debug(f"Unknown step parameter: {parameter}")
 
     def getOutputs(self) -> list[tuple[Path, dict]]:
         return [(output, self.outputProperties.get(str(idx), {})) for idx, output in enumerate(self.outputs)]
@@ -42,14 +43,14 @@ class StageScript:
     def run(self, overwriteStage: StageFileStep, overwrite: int = 0, verbose: bool = True):
         if all(output.exists() for output in self.outputs) and overwrite <= 0:
             if verbose:
-                print(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
+                logger.info(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
             return
         
         for input in self.inputs:
             input.create(overwriteStage, overwrite - 1)
             if not input.exists():
                 if verbose:
-                    print(f"Missing input file: {input.filePath}")
+                    logger.info(f"Missing input file: {input.filePath}")
                 return
         
         if self.scriptRun:
@@ -72,7 +73,7 @@ class StageScript:
 
         for output in self.outputs:
             if not output.exists():
-                print(f"Warning: Output {output} was not created")
+                logger.warning(f"Output {output} was not created")
 
         return output
 
@@ -92,7 +93,7 @@ class StageDownloadScript:
     def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False):
         if self.downloadedFile.exists() and overwriteAmount <= 0:
             if verbose:
-                print(f"File already downloaded at {self.downloadedFile}, skipping redownload")
+                logger.info(f"File already downloaded at {self.downloadedFile}, skipping redownload")
             return
         
         cmn.downloadFile(self.url, self.downloadedFile, self.user, self.password, verbose)
@@ -110,10 +111,10 @@ class StageDWCConversion:
         outputPath = self.getOutput()
 
         if outputPath.exists() and overwriteAmount <= 0:
-            print(f"DWC file {outputPath} exists and not overwriting, skipping creation")
+            logger.info(f"DWC file {outputPath} exists and not overwriting, skipping creation")
             return
         
-        print(f"Creating DWC from preDWC file {self.input.filePath}")
+        logger.info(f"Creating DWC from preDWC file {self.input.filePath}")
         self.dwcProcessor.process(
             self.input.filePath,
             self.outputFolderName,

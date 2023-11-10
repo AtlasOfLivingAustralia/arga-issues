@@ -6,6 +6,7 @@ import lib.config as cfg
 import lib.commonFuncs as cmn
 from pathlib import Path
 from enum import Enum
+from lib.tools.logger import logger
 
 class Events(Enum):
     COLLECTIONS = "collections"
@@ -36,7 +37,7 @@ class Remapper:
         if mapPath.exists():
             self.map = cmn.loadFromJson(mapPath)
         else:
-            print(f"WARNING: No DWC map found for location {self.location}")
+            logger.warning(f"No DWC map found for location {self.location}")
             self.map = {}
         
         self.reverseLookup = self._buildReverseLookup(self.map)
@@ -101,7 +102,7 @@ class Remapper:
                     uniqueMappings[item] = oldColumn
                     continue
                 else:
-                    print(f"Found mapping for column '{oldColumn}' that matches initial mapping '{uniqueMappings[item]}' in event '{item[0]}'")
+                    logger.info(f"Found mapping for column '{oldColumn}' that matches initial mapping '{uniqueMappings[item]}' in event '{item[0]}'")
                     return False
                 
         return True
@@ -154,12 +155,12 @@ class MapRetriever:
         written = []
         for database, sheetID in self.sheetIDs.items():
             location, _ = database.split("-")
-            print(f"Reading {database}")
+            logger.debug(f"Reading {database}")
 
             try:
                 df = pd.read_csv(self.retrieveURL + str(sheetID), keep_default_na=False)
             except urllib.error.HTTPError:
-                print(f"Unable to read sheet for {database}")
+                logger.warning(f"Unable to read sheet for {database}")
                 continue
 
             mappings = self.getMappings(df)
@@ -172,7 +173,7 @@ class MapRetriever:
                 with open(mapFile, "w") as fp:
                     json.dump(mappings, fp, indent=4)
                 written.append(location)
-                print(f"Created new {location} map")
+                logger.debug(f"Created new {location} map")
                 continue
 
             with open(mapFile) as fp:
@@ -188,7 +189,7 @@ class MapRetriever:
             with open(mapFile, "w") as fp:
                 json.dump(columnMap, fp, indent=4)
 
-            print(f"Added new values to {location} map")
+            logger.debug(f"Added new values to {location} map")
             if location not in written:
                 written.append(location)
 

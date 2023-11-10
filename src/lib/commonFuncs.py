@@ -4,6 +4,7 @@ import lib.config as cfg
 import json
 import platform
 import subprocess
+from lib.tools.logger import logger
 
 def reverseLookup(lookup: dict) -> dict:
     nameMap = {}
@@ -109,7 +110,7 @@ def downloadFile(url: str, filePath: str, user: str = "", password: str = "", ve
         args.extend(["--user", f"{user}:{password}"])
 
     if verbose:
-        print(f"Downloading from {url} to file {filePath}")
+        logger.info(f"Downloading from {url} to file {filePath}")
     else:
         args.append("-s")
 

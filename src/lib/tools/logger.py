@@ -2,6 +2,7 @@ import logging
 import lib.config as cfg
 from pathlib import Path
 from datetime import datetime
+import sys
 
 # Log file information
 logFolder: Path = cfg.folders.logs
@@ -12,8 +13,11 @@ logging.basicConfig(
     filename=logFolder / logFileName,
     format="[%(asctime)s] %(module)s - %(level)s: %(message)s",
     datefmt="%H:%M:%S",
-    level=logging.WARNING
+    level=logging.DEBUG
 )
 
 # logger object to import from other modules
 logger = logging.getLogger()
+
+# Add logging data to stdout
+logger.addHandler(logging.StreamHandler(sys.stdout))
