@@ -7,10 +7,11 @@ import sys
 # Log file information
 logFolder: Path = cfg.folders.logs
 logFileName = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+logFilePath = logFolder / f"{logFileName}.log" 
 
 # Configure root logger
 logging.basicConfig(
-    filename=logFolder / logFileName,
+    filename=logFilePath,
     format="[%(asctime)s] %(module)s - %(level)s: %(message)s",
     datefmt="%H:%M:%S",
     level=logging.DEBUG
