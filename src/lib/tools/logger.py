@@ -6,19 +6,23 @@ import sys
 
 # Log file information
 logFolder: Path = cfg.folders.logs
-logFileName = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-logFilePath = logFolder / f"{logFileName}.log" 
+logFileName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+logFilePath = logFolder / f"{logFileName}.log"
 
-# Configure root logger
-logging.basicConfig(
-    filename=logFilePath,
-    format="[%(asctime)s] %(module)s - %(level)s: %(message)s",
-    datefmt="%H:%M:%S",
-    level=logging.DEBUG
-)
-
-# logger object to import from other modules
+# Get root logger
 logger = logging.getLogger()
 
-# Add logging data to stdout
-logger.addHandler(logging.StreamHandler(sys.stdout))
+# Configure logger
+formatter = logging.Formatter("[%(asctime)s] %(module)s - %(level)s: %(message)s", "%H:%M:%S")
+
+fileHandler = logging.FileHandler(filename=str(logFilePath))
+fileHandler.setFormatter(formatter)
+fileHandler.setLevel(logging.DEBUG)
+logger.addHandler(fileHandler)
+
+streamHandler = logging.StreamHandler(sys.stdout)
+streamHandler.setFormatter(formatter)
+streamHandler.setLevel(logging.DEBUG)
+logger.addHandler(streamHandler)
+
+logger.debug("Logger Initialised")
