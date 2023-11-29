@@ -15,6 +15,11 @@ def buildURL(apiKey, method, **kwargs):
 
     return f"{url}{suffix}"
 
+def cleanDimension(value) -> int:
+    if value is None:
+        return 1
+    return int(value)
+
 def processPhoto(apiKey: str, licenses: dict, photo: dict) -> dict:
     photoID = photo["id"]
 
@@ -31,7 +36,7 @@ def processPhoto(apiKey: str, licenses: dict, photo: dict) -> dict:
         return {}
     
     photoSizes = response.json()["sizes"]
-    image = sorted(photoSizes["size"], key=lambda x: int(x["width"]) * int(x["height"]), reverse=True)[0]
+    image = sorted(photoSizes["size"], key=lambda x: cleanDimension(x["width"]) * cleanDimension(x["height"]), reverse=True)[0]
     
     tags = [tag["raw"] for tag in photoInfo["tags"]["tag"]]
 
@@ -58,7 +63,7 @@ def processPhoto(apiKey: str, licenses: dict, photo: dict) -> dict:
     }
 
 def run():
-    baseDir = Path(__file__)
+    baseDir = Path(__file__).parent
 
     with open(baseDir / "flickrkey.txt") as fp:
         apiKeyData = fp.read()
