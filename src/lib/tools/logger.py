@@ -13,16 +13,19 @@ logFilePath = logFolder / f"{logFileName}.log"
 logger = logging.getLogger()
 
 # Configure logger
-formatter = logging.Formatter("[%(asctime)s] %(module)s - %(level)s: %(message)s", "%H:%M:%S")
+logger.setLevel(logging.DEBUG)
 
-fileHandler = logging.FileHandler(filename=str(logFilePath))
+# Setup handlers
+# formatter = logging.Formatter("[%(asctime)s] %(module)s - %(levelname)s: %(message)s", "%H:%M:%S")
+formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%H:%M:%S")
+
+fileHandler = logging.FileHandler(filename=logFilePath)
 fileHandler.setFormatter(formatter)
-fileHandler.setLevel(logging.DEBUG)
+fileHandler.setLevel(logging.INFO)
 logger.addHandler(fileHandler)
 
 streamHandler = logging.StreamHandler(sys.stdout)
 streamHandler.setFormatter(formatter)
-streamHandler.setLevel(logging.DEBUG)
 logger.addHandler(streamHandler)
 
-logger.debug("Logger Initialised")
+logger.info("Logger initialised")
