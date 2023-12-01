@@ -5,6 +5,7 @@ import lzma
 import tarfile
 from pathlib import Path
 from enum import Enum
+from lib.tools.logger import logger
 
 class ExtractTypes(Enum):
     ZIP = ".zip"
@@ -28,7 +29,7 @@ class Extractor:
         filePath: Path = Path(filePath)
 
         if not filePath.exists():
-            print(f"No file exists at path: {filePath}.")
+            logger.warning(f"No file exists at path: {filePath}.")
             return None
         
         if not outputDir:
@@ -40,7 +41,7 @@ class Extractor:
                 outputFile = outputFile.with_suffix(addSuffix)
 
             if outputFile.exists() and not overwrite:
-                print("Output file already exists.... Skipping extraction stage")
+                logger.info("Output file already exists.... Skipping extraction stage")
                 filePath = outputFile
                 continue
 
