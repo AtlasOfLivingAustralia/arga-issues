@@ -9,8 +9,8 @@ logFolder: Path = cfg.folders.logs
 logFileName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 logFilePath = logFolder / f"{logFileName}.log"
 
-# Get root logger
-logger = logging.getLogger()
+# Get logger object
+logger = logging.getLogger("processing")
 
 # Configure logger
 logger.setLevel(logging.DEBUG)
