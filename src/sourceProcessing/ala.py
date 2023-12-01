@@ -3,6 +3,7 @@ import requests
 import json
 import math
 from pathlib import Path
+import lib.dataframeFuncs as dff
 
 def build(outputFilePath: Path) -> None:
     baseURL = "https://biocache-ws.ala.org.au/ws/occurrences/search?q=*%3A*&disableAllQualityFilters=true&qualityProfile=AVH&fq=type_status%3A*&fq=country%3A%22Australia%22&qc=data_hub_uid%3Adh9"
@@ -54,4 +55,5 @@ def collect(outputDir: Path, profileList: list[str], tokenFilePath: Path) -> Non
         print()
 
         df = pd.DataFrame.from_records(records)
+        df = dff.removeSpaces(df)
         df.to_csv(outputDir / f"{profile}.csv", index=False)

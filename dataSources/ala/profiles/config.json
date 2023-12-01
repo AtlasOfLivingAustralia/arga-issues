@@ -1,7 +1,7 @@
 {
     "dbType": "script",
     "script": {
-        "path": "sourceProcessing/ala/profiles.py",
+        "path": "sourceProcessing/ala.py",
         "function": "collect",
         "args": [
             "{PATH, DOWNLOAD}",
