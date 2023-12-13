@@ -50,7 +50,7 @@ class Database:
         buildProcessing = stage != StageFileStep.DOWNLOADED # Do not build processing if stage file step is only for downloaded
         self._prepare(buildProcessing=buildProcessing)
 
-        if stage == StageFileStep.PROCESSED:
+        if stage in (StageFileStep.DOWNLOADED, StageFileStep.PROCESSED):
             return
         
         self.systemManager.addFinalStage(self.finalProcessing)
