@@ -9,9 +9,9 @@ import pyarrow.parquet as pq
 from lib.tools.logger import Logger
 
 class Format(Enum):
-    CSV = "csv"
-    TSV = "tsv"
-    PARQUET = "parquet"
+    CSV = ".csv"
+    TSV = ".tsv"
+    PARQUET = ".parquet"
 
 class Subfile:
 
@@ -23,7 +23,7 @@ class Subfile:
         return super().__new__(subclass)
 
     def __init__(self, location: Path, fileName: str, format: Format) -> 'Subfile':
-        self.filePath = location / f"{fileName}.{Format(format).value}"
+        self.filePath = location / f"{fileName}{Format(format).value}"
 
     def __repr__(self) -> str:
         return str(self.filePath)
@@ -38,8 +38,8 @@ class Subfile:
     def write(self, df: pd.DataFrame) -> None:
         df.to_csv(self.filePath, index=False)
     
-    def read(self) -> pd.DataFrame:
-        return pd.read_csv(self.filePath)
+    def read(self, **kwargs) -> pd.DataFrame:
+        return pd.read_csv(self.filePath, **kwargs)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
         if newFileFormat == self.fileFormat:
@@ -60,7 +60,11 @@ class Subfile:
         self.remove()
         
     def remove(self) -> None:
-        self.filePath.unlink()   
+        self.filePath.unlink()
+
+    def getColumns(self) -> list[str]:
+        df = self.read(nrows=1)
+        return df.columns
 
 class TSVSubfile(Subfile):
 
@@ -69,8 +73,8 @@ class TSVSubfile(Subfile):
     def write(self, df: pd.DataFrame) -> None:
         df.to_csv(self.filePath, sep="\t", index=False)
 
-    def read(self) -> pd.DataFrame:
-        return pd.read_csv(self.filePath, sep="\t")
+    def read(self, **kwargs) -> pd.DataFrame:
+        return pd.read_csv(self.filePath, sep="\t", **kwargs)
     
 class PARQUETSubfile(Subfile):
 
@@ -79,13 +83,17 @@ class PARQUETSubfile(Subfile):
     def write(self, df: pd.DataFrame) -> None:
         df.to_parquet(self.filePath, "pyarrow", index=False)
 
-    def read(self) -> pd.DataFrame:
-        return pd.read_parquet(self.filePath, "pyarrow")
+    def read(self, **kwargs) -> pd.DataFrame:
+        return pd.read_parquet(self.filePath, "pyarrow", **kwargs)
+    
+    def getColumns(self) -> list[str]:
+        df = self.read()
+        return df.columns
 
 class BigFileWriter:
     def __init__(self, outputFile: Path, subDirName: str = "chunks", sectionPrefix: str = "chunk", subfileType: Format = Format.PARQUET) -> 'BigFileWriter':
         self.outputFile = outputFile
-        self.outputFileType = Format(outputFile.suffix[1:])
+        self.outputFileType = Format(outputFile.suffix)
         self.subfileDir = outputFile.parent / subDirName
         self.sectionPrefix = sectionPrefix
         self.subfileType = subfileType
@@ -100,6 +108,15 @@ class BigFileWriter:
                 return
             except OverflowError:
                 maxInt = int(maxInt/10)
+
+    def populateFromFolder(self, folderPath: Path) -> None:
+        for filePath in folderPath.iterdir():
+            subFile = Subfile.fromFilePath(filePath)
+            columns = subFile.getColumns()
+
+            self.writtenFiles.append(subFile)
+            cmn.extendUnique(self.globalColumns, columns)
+            print(f"Added file: {subFile.filePath}", end="\r")
 
     def writeCSV(self, cols: list[str], rows: list[list[str]]) -> None:
         df = pd.DataFrame(columns=cols, data=rows)
@@ -137,8 +154,9 @@ class BigFileWriter:
             self._oneParquet(removeOld)
 
         Logger.info(f"\nCreated a single file at {self.outputFile}")
-        self.subfileDir.rmdir()
-        self.writtenFiles.clear()
+        if removeOld:
+            self.subfileDir.rmdir()
+            self.writtenFiles.clear()
 
     def _oneCSV(self, removeOld: bool = True):
         delim = "\t" if self.outputFileType == Format.TSV else ","

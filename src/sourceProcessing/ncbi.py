@@ -112,31 +112,30 @@ def compileAssemblyStats(inputFolder: Path, outputFilePath: Path) -> None:
     print()
     writer.oneFile()
 
+def parseNucleotide(filePath: Path, outputFilePath: Path, verbose: bool = True) -> None:
+    extractor = Extractor(outputFilePath.parent)
+    flatfileParser = FlatFileParser()
+
+    records = []
+    if verbose:
+        print(f"Extracting file {filePath}")
+    
+    extractedFile = extractor.run(filePath)
+
+    if extractedFile is None:
+        print("Failed to extract file, skipping")
+        return
+
+    if verbose:
+        print(f"Parsing file {extractedFile}")
+
+    records = flatfileParser.parse(extractedFile, verbose)
+    df = pd.DataFrame.from_records(records)
+    df.to_parquet(outputFilePath, index=False)
+
+    extractedFile.unlink()
+
 def compileNucleotide(folderPath: Path, outputFilePath: Path) -> None:
     writer = BigFileWriter(outputFilePath, "seqChunks", "chunk")
-    extractor = Extractor(outputFilePath.parent)
-
-    flatfileParser = FlatFileParser()
-    records = []
-    verbose = True
-
-    for filePath in folderPath.iterdir():
-        if verbose:
-            print(f"Extracting file {filePath}")
-            
-        extractedFile = extractor.run(filePath)
-        if extractedFile is None:
-            print("Failed to extract file, skipping")
-            continue
-
-        if verbose:
-            print(f"Parsing file {extractedFile}")
-
-        records = flatfileParser.parse(extractedFile, verbose)
-        df = pd.DataFrame.from_records(records)
-        writer.writeDF(df)
-
-        # Delete extracted file after processing to save space
-        extractedFile.unlink()
-
-    writer.oneFile()
+    writer.populateFromFolder(folderPath)
+    writer.oneFile(False)

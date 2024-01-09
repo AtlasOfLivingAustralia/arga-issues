@@ -20,7 +20,7 @@ class StageFileStep(Enum):
 class StageFile:
     def __init__(self, filePath: Path, fileProperties: dict, parentScript: StageScript, stage: StageFileStep):
         self.filePath = filePath
-        self.fileProperties = fileProperties
+        self.fileProperties = fileProperties.copy()
         self.parentScript = parentScript
         self.stage = stage
         self.directory = filePath.parent
@@ -49,7 +49,8 @@ class StageFile:
 
     def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict) -> bool:
         if self.filePath.exists():
-            if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE):
+            if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE) or overwriteAmount <= 0:
+                print(f"{self.filePath} already exists")
                 return False
             
             elif overwriteAmount <= 0:
