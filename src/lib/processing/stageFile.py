@@ -47,7 +47,7 @@ class StageFile:
     def loadDataFrameIterator(self, chunkSize: int = 1024 * 1024) ->  Iterator[pd.DataFrame]:
         return dff.chunkGenerator(self.filePath, chunkSize, self.separator, self.firstRow, self.encoding)
 
-    def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0) -> bool:
+    def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict) -> bool:
         if self.filePath.exists():
             if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE):
                 return False
@@ -57,5 +57,5 @@ class StageFile:
                 return False
         
         self.filePath.parent.mkdir(parents=True, exist_ok=True)
-        self.parentScript.run(overwriteStage, overwriteAmount)
+        self.parentScript.run(overwriteStage, overwriteAmount, verbose, **kwargs)
         return True

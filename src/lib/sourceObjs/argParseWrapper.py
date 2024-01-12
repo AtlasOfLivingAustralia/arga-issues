@@ -22,11 +22,12 @@ class SourceArgParser:
     def add_argument(self, *args, **kwargs) -> None:
         self.parser.add_argument(*args, **kwargs)
 
-    def parse_args(self, *args, **kwargs) -> tuple[list[Database], list[int], argparse.Namespace]:
+    def parse_args(self, *args, **kwargs) -> tuple[list[Database], list[int], int, dict]:
         parsedArgs = self.parser.parse_args(*args, **kwargs)
         sources = self.manager.getDB(parsedArgs.sources)
+        overwrite = parsedArgs.overwrite
 
-        delattrs = ["sources"] # Remove source name stored in original parsed args
+        delattrs = ["sources", "overwrite"] # Remove source name stored in original parsed args
 
         selectedFiles = []
         if hasattr(parsedArgs, "filenums"): # Using specific selection
@@ -40,7 +41,7 @@ class SourceArgParser:
         for attr in delattrs:
             delattr(parsedArgs, attr)
 
-        return (sources, selectedFiles, parsedArgs)
+        return (sources, selectedFiles, overwrite, vars(parsedArgs))
 
     def add_mutually_exclusive_group(self, *args, **kwargs) -> argparse._MutuallyExclusiveGroup:
         self.parser.add_mutually_exclusive_group(*args, **kwargs)

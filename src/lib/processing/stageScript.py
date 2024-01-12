@@ -5,9 +5,9 @@ from lib.processing.dwcProcessing import DWCProcessor
 import lib.processing.processingFuncs as pFuncs
 import lib.commonFuncs as cmn
 from lib.tools.logger import logger
+from lib.processing.stageFile import StageFile, StageFileStep
 
 if TYPE_CHECKING:
-    from lib.processing.stageFile import StageFile, StageFileStep
     from lib.processing.parser import SelectorParser
 
 class StageScript:
@@ -40,14 +40,14 @@ class StageScript:
     def getOutputs(self) -> list[tuple[Path, dict]]:
         return [(output, self.outputProperties.get(str(idx), {})) for idx, output in enumerate(self.outputs)]
 
-    def run(self, overwriteStage: StageFileStep, overwrite: int = 0, verbose: bool = True):
+    def run(self, overwriteStage: StageFileStep, overwrite: int = 0, verbose: bool = True, **kwargs: dict):
         if all(output.exists() for output in self.outputs) and overwrite <= 0:
             if verbose:
                 logger.info(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
             return
         
         for input in self.inputs:
-            input.create(overwriteStage, overwrite - 1)
+            input.create(overwriteStage, overwrite - 1, verbose, **kwargs)
             if not input.exists():
                 if verbose:
                     logger.info(f"Missing input file: {input.filePath}")
@@ -90,7 +90,7 @@ class StageDownloadScript:
     def getOutputs(self) -> list[Path]:
         return [self.downloadedFile]
 
-    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False):
+    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict):
         if self.downloadedFile.exists() and overwriteAmount <= 0:
             if verbose:
                 logger.info(f"File already downloaded at {self.downloadedFile}, skipping redownload")
@@ -107,10 +107,10 @@ class StageDWCConversion:
     def getOutput(self) -> Path:
         return self.dwcProcessor.outputDir / self.outputFolderName
 
-    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = True):
+    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = True, **kwargs: dict):
         outputPath = self.getOutput()
 
-        if outputPath.exists() and overwriteAmount <= 0:
+        if outputPath.exists() and (overwriteAmount <= 0 or overwriteStage != StageFileStep.DWC):
             logger.info(f"DWC file {outputPath} exists and not overwriting, skipping creation")
             return
         
@@ -121,5 +121,6 @@ class StageDWCConversion:
             self.input.separator,
             self.input.firstRow,
             self.input.encoding,
-            overwriteAmount > 0
+            overwriteAmount > 0,
+            **kwargs
         )

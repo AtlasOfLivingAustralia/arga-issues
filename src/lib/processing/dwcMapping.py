@@ -7,6 +7,7 @@ import lib.commonFuncs as cmn
 from pathlib import Path
 from enum import Enum
 from lib.tools.logger import logger
+from dataclasses import dataclass
 
 class Events(Enum):
     COLLECTIONS = "collections"
@@ -18,6 +19,11 @@ class Events(Enum):
     ANNOTATIONS = "annotations"
     DEPOSITIONS = "depositions"
 
+@dataclass(eq=True, frozen=True)
+class MappedColumn:
+    event: str
+    colName: str
+
 class Remapper:
     def __init__(self, location: str, customMapPath: Path = None, preserveDwCMatch: bool = False, prefixMissing: bool = True) -> 'Remapper':
         self.location = location
@@ -25,7 +31,7 @@ class Remapper:
         self.preserveDwCMatch = preserveDwCMatch
         self.prefixMissing = prefixMissing
 
-        self.mappedColumns: dict[str, list] = {}
+        self.mappedColumns: dict[str, list[MappedColumn]] = {}
         self._loadMaps(customMapPath)
 
     def getMappings(self) -> dict:
@@ -62,14 +68,14 @@ class Remapper:
             for newName, oldNameList in columnMap.items():
                 for oldName in oldNameList:
                     if oldName not in reverse:
-                        reverse[oldName] = [(eventName, newName)]
-                    else:
-                        reverse[oldName].append((eventName, newName))
+                        reverse[oldName] = []
+  
+                    reverse[oldName].append(MappedColumn(eventName, newName))
 
         return reverse
     
-    def createMappings(self, columns: list, skipRemap: list = []) -> None:
-        self.mappedColumns = {} # Clear mapped columns
+    def createMappings(self, columns: list, skipRemap: list = []) -> dict[str, list]:
+        self.mappedColumns.clear()
 
         for column in columns:
             if column in skipRemap:
@@ -81,41 +87,41 @@ class Remapper:
 
             # If column matches an output column name
             if column in self.map and self.preserveDwCMatch:
-                self.mappedColumns[column].append(("Preserved", f"{self.location}_{column}"))
+                self.mappedColumns[column].append(MappedColumn("Preserved", f"{self.location}_{column}"))
 
             # If no mapped value has been found yet
             if not self.mappedColumns[column]:
-                self.mappedColumns[column].append(("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column))
-
-        with open(cfg.folders.mapping / "test_mapped_columns.json", "w") as fp:
-            json.dump(self.mappedColumns, fp, indent=4)
+                self.mappedColumns[column].append(MappedColumn("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column))
 
     def getEvents(self) -> list[str]:
-        return list(set([eventName for mappings in self.mappedColumns.values() for eventName, _ in mappings]))
+        return list(set([mapping.event for mapList in self.mappedColumns.values() for mapping in mapList]))
 
-    def verifyUnique(self) -> bool:
-        uniqueMappings = {}
+    def getMatches(self) -> tuple[dict, dict]:
+        uniqueMappings: dict[MappedColumn, str] = {}
+        matchedMappings: dict[MappedColumn, list[str]] = {}
 
         for oldColumn, eventInfoList in self.mappedColumns.items():
-            for item in eventInfoList:
-                if item not in uniqueMappings:
-                    uniqueMappings[item] = oldColumn
+            for mappedColumn in eventInfoList:
+                if mappedColumn not in uniqueMappings:
+                    uniqueMappings[mappedColumn] = oldColumn
                     continue
-                else:
-                    logger.info(f"Found mapping for column '{oldColumn}' that matches initial mapping '{uniqueMappings[item]}' in event '{item[0]}'")
-                    return False
+
+                logger.info(f"Found mapping for column '{oldColumn}' that matches initial mapping '{uniqueMappings[mappedColumn]}' in event '{mappedColumn.event}'")
+                if uniqueMappings[mappedColumn] not in matchedMappings:
+                    matchedMappings[uniqueMappings[mappedColumn]] = []
+                matchedMappings[uniqueMappings[mappedColumn]].append(oldColumn)
                 
-        return True
+        return matchedMappings, uniqueMappings
 
     def applyMap(self, df: pd.DataFrame) -> pd.DataFrame:
         eventColumns = {}
 
         for column in df.columns:
-            for eventName, newName in self.mappedColumns[column]:
-                if eventName not in eventColumns:
-                    eventColumns[eventName] = {}
+            for mappedColumn in self.mappedColumns[column]:
+                if mappedColumn.event not in eventColumns:
+                    eventColumns[mappedColumn.event] = {}
 
-                eventColumns[eventName][column] = newName
+                eventColumns[mappedColumn.event][column] = mappedColumn.colName
 
         for eventName, colMap in eventColumns.items():
             subDF: pd.DataFrame = df[colMap.keys()].copy() # Select only relevant columns

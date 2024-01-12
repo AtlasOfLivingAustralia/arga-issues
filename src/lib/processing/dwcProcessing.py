@@ -24,7 +24,7 @@ class DWCProcessor:
         self.augmentSteps = [DWCAugment(augProperties) for augProperties in self.augments]
         self.remapper = Remapper(location, self.customMapPath)
 
-    def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False) -> Path:
+    def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False, **kwargs: dict) -> Path:
         outputFolderPath = self.outputDir / outputFolderName
         if outputFolderPath.exists() and not overwrite:
             logger.info(f"{outputFolderPath} already exists, exiting...")
@@ -35,8 +35,12 @@ class DWCProcessor:
         headerChunk = next(preGenerator)
         self.remapper.createMappings(headerChunk.columns)
         
-        if not self.remapper.verifyUnique():
-            return
+        columnMatches, uniqueColumns = self.remapper.getMatches()
+        if columnMatches: # If there are non unique columns
+            if not kwargs["ignoreRemapErrors"]:
+                return
+            
+            self.remapper.mappedColumns = uniqueColumns
         
         events = self.remapper.getEvents()
 
