@@ -15,18 +15,20 @@
                     "outputs": [
                         "{PATH, PROCESSING, taxdump}"
                     ]
-                },
-                {
-                    "path": "sourceProcessing/ncbiTaxonomy.py",
-                    "function": "process",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}",
-                        "{PATH, PROCESSING, ncbiTaxonomy.csv}"
-                    ],
-                    "outputs": [
-                        "{PATH, PROCESSING, ncbiTaxonomy.csv}"
-                    ]
                 }
+            ]
+        }
+    ],
+    "finalProcessing": [
+        {
+            "path": "sourceProcessing/ncbiTaxonomy.py",
+            "function": "parse",
+            "args": [
+                "{PATH, PROCESSING, taxdump}",
+                "{PATH, PREDWC, ncbiTaxonomy.csv}"
+            ],
+            "outputs": [
+                "{PATH, PREDWC, ncbiTaxonomy.csv}"
             ]
         }
     ]
