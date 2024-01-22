@@ -17,6 +17,8 @@
 *.ear
 *.zip
 *.tar.gz
+*.gbff
+*.gz
 *.rar
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
@@ -29,10 +31,11 @@ mapping
 logs
 env
 
-# Data source template
+# Data sources files
 datasources/*/*/data
 datasources/*/*/examples
-datasources/*/*/lastUpdate.json
+datasources/*/*/crawlerProgress
+datasources/*/*/*.json
 
 # Data Files #
 *.tsv
