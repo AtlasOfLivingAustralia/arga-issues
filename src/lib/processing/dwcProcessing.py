@@ -35,12 +35,12 @@ class DWCProcessor:
         headerChunk = next(preGenerator)
         self.remapper.createMappings(headerChunk.columns)
         
-        columnMatches, uniqueColumns = self.remapper.getMatches()
-        if columnMatches: # If there are non unique columns
+        if not self.remapper.allUnique(): # If there are non unique columns
             if not kwargs["ignoreRemapErrors"]:
+                self.remapper.reportMatches()
                 return
             
-            self.remapper.mappedColumns = uniqueColumns
+            self.remapper.forceUnique()
         
         events = self.remapper.getEvents()
 

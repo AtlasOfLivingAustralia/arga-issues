@@ -32,6 +32,7 @@ class Remapper:
         self.prefixMissing = prefixMissing
 
         self.mappedColumns: dict[str, list[MappedColumn]] = {}
+        self.uniqueColumns: dict[MappedColumn, list[str]] = {}
         self._loadMaps(customMapPath)
 
     def getMappings(self) -> dict:
@@ -46,11 +47,11 @@ class Remapper:
             logger.warning(f"No DWC map found for location {self.location}")
             self.map = {}
         
-        self.reverseLookup = self._buildReverseLookup(self.map)
+        self.lookup = self._buildLookup(self.map)
 
         # Exit early if no custom path specified
         if customMapPath is None:
-            self.customReverseLookup = {}
+            self.customLookup = {}
             return
 
         # Custom map
@@ -59,59 +60,81 @@ class Remapper:
         else:
             raise Exception(f"No custom map found at location: {customMapPath}") from FileNotFoundError
 
-        self.customReverseLookup = self._buildReverseLookup(self.customMap)
+        self.customLookup = self._buildLookup(self.customMap)
 
-    def _buildReverseLookup(self, lookup: dict) -> dict[str, list]:
-        reverse = {}
+    def _buildLookup(self, map: dict[str, dict[str, list[str]]]) -> dict[str, list[MappedColumn]]:
+        lookup: dict[str, list[MappedColumn]] = {}
 
-        for eventName, columnMap in lookup.items():
+        for eventName, columnMap in map.items():
             for newName, oldNameList in columnMap.items():
                 for oldName in oldNameList:
-                    if oldName not in reverse:
-                        reverse[oldName] = []
+                    if oldName not in lookup:
+                        lookup[oldName] = []
   
-                    reverse[oldName].append(MappedColumn(eventName, newName))
+                    lookup[oldName].append(MappedColumn(eventName, newName))
 
-        return reverse
+        return lookup
     
-    def createMappings(self, columns: list, skipRemap: list = []) -> dict[str, list]:
+    def createMappings(self, columns: list[str], skipRemap: list[str] = []) -> dict[str, list[MappedColumn]]:
         self.mappedColumns.clear()
+        self.uniqueColumns.clear()
 
         for column in columns:
             if column in skipRemap:
                 continue
 
             self.mappedColumns[column] = []
-            self.mappedColumns[column].extend(self.reverseLookup.get(column, [])) # Apply DWC mapping
-            self.mappedColumns[column].extend(self.customReverseLookup.get(column, [])) # Apply custom mapping
+
+            # Apply DWC mapping
+            for lookup in (self.lookup, self.customLookup):
+                lookupValues = lookup.get(column, [])
+                self.mappedColumns[column].extend(lookupValues)
+                for mapping in lookupValues:
+                    if mapping not in self.uniqueColumns:
+                        self.uniqueColumns[mapping] = []
+                    
+                    self.uniqueColumns[mapping].append(column)
 
             # If column matches an output column name
             if column in self.map and self.preserveDwCMatch:
-                self.mappedColumns[column].append(MappedColumn("Preserved", f"{self.location}_{column}"))
+                mapValue = MappedColumn("Preserved", f"{self.location}_{column}")
+                self.mappedColumns[column].append(mapValue)
+
+                if mapValue not in self.uniqueColumns:
+                    self.uniqueColumns[mapValue] = []
+                    
+                self.uniqueColumns[mapValue].append(column)
 
             # If no mapped value has been found yet
             if not self.mappedColumns[column]:
-                self.mappedColumns[column].append(MappedColumn("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column))
+                mapValue = MappedColumn("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column)
+                self.mappedColumns[column].append(mapValue)
+
+                if mapValue not in self.uniqueColumns:
+                    self.uniqueColumns[mapValue] = []
+                    
+                self.uniqueColumns[mapValue].append(column)
+
+        return self.mappedColumns
+    
+    def allUnique(self) -> bool:
+        return all(len(originalColumns) == 1 for originalColumns in self.uniqueColumns.values())
 
     def getEvents(self) -> list[str]:
         return list(set([mapping.event for mapList in self.mappedColumns.values() for mapping in mapList]))
+    
+    def reportMatches(self) -> None:
+        for mapping, oldColumns in self.uniqueColumns.items():
+            initialMapping = oldColumns[0]
 
-    def getMatches(self) -> tuple[dict, dict]:
-        uniqueMappings: dict[MappedColumn, str] = {}
-        matchedMappings: dict[MappedColumn, list[str]] = {}
+            for column in oldColumns[1:]:
+                logger.info(f"Found mapping for column '{column}' that matches initial mapping '{initialMapping}' with event '{mapping.event}'")
 
-        for oldColumn, eventInfoList in self.mappedColumns.items():
-            for mappedColumn in eventInfoList:
-                if mappedColumn not in uniqueMappings:
-                    uniqueMappings[mappedColumn] = oldColumn
-                    continue
+    def forceUnique(self) -> None:
+        self.mappedColumns.clear()
 
-                logger.info(f"Found mapping for column '{oldColumn}' that matches initial mapping '{uniqueMappings[mappedColumn]}' in event '{mappedColumn.event}'")
-                if uniqueMappings[mappedColumn] not in matchedMappings:
-                    matchedMappings[uniqueMappings[mappedColumn]] = []
-                matchedMappings[uniqueMappings[mappedColumn]].append(oldColumn)
-                
-        return matchedMappings, uniqueMappings
+        for mapping, oldColumns in self.uniqueColumns.items():
+            self.mappedColumns[oldColumns[0]] = [mapping]
 
     def applyMap(self, df: pd.DataFrame) -> pd.DataFrame:
         eventColumns = {}
