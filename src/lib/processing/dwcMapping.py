@@ -131,10 +131,9 @@ class Remapper:
                 logger.info(f"Found mapping for column '{column}' that matches initial mapping '{initialMapping}' with event '{mapping.event}'")
 
     def forceUnique(self) -> None:
-        self.mappedColumns.clear()
-
         for mapping, oldColumns in self.uniqueColumns.items():
-            self.mappedColumns[oldColumns[0]] = [mapping]
+            for column in oldColumns[1:]:
+                self.mappedColumns[column].remove(mapping)
 
     def applyMap(self, df: pd.DataFrame) -> pd.DataFrame:
         eventColumns = {}
