@@ -50,7 +50,7 @@ class SystemManager:
         logger.info("Using concurrency for large quantity of tasks")
         createdFile = False # Check if any new files were actually created
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.maxWorkers) as executor:
-            futures = (executor.submit(file.create, (stage, overwrite, verbose), **kwargs) for file in files)
+            futures = (executor.submit(file.create, stage, overwrite, verbose, **kwargs) for file in files)
             try:
                 for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
                     success = future.result()
