@@ -6,7 +6,7 @@ import sys
 from enum import Enum
 import pyarrow as pa
 import pyarrow.parquet as pq
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 
 class Format(Enum):
     CSV = "csv"
@@ -120,23 +120,23 @@ class BigFileWriter:
 
     def oneFile(self, removeOld: bool = True) -> None:
         if self.outputFile.exists():
-            logger.info(f"Removing old file {self.outputFile}")
+            Logger.info(f"Removing old file {self.outputFile}")
             self.outputFile.unlink()
 
         if len(self.writtenFiles) == 1:
-            logger.info(f"Only single subfile, moving {self.writtenFiles[0]} to {self.outputFile}")
+            Logger.info(f"Only single subfile, moving {self.writtenFiles[0]} to {self.outputFile}")
 
             self.writtenFiles[0].rename(self.outputFile, self.outputFileType)
             self.subfileDir.rmdir()
             return
 
-        logger.info("Combining into one file")
+        Logger.info("Combining into one file")
         if self.outputFileType in (Format.CSV, Format.TSV):
             self._oneCSV(removeOld)
         elif self.outputFileType == Format.PARQUET:
             self._oneParquet(removeOld)
 
-        logger.info(f"\nCreated a single file at {self.outputFile}")
+        Logger.info(f"\nCreated a single file at {self.outputFile}")
         self.subfileDir.rmdir()
         self.writtenFiles.clear()
 

@@ -6,7 +6,7 @@ import lib.config as cfg
 import lib.commonFuncs as cmn
 from pathlib import Path
 from enum import Enum
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 from dataclasses import dataclass
 
 class Events(Enum):
@@ -44,7 +44,7 @@ class Remapper:
         if mapPath.exists():
             self.map = cmn.loadFromJson(mapPath)
         else:
-            logger.warning(f"No DWC map found for location {self.location}")
+            Logger.warning(f"No DWC map found for location {self.location}")
             self.map = {}
         
         self.lookup = self._buildLookup(self.map)
@@ -128,7 +128,7 @@ class Remapper:
             initialMapping = oldColumns[0]
 
             for column in oldColumns[1:]:
-                logger.info(f"Found mapping for column '{column}' that matches initial mapping '{initialMapping}' with event '{mapping.event}'")
+                Logger.info(f"Found mapping for column '{column}' that matches initial mapping '{initialMapping}' with event '{mapping.event}'")
 
     def forceUnique(self) -> None:
         for mapping, oldColumns in self.uniqueColumns.items():
@@ -183,12 +183,12 @@ class MapRetriever:
         written = []
         for database, sheetID in self.sheetIDs.items():
             location, _ = database.split("-")
-            logger.debug(f"Reading {database}")
+            Logger.debug(f"Reading {database}")
 
             try:
                 df = pd.read_csv(self.retrieveURL + str(sheetID), keep_default_na=False)
             except urllib.error.HTTPError:
-                logger.warning(f"Unable to read sheet for {database}")
+                Logger.warning(f"Unable to read sheet for {database}")
                 continue
 
             mappings = self.getMappings(df)
@@ -201,7 +201,7 @@ class MapRetriever:
                 with open(mapFile, "w") as fp:
                     json.dump(mappings, fp, indent=4)
                 written.append(location)
-                logger.debug(f"Created new {location} map")
+                Logger.debug(f"Created new {location} map")
                 continue
 
             with open(mapFile) as fp:
@@ -217,7 +217,7 @@ class MapRetriever:
             with open(mapFile, "w") as fp:
                 json.dump(columnMap, fp, indent=4)
 
-            logger.debug(f"Added new values to {location} map")
+            Logger.debug(f"Added new values to {location} map")
             if location not in written:
                 written.append(location)
 

@@ -4,7 +4,7 @@ from lib.processing.stageScript import StageDownloadScript, StageScript, StageDW
 from lib.processing.parser import SelectorParser
 from lib.processing.dwcProcessing import DWCProcessor
 import concurrent.futures
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 
 class SystemManager:
     def __init__(self, location: str, rootDir: Path, dwcProperties: dict, authFileName: str = "", maxWorkers: int = 100):
@@ -42,12 +42,12 @@ class SystemManager:
                 if number >= 0 and number <= len(self.stageFiles[stage]):
                     files.append(self.stageFiles[stage][number])
                 else:
-                    logger.error(f"Invalid number provided: {number}")
+                    Logger.error(f"Invalid number provided: {number}")
 
         if len(files) <= 10: # Skip threadpool if only 1 file being processed
             return any(file.create(stage, overwrite, verbose, **kwargs) for file in files) # Return if any files were created
 
-        logger.info("Using concurrency for large quantity of tasks")
+        Logger.info("Using concurrency for large quantity of tasks")
         createdFile = False # Check if any new files were actually created
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.maxWorkers) as executor:
             futures = (executor.submit(file.create, stage, overwrite, verbose, **kwargs) for file in files)
@@ -60,7 +60,7 @@ class SystemManager:
                         createdFile = True
                     
             except KeyboardInterrupt:
-                logger.info("\nExiting...")
+                Logger.info("\nExiting...")
                 executor.shutdown(cancel_futures=True)
                 return False
             

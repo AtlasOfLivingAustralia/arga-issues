@@ -6,7 +6,7 @@ import lib.processing.processingFuncs as pFuncs
 from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.dwcMapping import Remapper, Events
 from lib.processing.parser import SelectorParser
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 
 class DWCProcessor:
     def __init__(self, location: str, dwcProperties: dict, parser: SelectorParser):
@@ -27,7 +27,7 @@ class DWCProcessor:
     def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False, **kwargs: dict) -> Path:
         outputFolderPath = self.outputDir / outputFolderName
         if outputFolderPath.exists() and not overwrite:
-            logger.info(f"{outputFolderPath} already exists, exiting...")
+            Logger.info(f"{outputFolderPath} already exists, exiting...")
             return
         
         # Get columns and create mappings
