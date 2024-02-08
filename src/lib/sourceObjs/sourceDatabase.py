@@ -5,7 +5,7 @@ from lib.sourceObjs.systemManager import SystemManager
 from lib.sourceObjs.timeManager import TimeManager
 from lib.processing.stageFile import StageFile, StageFileStep
 from lib.tools.crawler import Crawler
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 
 class DBType(Enum):
     UNKNOWN    = -1
@@ -59,28 +59,19 @@ class Database:
             return
         
         self.systemManager.prepareDwC()
-    
-    def download(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
-        self._create(StageFileStep.DOWNLOADED, fileNumbers, overwrite)
 
-    def createPreDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
-        self._create(StageFileStep.PRE_DWC, fileNumbers, overwrite)
-
-    def createDwC(self, fileNumbers: list[int] = [], overwrite: int = 0) -> None:
-        self._create(StageFileStep.DWC, fileNumbers, overwrite)
-
-    def _create(self, stage: StageFileStep, fileNumbers: list[int], overwrite: int) -> None:
-        success = self.systemManager.create(stage, fileNumbers, overwrite)
+    def createStage(self, stage: StageFileStep, fileNumbers: list[int] = [], overwrite: int = 0, **kwargs: dict) -> None:
+        success = self.systemManager.create(stage, fileNumbers, overwrite, **kwargs)
         if success:
             self.timeManager.update(stage)
 
     def createDirectory(self) -> None:
-        logger.info(f"Creating directory for data: {str(self.databaseDir)}")
+        Logger.info(f"Creating directory for data: {str(self.databaseDir)}")
         self.databaseDir.mkdir(parents=True, exist_ok=True)
 
     def checkLeftovers(self, properties: dict) -> None:
         for property in properties:
-            logger.debug(f"{self.location}-{self.database} unknown property: {property}")
+            Logger.debug(f"{self.location}-{self.database} unknown property: {property}")
 
     def getDBType(self) -> str:
         return self.dbType
@@ -89,15 +80,17 @@ class Database:
         return self.databaseDir
     
     def getDownloadedFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
-        return self.selectFiles(self.systemManager.getFiles(StageFileStep.RAW), selectIndexes, "RAW")
+        return self._selectFiles(StageFileStep.DOWNLOADED, selectIndexes)
     
     def getPreDWCFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
-        return self.selectFiles(self.systemManager.getFiles(StageFileStep.PRE_DWC), selectIndexes, "PreDWC")
+        return self._selectFiles(StageFileStep.PRE_DWC, selectIndexes)
     
     def getDWCFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
-        return self.selectFiles(self.systemManager.getFiles(StageFileStep.DWC), selectIndexes, "DWC")
+        return self._selectFiles(StageFileStep.DWC, selectIndexes)
 
-    def selectFiles(self, fileList: list[StageFile], indexes: list[int], stage: str) -> list[StageFile]:
+    def _selectFiles(self, stage: StageFileStep, indexes: list[int]) -> list[StageFile]:
+        fileList = self.systemManager.getFiles(stage)
+
         if not indexes:
             return fileList
         
@@ -109,7 +102,7 @@ class Database:
             else:
                 invalidIndexes.append(index)
 
-        logger.error(f"Invalid {stage} files selected: {invalidIndexes}")
+        Logger.error(f"Invalid {stage.name} files selected: {invalidIndexes}")
         return selectedFiles
 
 class SpecificDB(Database):

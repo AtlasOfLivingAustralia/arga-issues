@@ -4,28 +4,31 @@ from pathlib import Path
 from datetime import datetime
 import sys
 
-# Log file information
-logFolder: Path = cfg.folders.logs
-logFileName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-logFilePath = logFolder / f"{logFileName}.log"
+class SystemLogger(logging.Logger):
+    def __init__(self):
+        super().__init__("processing", logging.DEBUG)
 
-# Get logger object
-logger = logging.getLogger("processing")
+        # Log file information
+        logFolder: Path = cfg.folders.logs
+        logFileName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        logFilePath = logFolder / f"{logFileName}.log"
 
-# Configure logger
-logger.setLevel(logging.DEBUG)
+        # Configure logger
+        self.setLevel(logging.DEBUG)
 
-# Setup handlers
-# formatter = logging.Formatter("[%(asctime)s] %(module)s - %(levelname)s: %(message)s", "%H:%M:%S")
-formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%H:%M:%S")
+        # Setup handlers
+        # formatter = logging.Formatter("[%(asctime)s] %(module)s - %(levelname)s: %(message)s", "%H:%M:%S")
+        formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%H:%M:%S")
 
-fileHandler = logging.FileHandler(filename=logFilePath)
-fileHandler.setFormatter(formatter)
-fileHandler.setLevel(logging.INFO)
-logger.addHandler(fileHandler)
+        fileHandler = logging.FileHandler(filename=logFilePath)
+        fileHandler.setFormatter(formatter)
+        fileHandler.setLevel(logging.INFO)
+        self.addHandler(fileHandler)
 
-streamHandler = logging.StreamHandler(sys.stdout)
-streamHandler.setFormatter(formatter)
-logger.addHandler(streamHandler)
+        streamHandler = logging.StreamHandler(sys.stdout)
+        streamHandler.setFormatter(formatter)
+        self.addHandler(streamHandler)
 
-logger.info("Logger initialised")
+        self.info("Logger initialised")
+
+Logger = SystemLogger()

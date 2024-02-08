@@ -1,10 +1,8 @@
-import logging
 import csv
-import lib.config as cfg
 import json
 import platform
 import subprocess
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 
 def reverseLookup(lookup: dict) -> dict:
     nameMap = {}
@@ -36,17 +34,6 @@ def latlongToDecimal(latlong: str) -> str:
 
     latlong = latlong.replace('S', '-').replace('W', '-').replace('N', '').replace('E', '')
     return latlong.split(' ')
-
-def loadLogger(filename):
-    logging.basicConfig(
-        filename=cfg.folderPaths.logs / f"{filename}.log",
-        encoding="utf-8",
-        level=logging.DEBUG,
-        filemode='w',
-        format="%(message)s"
-    )
-
-    return logging.getLogger(__name__)
 
 def flatten(inputDict: dict, parent: str = "") -> dict:
     res = {}
@@ -110,7 +97,7 @@ def downloadFile(url: str, filePath: str, user: str = "", password: str = "", ve
         args.extend(["--user", f"{user}:{password}"])
 
     if verbose:
-        logger.info(f"Downloading from {url} to file {filePath}")
+        Logger.info(f"Downloading from {url} to file {filePath}")
     else:
         args.append("-s")
 

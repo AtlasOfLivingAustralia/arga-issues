@@ -4,10 +4,10 @@ from pathlib import Path
 from lib.processing.dwcProcessing import DWCProcessor
 import lib.processing.processingFuncs as pFuncs
 import lib.commonFuncs as cmn
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
+from lib.processing.stageFile import StageFile, StageFileStep
 
 if TYPE_CHECKING:
-    from lib.processing.stageFile import StageFile, StageFileStep
     from lib.processing.parser import SelectorParser
 
 class StageScript:
@@ -35,22 +35,22 @@ class StageScript:
         self.outputs = self.parser.parseMultipleArgs(self.outputs, self.inputs)
 
         for parameter in self.processingStep:
-            logger.debug(f"Unknown step parameter: {parameter}")
+            Logger.debug(f"Unknown step parameter: {parameter}")
 
     def getOutputs(self) -> list[tuple[Path, dict]]:
         return [(output, self.outputProperties.get(str(idx), {})) for idx, output in enumerate(self.outputs)]
 
-    def run(self, overwriteStage: StageFileStep, overwrite: int = 0, verbose: bool = True):
+    def run(self, overwriteStage: StageFileStep, overwrite: int = 0, verbose: bool = True, **kwargs: dict):
         if all(output.exists() for output in self.outputs) and overwrite <= 0:
             if verbose:
-                logger.info(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
+                Logger.info(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
             return
         
         for input in self.inputs:
-            input.create(overwriteStage, overwrite - 1)
+            input.create(overwriteStage, overwrite - 1, verbose, **kwargs)
             if not input.exists():
                 if verbose:
-                    logger.info(f"Missing input file: {input.filePath}")
+                    Logger.info(f"Missing input file: {input.filePath}")
                 return
         
         if self.scriptRun:
@@ -73,7 +73,7 @@ class StageScript:
 
         for output in self.outputs:
             if not output.exists():
-                logger.warning(f"Output {output} was not created")
+                Logger.warning(f"Output {output} was not created")
 
         return output
 
@@ -90,10 +90,10 @@ class StageDownloadScript:
     def getOutputs(self) -> list[Path]:
         return [self.downloadedFile]
 
-    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False):
+    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict):
         if self.downloadedFile.exists() and overwriteAmount <= 0:
             if verbose:
-                logger.info(f"File already downloaded at {self.downloadedFile}, skipping redownload")
+                Logger.info(f"File already downloaded at {self.downloadedFile}, skipping redownload")
             return
         
         cmn.downloadFile(self.url, self.downloadedFile, self.user, self.password, verbose)
@@ -107,19 +107,20 @@ class StageDWCConversion:
     def getOutput(self) -> Path:
         return self.dwcProcessor.outputDir / self.outputFolderName
 
-    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = True):
+    def run(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = True, **kwargs: dict):
         outputPath = self.getOutput()
 
-        if outputPath.exists() and overwriteAmount <= 0:
-            logger.info(f"DWC file {outputPath} exists and not overwriting, skipping creation")
+        if outputPath.exists() and (overwriteAmount <= 0 or overwriteStage != StageFileStep.DWC):
+            Logger.info(f"DWC file {outputPath} exists and not overwriting, skipping creation")
             return
         
-        logger.info(f"Creating DWC from preDWC file {self.input.filePath}")
+        Logger.info(f"Creating DWC from preDWC file {self.input.filePath}")
         self.dwcProcessor.process(
             self.input.filePath,
             self.outputFolderName,
             self.input.separator,
             self.input.firstRow,
             self.input.encoding,
-            overwriteAmount > 0
+            overwriteAmount > 0,
+            **kwargs
         )

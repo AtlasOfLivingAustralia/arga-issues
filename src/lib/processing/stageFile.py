@@ -5,7 +5,7 @@ from enum import Enum
 import pandas as pd
 import lib.dataframeFuncs as dff
 from collections.abc import Iterator
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 
 if TYPE_CHECKING:
     from lib.processing.stageScript import StageScript
@@ -47,15 +47,15 @@ class StageFile:
     def loadDataFrameIterator(self, chunkSize: int = 1024 * 1024) ->  Iterator[pd.DataFrame]:
         return dff.chunkGenerator(self.filePath, chunkSize, self.separator, self.firstRow, self.encoding)
 
-    def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0) -> bool:
+    def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict) -> bool:
         if self.filePath.exists():
             if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE):
                 return False
             
             elif overwriteAmount <= 0:
-                logger.info(f"{self.filePath} already exists")
+                Logger.info(f"{self.filePath} already exists")
                 return False
         
         self.filePath.parent.mkdir(parents=True, exist_ok=True)
-        self.parentScript.run(overwriteStage, overwriteAmount)
+        self.parentScript.run(overwriteStage, overwriteAmount, verbose, **kwargs)
         return True

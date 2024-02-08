@@ -3,7 +3,7 @@ from pathlib import Path
 import lib.commonFuncs as cmn
 import pandas as pd
 import sys
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 
 class Writer:
     def __init__(self, outputDir: Path, subDirName: str, sectionPrefix: str) -> 'Writer':
@@ -55,18 +55,18 @@ class Writer:
 
     def oneFile(self, outputFilePath: Path, keepWrittenFile: bool = False) -> None:
         if outputFilePath.exists():
-            logger.info(f"Removing old file {outputFilePath}")
+            Logger.info(f"Removing old file {outputFilePath}")
             outputFilePath.unlink()
 
         if len(self.writtenFiles) == 1:
-            logger.info(f"Only single subfile, moving {self.writtenFiles[0]} to {outputFilePath}")
+            Logger.info(f"Only single subfile, moving {self.writtenFiles[0]} to {outputFilePath}")
             self.writtenFiles[0].rename(outputFilePath)
             self.subfileDir.rmdir()
             if not keepWrittenFile:
                 self.writtenFiles = []
             return
 
-        logger.info("Combining into one file")
+        Logger.info("Combining into one file")
         with open(outputFilePath, 'w', newline='', encoding='utf-8') as fp:
             writer = csv.DictWriter(fp, self.globalColumns)
             writer.writeheader()
@@ -81,7 +81,7 @@ class Writer:
                         writer.writerow(row)
 
                 file.unlink()
-        logger.info(f"\nCreated a single file at {outputFilePath}")
+        Logger.info(f"\nCreated a single file at {outputFilePath}")
         self.subfileDir.rmdir()
         if keepWrittenFile:
             self.writtenFiles = [outputFilePath]

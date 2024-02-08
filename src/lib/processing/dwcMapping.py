@@ -6,7 +6,8 @@ import lib.config as cfg
 import lib.commonFuncs as cmn
 from pathlib import Path
 from enum import Enum
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
+from dataclasses import dataclass
 
 class Events(Enum):
     COLLECTIONS = "collections"
@@ -18,6 +19,11 @@ class Events(Enum):
     ANNOTATIONS = "annotations"
     DEPOSITIONS = "depositions"
 
+@dataclass(eq=True, frozen=True)
+class MappedColumn:
+    event: str
+    colName: str
+
 class Remapper:
     def __init__(self, location: str, customMapPath: Path = None, preserveDwCMatch: bool = False, prefixMissing: bool = True) -> 'Remapper':
         self.location = location
@@ -25,7 +31,8 @@ class Remapper:
         self.preserveDwCMatch = preserveDwCMatch
         self.prefixMissing = prefixMissing
 
-        self.mappedColumns: dict[str, list] = {}
+        self.mappedColumns: dict[str, list[MappedColumn]] = {}
+        self.uniqueColumns: dict[MappedColumn, list[str]] = {}
         self._loadMaps(customMapPath)
 
     def getMappings(self) -> dict:
@@ -37,14 +44,14 @@ class Remapper:
         if mapPath.exists():
             self.map = cmn.loadFromJson(mapPath)
         else:
-            logger.warning(f"No DWC map found for location {self.location}")
+            Logger.warning(f"No DWC map found for location {self.location}")
             self.map = {}
         
-        self.reverseLookup = self._buildReverseLookup(self.map)
+        self.lookup = self._buildLookup(self.map)
 
         # Exit early if no custom path specified
         if customMapPath is None:
-            self.customReverseLookup = {}
+            self.customLookup = {}
             return
 
         # Custom map
@@ -53,69 +60,90 @@ class Remapper:
         else:
             raise Exception(f"No custom map found at location: {customMapPath}") from FileNotFoundError
 
-        self.customReverseLookup = self._buildReverseLookup(self.customMap)
+        self.customLookup = self._buildLookup(self.customMap)
 
-    def _buildReverseLookup(self, lookup: dict) -> dict[str, list]:
-        reverse = {}
+    def _buildLookup(self, map: dict[str, dict[str, list[str]]]) -> dict[str, list[MappedColumn]]:
+        lookup: dict[str, list[MappedColumn]] = {}
 
-        for eventName, columnMap in lookup.items():
+        for eventName, columnMap in map.items():
             for newName, oldNameList in columnMap.items():
                 for oldName in oldNameList:
-                    if oldName not in reverse:
-                        reverse[oldName] = [(eventName, newName)]
-                    else:
-                        reverse[oldName].append((eventName, newName))
+                    if oldName not in lookup:
+                        lookup[oldName] = []
+  
+                    lookup[oldName].append(MappedColumn(eventName, newName))
 
-        return reverse
+        return lookup
     
-    def createMappings(self, columns: list, skipRemap: list = []) -> None:
-        self.mappedColumns = {} # Clear mapped columns
+    def createMappings(self, columns: list[str], skipRemap: list[str] = []) -> dict[str, list[MappedColumn]]:
+        self.mappedColumns.clear()
+        self.uniqueColumns.clear()
 
         for column in columns:
             if column in skipRemap:
                 continue
 
             self.mappedColumns[column] = []
-            self.mappedColumns[column].extend(self.reverseLookup.get(column, [])) # Apply DWC mapping
-            self.mappedColumns[column].extend(self.customReverseLookup.get(column, [])) # Apply custom mapping
+
+            # Apply DWC mapping
+            for lookup in (self.lookup, self.customLookup):
+                lookupValues = lookup.get(column, [])
+                self.mappedColumns[column].extend(lookupValues)
+                for mapping in lookupValues:
+                    if mapping not in self.uniqueColumns:
+                        self.uniqueColumns[mapping] = []
+                    
+                    self.uniqueColumns[mapping].append(column)
 
             # If column matches an output column name
             if column in self.map and self.preserveDwCMatch:
-                self.mappedColumns[column].append(("Preserved", f"{self.location}_{column}"))
+                mapValue = MappedColumn("Preserved", f"{self.location}_{column}")
+                self.mappedColumns[column].append(mapValue)
+
+                if mapValue not in self.uniqueColumns:
+                    self.uniqueColumns[mapValue] = []
+                    
+                self.uniqueColumns[mapValue].append(column)
 
             # If no mapped value has been found yet
             if not self.mappedColumns[column]:
-                self.mappedColumns[column].append(("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column))
+                mapValue = MappedColumn("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column)
+                self.mappedColumns[column].append(mapValue)
 
-        with open(cfg.folders.mapping / "test_mapped_columns.json", "w") as fp:
-            json.dump(self.mappedColumns, fp, indent=4)
+                if mapValue not in self.uniqueColumns:
+                    self.uniqueColumns[mapValue] = []
+                    
+                self.uniqueColumns[mapValue].append(column)
+
+        return self.mappedColumns
+    
+    def allUnique(self) -> bool:
+        return all(len(originalColumns) == 1 for originalColumns in self.uniqueColumns.values())
 
     def getEvents(self) -> list[str]:
-        return list(set([eventName for mappings in self.mappedColumns.values() for eventName, _ in mappings]))
+        return list(set([mapping.event for mapList in self.mappedColumns.values() for mapping in mapList]))
+    
+    def reportMatches(self) -> None:
+        for mapping, oldColumns in self.uniqueColumns.items():
+            initialMapping = oldColumns[0]
 
-    def verifyUnique(self) -> bool:
-        uniqueMappings = {}
+            for column in oldColumns[1:]:
+                Logger.info(f"Found mapping for column '{column}' that matches initial mapping '{initialMapping}' with event '{mapping.event}'")
 
-        for oldColumn, eventInfoList in self.mappedColumns.items():
-            for item in eventInfoList:
-                if item not in uniqueMappings:
-                    uniqueMappings[item] = oldColumn
-                    continue
-                else:
-                    logger.info(f"Found mapping for column '{oldColumn}' that matches initial mapping '{uniqueMappings[item]}' in event '{item[0]}'")
-                    return False
-                
-        return True
+    def forceUnique(self) -> None:
+        for mapping, oldColumns in self.uniqueColumns.items():
+            for column in oldColumns[1:]:
+                self.mappedColumns[column].remove(mapping)
 
     def applyMap(self, df: pd.DataFrame) -> pd.DataFrame:
         eventColumns = {}
 
         for column in df.columns:
-            for eventName, newName in self.mappedColumns[column]:
-                if eventName not in eventColumns:
-                    eventColumns[eventName] = {}
+            for mappedColumn in self.mappedColumns[column]:
+                if mappedColumn.event not in eventColumns:
+                    eventColumns[mappedColumn.event] = {}
 
-                eventColumns[eventName][column] = newName
+                eventColumns[mappedColumn.event][column] = mappedColumn.colName
 
         for eventName, colMap in eventColumns.items():
             subDF: pd.DataFrame = df[colMap.keys()].copy() # Select only relevant columns
@@ -155,12 +183,12 @@ class MapRetriever:
         written = []
         for database, sheetID in self.sheetIDs.items():
             location, _ = database.split("-")
-            logger.debug(f"Reading {database}")
+            Logger.debug(f"Reading {database}")
 
             try:
                 df = pd.read_csv(self.retrieveURL + str(sheetID), keep_default_na=False)
             except urllib.error.HTTPError:
-                logger.warning(f"Unable to read sheet for {database}")
+                Logger.warning(f"Unable to read sheet for {database}")
                 continue
 
             mappings = self.getMappings(df)
@@ -173,7 +201,7 @@ class MapRetriever:
                 with open(mapFile, "w") as fp:
                     json.dump(mappings, fp, indent=4)
                 written.append(location)
-                logger.debug(f"Created new {location} map")
+                Logger.debug(f"Created new {location} map")
                 continue
 
             with open(mapFile) as fp:
@@ -189,7 +217,7 @@ class MapRetriever:
             with open(mapFile, "w") as fp:
                 json.dump(columnMap, fp, indent=4)
 
-            logger.debug(f"Added new values to {location} map")
+            Logger.debug(f"Added new values to {location} map")
             if location not in written:
                 written.append(location)
 
