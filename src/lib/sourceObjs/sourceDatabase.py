@@ -48,20 +48,20 @@ class Database:
     
     def prepareStage(self, stage: StageFileStep) -> None:
         buildProcessing = stage != StageFileStep.DOWNLOADED # Do not build processing if stage file step is only for downloaded
-        logger.info(f"Preparing database with{'out' if not buildProcessing else ''} processing")
+        Logger.info(f"Preparing database with{'out' if not buildProcessing else ''} processing")
 
         self._prepare(buildProcessing=buildProcessing)
 
         if stage in (StageFileStep.DOWNLOADED, StageFileStep.PROCESSED):
             return
         
-        logger.info("Preparing pre-DWC files")
+        Logger.info("Preparing pre-DWC files")
         self.systemManager.addFinalStage(self.finalProcessing)
 
         if stage == StageFileStep.PRE_DWC:
             return
         
-        logger.info("Preparing DWC file converter")
+        Logger.info("Preparing DWC file converter")
         self.systemManager.prepareDwC()
 
     def createStage(self, stage: StageFileStep, fileNumbers: list[int] = [], overwrite: int = 0, **kwargs: dict) -> None:
@@ -155,13 +155,13 @@ class LocationDB(Database):
         localFilePath = self.databaseDir / self.localFile
 
         if not recrawl and localFilePath.exists():
-            logger.info("Local file found, skipping crawling")
+            Logger.info("Local file found, skipping crawling")
             with open(localFilePath) as fp:
                 urls = fp.read().splitlines()
         else:
             localFilePath.unlink(True)
             
-            logger.info("Crawling...")
+            Logger.info("Crawling...")
             self.crawler.crawl(self.fileLocation)
             urls = self.crawler.getURLList()
 
