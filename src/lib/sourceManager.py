@@ -7,7 +7,7 @@ class SourceManager:
     def __init__(self):
         self.locations: dict[str, SourceLocation] = {}
         
-        for locationPath in cfg.folders.datasources.iterdir():
+        for locationPath in cfg.Folders.dataSources.iterdir():
             if locationPath.is_file(): # Ignore files in directory
                 continue
 
