@@ -7,6 +7,7 @@ from enum import Enum
 import pyarrow as pa
 import pyarrow.parquet as pq
 from lib.tools.logger import Logger
+from typing import Iterator
 
 class Format(Enum):
     CSV = ".csv"
@@ -24,15 +25,17 @@ class Subfile:
 
     def __init__(self, location: Path, fileName: str, format: Format) -> 'Subfile':
         self.filePath = location / f"{fileName}{Format(format).value}"
+        self.size = self.filePath.stat().st_size
 
     def __repr__(self) -> str:
-        return str(self.filePath)
+        return f"{self.filePath}"
     
     @classmethod
     def fromFilePath(cls, filePath: Path) -> 'Subfile':
+        location = filePath.parent
+        fileName = filePath.stem
         fileFormat = Format(filePath.suffix)
-        instance = cls(Path(), "", fileFormat)
-        instance.filePath = filePath
+        instance = cls(location, fileName, fileFormat)
         return instance
     
     def write(self, df: pd.DataFrame) -> None:
@@ -40,6 +43,9 @@ class Subfile:
     
     def read(self, **kwargs) -> pd.DataFrame:
         return pd.read_csv(self.filePath, **kwargs)
+    
+    def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
+        return pd.read_csv(self.filePath, iterator=True, chunksize=chunkSize, **kwargs)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
         if newFileFormat == self.fileFormat:
@@ -63,7 +69,7 @@ class Subfile:
         self.filePath.unlink()
 
     def getColumns(self) -> list[str]:
-        df = self.read(nrows=1)
+        df = next(self.readChunks(2))
         return df.columns
 
 class TSVSubfile(Subfile):
@@ -76,6 +82,9 @@ class TSVSubfile(Subfile):
     def read(self, **kwargs) -> pd.DataFrame:
         return pd.read_csv(self.filePath, sep="\t", **kwargs)
     
+    def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
+        return pd.read_csv(self.filePath, sep="\t", iterator=True, chunksize=chunkSize, **kwargs)
+    
 class PARQUETSubfile(Subfile):
 
     fileFormat = Format.PARQUET
@@ -86,9 +95,9 @@ class PARQUETSubfile(Subfile):
     def read(self, **kwargs) -> pd.DataFrame:
         return pd.read_parquet(self.filePath, "pyarrow", **kwargs)
     
-    def getColumns(self) -> list[str]:
-        df = self.read()
-        return df.columns
+    def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
+        pf = pq.ParquetFile(self.filePath)
+        return (batch.to_pandas() for batch in pf.iter_batches(batch_size=chunkSize, **kwargs))
 
 class BigFileWriter:
     def __init__(self, outputFile: Path, subDirName: str = "chunks", sectionPrefix: str = "chunk", subfileType: Format = Format.PARQUET) -> 'BigFileWriter':
@@ -116,7 +125,7 @@ class BigFileWriter:
 
             self.writtenFiles.append(subFile)
             cmn.extendUnique(self.globalColumns, columns)
-            print(f"Added file: {subFile.filePath}", end="\r")
+            Logger.info(f"Added file: {subFile.filePath}")
 
     def writeCSV(self, cols: list[str], rows: list[list[str]]) -> None:
         df = pd.DataFrame(columns=cols, data=rows)

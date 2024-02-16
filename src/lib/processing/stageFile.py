@@ -50,10 +50,6 @@ class StageFile:
     def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict) -> bool:
         if self.filePath.exists():
             if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE) or overwriteAmount <= 0:
-                print(f"{self.filePath} already exists")
-                return False
-            
-            elif overwriteAmount <= 0:
                 Logger.info(f"{self.filePath} already exists")
                 return False
         
