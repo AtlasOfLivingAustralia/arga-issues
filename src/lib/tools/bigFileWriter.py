@@ -34,9 +34,8 @@ class Subfile:
     def fromFilePath(cls, filePath: Path) -> 'Subfile':
         location = filePath.parent
         fileName = filePath.stem
-        fileFormat = Format(filePath.suffix)
-        instance = cls(location, fileName, fileFormat)
-        return instance
+        fileFormat = Format(filePath.suffix.lower())
+        return cls(location, fileName, fileFormat)
     
     def write(self, df: pd.DataFrame) -> None:
         df.to_csv(self.filePath, index=False)
@@ -45,7 +44,7 @@ class Subfile:
         return pd.read_csv(self.filePath, **kwargs)
     
     def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
-        return pd.read_csv(self.filePath, iterator=True, chunksize=chunkSize, **kwargs)
+        return self.read(chunkSize=chunkSize, **kwargs)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
         if newFileFormat == self.fileFormat:
@@ -69,7 +68,7 @@ class Subfile:
         self.filePath.unlink()
 
     def getColumns(self) -> list[str]:
-        df = next(self.readChunks(2))
+        df = self.read(nrows=1)
         return df.columns
 
 class TSVSubfile(Subfile):
@@ -82,9 +81,6 @@ class TSVSubfile(Subfile):
     def read(self, **kwargs) -> pd.DataFrame:
         return pd.read_csv(self.filePath, sep="\t", **kwargs)
     
-    def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
-        return pd.read_csv(self.filePath, sep="\t", iterator=True, chunksize=chunkSize, **kwargs)
-    
 class PARQUETSubfile(Subfile):
 
     fileFormat = Format.PARQUET
@@ -93,11 +89,16 @@ class PARQUETSubfile(Subfile):
         df.to_parquet(self.filePath, "pyarrow", index=False)
 
     def read(self, **kwargs) -> pd.DataFrame:
-        return pd.read_parquet(self.filePath, "pyarrow", **kwargs)
+        # return pd.read_parquet(self.filePath, "pyarrow", **kwargs)
+        return pq.read_table(self.filePath, **kwargs).to_pandas()
     
     def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
-        pf = pq.ParquetFile(self.filePath)
-        return (batch.to_pandas() for batch in pf.iter_batches(batch_size=chunkSize, **kwargs))
+        parquetFile = pq.ParquetFile(self.filePath)
+        return (batch.to_pandas() for batch in parquetFile.iter_batches(batch_size=chunkSize, **kwargs))
+    
+    def getColumns(self) -> list[str]:
+        pf = pq.read_schema(self.filePath)
+        return pf.names
 
 class BigFileWriter:
     def __init__(self, outputFile: Path, subDirName: str = "chunks", sectionPrefix: str = "chunk", subfileType: Format = Format.PARQUET) -> 'BigFileWriter':
@@ -120,11 +121,15 @@ class BigFileWriter:
 
     def populateFromFolder(self, folderPath: Path) -> None:
         for filePath in folderPath.iterdir():
+            if not filePath.suffix in Format._value2member_map_.keys():
+                continue
+
             subFile = Subfile.fromFilePath(filePath)
             columns = subFile.getColumns()
 
             self.writtenFiles.append(subFile)
             cmn.extendUnique(self.globalColumns, columns)
+
             Logger.info(f"Added file: {subFile.filePath}")
 
     def writeCSV(self, cols: list[str], rows: list[list[str]]) -> None:
@@ -169,21 +174,21 @@ class BigFileWriter:
 
     def _oneCSV(self, removeOld: bool = True):
         delim = "\t" if self.outputFileType == Format.TSV else ","
+        chunkSize = 1024
 
-        with open(self.outputFile, 'w', newline='', encoding='utf-8') as fp:
-            writer = csv.DictWriter(fp, self.globalColumns, delimiter=delim)
-            writer.writeheader()
+        fileCount = len(self.writtenFiles)
+        for idx, file in enumerate(self.writtenFiles):
+            print(f"At file: {idx+1} / {fileCount}", end='\r')
 
-            fileCount = len(self.writtenFiles)
-            for idx, file in enumerate(self.writtenFiles, start=1):
-                print(f"At file: {idx} / {fileCount}", end='\r')
+            for subIdx, chunk in enumerate(file.readChunks(chunkSize)):
+                if idx == subIdx == 0:
+                    chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False)
+                    continue
 
-                df = file.read()
-                for row in df.to_dict(orient="records"):
-                    writer.writerow(row)
+                chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False, header=False)
 
-                if removeOld:
-                    file.remove()
+            if removeOld:
+                file.remove()
         
     def _oneParquet(self, removeOld: bool = True):
         schema = pa.schema([(column, pa.string()) for column in self.globalColumns])
