@@ -3,16 +3,29 @@
     "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
     "subDirectoryDepth": 0,
     "regexMatch": "gbphg\\d+\\.seq\\.gz",
+    "perFileProcessing": [
+        {
+            "path": "sourceProcessing/ncbi.py",
+            "function": "parseNucleotide",
+            "args": [
+                "{INPUT, 0, FILEPATH}",
+                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM_STEM, .parquet}"
+            ],
+            "outputs": [
+                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM_STEM, .parquet}"
+            ]
+        }
+    ],
     "finalProcessing": [
         {
             "path": "sourceProcessing/ncbi.py",
             "function": "compileNucleotide",
             "args": [
-                "{PATH, DOWNLOAD}",
-                "{PATH, PROCESSING, nucPhage.csv}"
+                "{PATH, PROCESSING}",
+                "{PATH, PREDWC, nucPhage.csv}"
             ],
             "outputs": [
-                "{PATH, PROCESSING, nucPhage.csv}"
+                "{PATH, PREDWC, nucPhage.csv}"
             ]
         }
     ]
