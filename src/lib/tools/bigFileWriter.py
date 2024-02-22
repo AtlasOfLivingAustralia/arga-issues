@@ -7,11 +7,12 @@ from enum import Enum
 import pyarrow as pa
 import pyarrow.parquet as pq
 from lib.tools.logger import Logger
+from typing import Iterator
 
 class Format(Enum):
-    CSV = "csv"
-    TSV = "tsv"
-    PARQUET = "parquet"
+    CSV = ".csv"
+    TSV = ".tsv"
+    PARQUET = ".parquet"
 
 class Subfile:
 
@@ -23,23 +24,27 @@ class Subfile:
         return super().__new__(subclass)
 
     def __init__(self, location: Path, fileName: str, format: Format) -> 'Subfile':
-        self.filePath = location / f"{fileName}.{Format(format).value}"
+        self.filePath = location / f"{fileName}{Format(format).value}"
+        self.size = self.filePath.stat().st_size
 
     def __repr__(self) -> str:
-        return str(self.filePath)
+        return f"{self.filePath}"
     
     @classmethod
     def fromFilePath(cls, filePath: Path) -> 'Subfile':
-        fileFormat = Format(filePath.suffix)
-        instance = cls(Path(), "", fileFormat)
-        instance.filePath = filePath
-        return instance
+        location = filePath.parent
+        fileName = filePath.stem
+        fileFormat = Format(filePath.suffix.lower())
+        return cls(location, fileName, fileFormat)
     
     def write(self, df: pd.DataFrame) -> None:
         df.to_csv(self.filePath, index=False)
     
-    def read(self) -> pd.DataFrame:
-        return pd.read_csv(self.filePath)
+    def read(self, **kwargs) -> pd.DataFrame:
+        return pd.read_csv(self.filePath, **kwargs)
+    
+    def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
+        return self.read(chunkSize=chunkSize, **kwargs)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
         if newFileFormat == self.fileFormat:
@@ -60,7 +65,11 @@ class Subfile:
         self.remove()
         
     def remove(self) -> None:
-        self.filePath.unlink()   
+        self.filePath.unlink()
+
+    def getColumns(self) -> list[str]:
+        df = self.read(nrows=1)
+        return df.columns
 
 class TSVSubfile(Subfile):
 
@@ -69,8 +78,8 @@ class TSVSubfile(Subfile):
     def write(self, df: pd.DataFrame) -> None:
         df.to_csv(self.filePath, sep="\t", index=False)
 
-    def read(self) -> pd.DataFrame:
-        return pd.read_csv(self.filePath, sep="\t")
+    def read(self, **kwargs) -> pd.DataFrame:
+        return pd.read_csv(self.filePath, sep="\t", **kwargs)
     
 class PARQUETSubfile(Subfile):
 
@@ -79,13 +88,22 @@ class PARQUETSubfile(Subfile):
     def write(self, df: pd.DataFrame) -> None:
         df.to_parquet(self.filePath, "pyarrow", index=False)
 
-    def read(self) -> pd.DataFrame:
-        return pd.read_parquet(self.filePath, "pyarrow")
+    def read(self, **kwargs) -> pd.DataFrame:
+        # return pd.read_parquet(self.filePath, "pyarrow", **kwargs)
+        return pq.read_table(self.filePath, **kwargs).to_pandas()
+    
+    def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
+        parquetFile = pq.ParquetFile(self.filePath)
+        return (batch.to_pandas() for batch in parquetFile.iter_batches(batch_size=chunkSize, **kwargs))
+    
+    def getColumns(self) -> list[str]:
+        pf = pq.read_schema(self.filePath)
+        return pf.names
 
 class BigFileWriter:
     def __init__(self, outputFile: Path, subDirName: str = "chunks", sectionPrefix: str = "chunk", subfileType: Format = Format.PARQUET) -> 'BigFileWriter':
         self.outputFile = outputFile
-        self.outputFileType = Format(outputFile.suffix[1:])
+        self.outputFileType = Format(outputFile.suffix)
         self.subfileDir = outputFile.parent / subDirName
         self.sectionPrefix = sectionPrefix
         self.subfileType = subfileType
@@ -100,6 +118,19 @@ class BigFileWriter:
                 return
             except OverflowError:
                 maxInt = int(maxInt/10)
+
+    def populateFromFolder(self, folderPath: Path) -> None:
+        for filePath in folderPath.iterdir():
+            if not filePath.suffix in Format._value2member_map_.keys():
+                continue
+
+            subFile = Subfile.fromFilePath(filePath)
+            columns = subFile.getColumns()
+
+            self.writtenFiles.append(subFile)
+            cmn.extendUnique(self.globalColumns, columns)
+
+            Logger.info(f"Added file: {subFile.filePath}")
 
     def writeCSV(self, cols: list[str], rows: list[list[str]]) -> None:
         df = pd.DataFrame(columns=cols, data=rows)
@@ -137,26 +168,27 @@ class BigFileWriter:
             self._oneParquet(removeOld)
 
         Logger.info(f"\nCreated a single file at {self.outputFile}")
-        self.subfileDir.rmdir()
-        self.writtenFiles.clear()
+        if removeOld:
+            self.subfileDir.rmdir()
+            self.writtenFiles.clear()
 
     def _oneCSV(self, removeOld: bool = True):
         delim = "\t" if self.outputFileType == Format.TSV else ","
+        chunkSize = 1024
 
-        with open(self.outputFile, 'w', newline='', encoding='utf-8') as fp:
-            writer = csv.DictWriter(fp, self.globalColumns, delimiter=delim)
-            writer.writeheader()
+        fileCount = len(self.writtenFiles)
+        for idx, file in enumerate(self.writtenFiles):
+            print(f"At file: {idx+1} / {fileCount}", end='\r')
 
-            fileCount = len(self.writtenFiles)
-            for idx, file in enumerate(self.writtenFiles, start=1):
-                print(f"At file: {idx} / {fileCount}", end='\r')
+            for subIdx, chunk in enumerate(file.readChunks(chunkSize)):
+                if idx == subIdx == 0:
+                    chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False)
+                    continue
 
-                df = file.read()
-                for row in df.to_dict(orient="records"):
-                    writer.writerow(row)
+                chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False, header=False)
 
-                if removeOld:
-                    file.remove()
+            if removeOld:
+                file.remove()
         
     def _oneParquet(self, removeOld: bool = True):
         schema = pa.schema([(column, pa.string()) for column in self.globalColumns])

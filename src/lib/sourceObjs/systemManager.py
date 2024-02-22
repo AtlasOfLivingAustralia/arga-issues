@@ -45,7 +45,17 @@ class SystemManager:
                     Logger.error(f"Invalid number provided: {number}")
 
         if len(files) <= 10: # Skip threadpool if only 1 file being processed
-            return any(file.create(stage, overwrite, verbose, **kwargs) for file in files) # Return if any files were created
+            Logger.info("Creating files one at a time")
+
+            createdFile = False
+            for idx, file in enumerate(files):
+                success = file.create(stage, overwrite, verbose, **kwargs)
+
+                if success:
+                    print(f"Created file: {idx} of {len(files)}", end="\r")
+                    createdFile = True
+
+            return createdFile
 
         Logger.info("Using concurrency for large quantity of tasks")
         createdFile = False # Check if any new files were actually created

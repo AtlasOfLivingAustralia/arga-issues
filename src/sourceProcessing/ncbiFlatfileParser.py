@@ -188,8 +188,12 @@ class FlatFileParser:
 
                             otherProperties[sectionHeader].append(properties)
                 
-                entryData["genes"] = genes
-                entryData["other_properties"] = otherProperties
+                # Only write genes and other properties if exists
+                if genes:
+                    entryData["genes"] = genes
+
+                if otherProperties:
+                    entryData["other_properties"] = otherProperties
 
             elif heading == "ORIGIN":
                 pass # Skip adding of origin to output
