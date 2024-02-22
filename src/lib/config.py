@@ -7,15 +7,21 @@ class Meta(type):
             if k.startswith("__"):
                 continue
 
-            attrs[k] = rootDir / Path(v)
+            if v.startswith("./"):
+                path = rootDir / Path(v)
+            else:
+                path = Path(v)
+
+            attrs[k] = path
 
         return super().__new__(cls, name, bases, attrs)
 
+# Edit these classes, "./"" indicates root directory for project
 class Files(metaclass=Meta):
     pass
 
 class Folders(metaclass=Meta):
-    src: Path = "src" # Source folder for all python code
-    dataSources: Path = "dataSources" # Location of all source related files
-    mapping: Path = "mapping" # Location for map files
-    logs: Path = "logs" # Location of all logging files
+    src: Path = "./src" # Source folder for all python code
+    dataSources: Path = "./dataSources" # Location of all source related files
+    mapping: Path = "./mapping" # Location for map files
+    logs: Path = "./logs" # Location of all logging files
