@@ -41,7 +41,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     sourceManager = SourceManager()
-    locationFolder: Path = cfg.folders.datasources / args.location
+    locationFolder: Path = cfg.Folders.dataSources / args.location
     databaseFolder: Path = locationFolder / args.database
 
     if databaseFolder.exists():

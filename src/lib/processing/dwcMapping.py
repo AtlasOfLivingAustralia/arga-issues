@@ -40,7 +40,7 @@ class Remapper:
 
     def _loadMaps(self, customMapPath: Path = None) -> None:
         # DWC map
-        mapPath = cfg.folders.mapping / f"{self.location}.json"
+        mapPath = cfg.Folders.mapping / f"{self.location}.json"
         if mapPath.exists():
             self.map = cmn.loadFromJson(mapPath)
         else:
@@ -194,7 +194,7 @@ class MapRetriever:
                 continue
 
             mappings = self.getMappings(df)
-            mapFile = cfg.folders.mapping / f"{location}.json"
+            mapFile = cfg.Folders.mapping / f"{location}.json"
 
             if mapFile.exists() and location not in written: # Old map file
                 mapFile.unlink()
