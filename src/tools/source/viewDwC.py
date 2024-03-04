@@ -8,7 +8,7 @@ if __name__ == '__main__':
     columnGroup.add_argument("-m", "--mapped", action="store_true", help="Get only mapped fields")
     columnGroup.add_argument("-u", "--unmapped", action="store_true", help="Get only unmapped fields")
     
-    sources, selectedFiles, args = parser.parse_args()
+    sources, selectedFiles, overwrite, args = parser.parse_args()
     for source in sources:
         source.prepareStage(StageFileStep.DWC)
         dwcFiles = source.getDWCFiles(selectedFiles)

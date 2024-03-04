@@ -83,9 +83,9 @@ class Remapper:
             self.mappedColumns[column] = []
 
             if column in skipRemap:
-                self.mappedColumns[column].append(("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column))
+                mapValue = MappedColumn("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column)
+                self.mappedColumns[column].append(mapValue)
                 continue
-
 
             # Apply DWC mapping
             for lookup in (self.lookup, self.customLookup):

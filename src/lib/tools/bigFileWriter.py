@@ -25,7 +25,7 @@ class Subfile:
 
     def __init__(self, location: Path, fileName: str, format: Format) -> 'Subfile':
         self.filePath = location / f"{fileName}{Format(format).value}"
-        self.size = self.filePath.stat().st_size
+        self.size = self.filePath.stat().st_size if self.filePath.exists() else 0
 
     def __repr__(self) -> str:
         return f"{self.filePath}"

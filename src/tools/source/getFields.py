@@ -62,7 +62,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--samples', type=int, default=0, help="Amount of random samples to take per chunk")
     parser.add_argument('-s', '--seed', type=int, default=-1, help="Specify seed to run")
 
-    sources, selectedFiles, args = parser.parse_args()
+    sources, selectedFiles, overwrite, args = parser.parse_args()
     entryLimit = args.entries
 
     for source in sources:

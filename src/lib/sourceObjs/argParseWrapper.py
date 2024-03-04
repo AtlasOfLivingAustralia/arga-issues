@@ -22,7 +22,7 @@ class SourceArgParser:
     def add_argument(self, *args, **kwargs) -> None:
         self.parser.add_argument(*args, **kwargs)
 
-    def parse_args(self, *args, **kwargs) -> tuple[list[Database], list[int], int, dict]:
+    def parse_args(self, *args, **kwargs) -> tuple[list[Database], list[int], int, argparse.Namespace]:
         parsedArgs = self.parser.parse_args(*args, **kwargs)
         sources = self.manager.getDB(parsedArgs.sources)
         overwrite = parsedArgs.overwrite
@@ -41,7 +41,10 @@ class SourceArgParser:
         for attr in delattrs:
             delattr(parsedArgs, attr)
 
-        return (sources, selectedFiles, overwrite, vars(parsedArgs))
+        return (sources, selectedFiles, overwrite, parsedArgs)
+    
+    def namespaceKwargs(self, namespace: argparse.Namespace) -> dict:
+        return vars(namespace)
 
     def add_mutually_exclusive_group(self, *args, **kwargs) -> argparse._MutuallyExclusiveGroup:
         self.parser.add_mutually_exclusive_group(*args, **kwargs)
