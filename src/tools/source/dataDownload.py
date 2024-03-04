@@ -4,7 +4,8 @@ from lib.processing.stageFile import StageFileStep
 if __name__ == '__main__':
     parser = SourceArgParser(description="Download source data")
 
-    sources, selectedFiles, overwrite, kwargs = parser.parse_args()
+    sources, selectedFiles, overwrite, args = parser.parse_args()
+    kwargs = parser.namespaceKwargs(args)
     for source in sources:
         source.prepareStage(StageFileStep.DOWNLOADED)
-        source.createStage(StageFileStep.DOWNLOADED, selectedFiles, overwrite, **kwargs)
+        source.createStage(StageFileStep.DOWNLOADED, selectedFiles, overwrite, **vars(kwargs))
