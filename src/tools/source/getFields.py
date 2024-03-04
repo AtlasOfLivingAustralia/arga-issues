@@ -5,6 +5,7 @@ from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile, StageFileStep
 from lib.processing.dwcMapping import Remapper
 import random
+from lib.tools.logger import Logger
 
 def _collectFields(stageFile: StageFile, remapper: Remapper, entryLimit: int, chunkSize: int, samples: int) -> dict:
     chunkGen = dff.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
@@ -15,7 +16,7 @@ def _collectFields(stageFile: StageFile, remapper: Remapper, entryLimit: int, ch
 
         if idx == 0:
             remapper.createMappings(chunk.columns)
-            data = {column: {"Maps to": [{"Event": mapEvent, "Column": mapColumn} for mapEvent, mapColumn in mapping], "Values": []} for column, mapping in remapper.mappedColumns.items()}
+            data = {column: {"Maps to": [{"Event": mappedColumn.event, "Column": mappedColumn.colName} for mappedColumn in mapping], "Values": []} for column, mapping in remapper.mappedColumns.items()}
 
         for column in chunk.columns:
             columnValues = data[column]["Values"] # Reference pointer to values
@@ -26,6 +27,8 @@ def _collectFields(stageFile: StageFile, remapper: Remapper, entryLimit: int, ch
                 continue
 
             columnValues.extend(random.sample(seriesValues, samples))
+
+    print()
 
     # Shuffle entries and take only up to entry limit
     for column, properties in data.items():
@@ -43,6 +46,8 @@ def _collectRecords(stageFile: StageFile, remapper: Remapper, entryLimit: int, c
         print(f"Scanning chunk: {idx}", end='\r')
         dfSamples.append(chunk.sample(n=samples, random_state=seed))
 
+    print()
+    
     df = pd.concat(dfSamples)
     emptyDF = df.isna().sum(axis=1)
     indexes = [idx for idx, _ in sorted(emptyDF.items(), key=lambda x: x[1])]
@@ -50,7 +55,7 @@ def _collectRecords(stageFile: StageFile, remapper: Remapper, entryLimit: int, c
     reducedDF = df.loc[indexes[:entryLimit]]
     remapper.createMappings(reducedDF.columns)
 
-    data = {column: {"Maps to": [{"Event": mapEvent, "Column": mapColumn} for mapEvent, mapColumn in mapping], "Values": reducedDF[column].tolist()} for column, mapping in remapper.mappedColumns.items()}
+    data = {column: {"Maps to": [{"Event": mappedColumn.event, "Column": mappedColumn.colName} for mappedColumn in mapping], "Values": reducedDF[column].tolist()} for column, mapping in remapper.mappedColumns.items()}
     return data
 
 if __name__ == '__main__':
@@ -89,13 +94,15 @@ if __name__ == '__main__':
         random.seed(seed)
 
         if args.uniques:
+            Logger.info("Collecting fields...")
             data = _collectFields(stageFile, remapper, args.entries, args.chunksize, samples)
             output = outputDir / f"fieldExamples_{args.chunksize}_{seed}.{extension}"
         else:
+            Logger.info("Collecting records...")
             data = _collectRecords(stageFile, remapper, args.entries, args.chunksize, samples, seed)
             output = outputDir / f"recordExamples_{args.chunksize}_{seed}.{extension}"
 
-        print(f"Writing to file {output}")
+        Logger.info(f"Writing to file {output}")
         if args.tsv:
             dfData = {k: v["Values"] + ["" for _ in range(entryLimit - len(v["Values"]))] for k, v in data.items()}
             df = pd.DataFrame.from_dict(dfData)
