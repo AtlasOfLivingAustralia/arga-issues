@@ -47,4 +47,4 @@ class SourceArgParser:
         return vars(namespace)
 
     def add_mutually_exclusive_group(self, *args, **kwargs) -> argparse._MutuallyExclusiveGroup:
-        self.parser.add_mutually_exclusive_group(*args, **kwargs)
+        return self.parser.add_mutually_exclusive_group(*args, **kwargs)
