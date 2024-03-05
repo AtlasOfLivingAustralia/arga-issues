@@ -1,5 +1,4 @@
-import pandas as pd
-import lib.dataframeFuncs as dff
+import lib.commonFuncs as cmn
 from pathlib import Path
 
 baseDir = Path(__file__)
@@ -12,7 +11,7 @@ if not outputFolder.exists():
     outputFolder.mkdir()
 
 for file in sourceFolder.iterdir():
-    chunkGen = dff.chunkGenerator(file, chunkSize, sep="\t")
+    chunkGen = cmn.chunkGenerator(file, chunkSize, sep="\t")
     chunk = next(chunkGen)
 
     chunk.to_csv(outputFolder / f"{file.stem}_chunk.csv", index=False)

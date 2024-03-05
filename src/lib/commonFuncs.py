@@ -2,6 +2,8 @@ import csv
 import json
 import platform
 import subprocess
+import pandas as pd
+from typing import Generator
 from lib.tools.logger import Logger
 
 def reverseLookup(lookup: dict) -> dict:
@@ -53,6 +55,9 @@ def flatten(inputDict: dict, parent: str = "") -> dict:
             res[addKey] = value
 
     return res
+
+def chunkGenerator(filePath: str, chunkSize: int, sep: str = ",", header: int = 0, encoding: str = "utf-8", usecols: list = None) -> Generator[pd.DataFrame, None, None]:
+    return (chunk for chunk in pd.read_csv(filePath, on_bad_lines="skip", chunksize=chunkSize, sep=sep, header=header, encoding=encoding, dtype=object, usecols=usecols))
 
 def getColumns(filePath: str, separator: str = ',', headerRow: int = 0) -> str:
     with open(filePath, encoding='utf-8') as fp:
