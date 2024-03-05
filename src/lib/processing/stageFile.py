@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 from enum import Enum
 import pandas as pd
-import lib.dataframeFuncs as dff
+import lib.commonFuncs as cmn
 from collections.abc import Iterator
 from lib.tools.logger import Logger
 
@@ -45,7 +45,7 @@ class StageFile:
         return pd.read_csv(self.filePath, sep=self.separator, header=self.firstRow, encoding=self.encoding)
     
     def loadDataFrameIterator(self, chunkSize: int = 1024 * 1024) ->  Iterator[pd.DataFrame]:
-        return dff.chunkGenerator(self.filePath, chunkSize, self.separator, self.firstRow, self.encoding)
+        return cmn.chunkGenerator(self.filePath, chunkSize, self.separator, self.firstRow, self.encoding)
 
     def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict) -> bool:
         if self.filePath.exists():

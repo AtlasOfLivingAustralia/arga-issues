@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-import lib.dataframeFuncs as dff
+import lib.commonFuncs as cmn
 from lib.tools.bigFileWriter import BigFileWriter
 import numpy as np
 
@@ -27,7 +27,7 @@ def run():
 
     writer = BigFileWriter(Path("./inaturalist.csv"), "subfiles")
 
-    photosGen = dff.chunkGenerator(photos, 1024*1024*2, "\t")
+    photosGen = cmn.chunkGenerator(photos, 1024*1024*2, "\t")
     for idx, df in enumerate(photosGen, start=1):
         df.drop(df[df["license"] == "CC-BY-NC-ND"].index, inplace=True)
         df.drop_duplicates("photo_uuid", inplace=True)
@@ -46,7 +46,7 @@ def run():
         df.set_index("observation_uuid", inplace=True)
 
         print(" "*100, end="\r") # Clear stdout
-        obsvGen = dff.chunkGenerator(observations, 1024*1024, "\t")        
+        obsvGen = cmn.chunkGenerator(observations, 1024*1024, "\t")        
         for subIdx, obsv in enumerate(obsvGen, start=1):
             print(f"At: chunk {idx} | sub chunk {subIdx}", end="\r")
             obsv.drop(obsv[obsv["quality_grade"] != "research"].index, inplace=True)

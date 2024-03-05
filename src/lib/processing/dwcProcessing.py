@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-import lib.dataframeFuncs as dff
+import lib.commonFuncs as cmn
 import lib.processing.processingFuncs as pFuncs
 from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.dwcMapping import Remapper, Events
@@ -32,7 +32,7 @@ class DWCProcessor:
             return
         
         # Get columns and create mappings
-        preGenerator = dff.chunkGenerator(inputPath, 1, sep, header, encoding)
+        preGenerator = cmn.chunkGenerator(inputPath, 1, sep, header, encoding)
         headerChunk = next(preGenerator)
         self.remapper.createMappings(headerChunk.columns, self.skipRemap)
         
@@ -50,7 +50,7 @@ class DWCProcessor:
             cleanedName = event.lower().replace(" ", "_")
             writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
-        for idx, chunk in enumerate(dff.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
+        for idx, chunk in enumerate(cmn.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
             print(f"At chunk: {idx}", end='\r')
 
             df = self.remapper.applyMap(chunk) # Returns a multi-index dataframe

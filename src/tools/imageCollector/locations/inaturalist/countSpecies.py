@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-import lib.dataframeFuncs as dff
+import lib.commonFuncs as cmn
 
 def run():
     baseDir = Path(__file__)
@@ -48,7 +48,7 @@ def run():
 
     obsvIDs = createdFolder / "observationIDs.txt"
     if not obsvIDs.exists():
-        chunkGen = dff.chunkGenerator(observations, 1024*1024*4, "\t", usecols=["taxon_id", "observation_uuid"])
+        chunkGen = cmn.chunkGenerator(observations, 1024*1024*4, "\t", usecols=["taxon_id", "observation_uuid"])
 
         for idx, df in enumerate(chunkGen, start=1):
             print(f"At chunk: {idx}", end="\r")
@@ -64,7 +64,7 @@ def run():
     lengthBefore = 0
     lengthAfter = 0
 
-    chunkGen = dff.chunkGenerator(photos, 1024*1024*4, sep="\t", usecols=["photo_uuid", "observation_uuid"])
+    chunkGen = cmn.chunkGenerator(photos, 1024*1024*4, sep="\t", usecols=["photo_uuid", "observation_uuid"])
     readBytes = 1024*1024*256
 
     for idx, df in enumerate(chunkGen, start=1):
