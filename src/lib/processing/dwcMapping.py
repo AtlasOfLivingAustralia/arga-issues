@@ -171,12 +171,12 @@ class MapRetriever:
             "csiro-genomes": 215504073,
             "dnazoo-db": 570069681,
             "ena-genomes": 1058330275,
-            "ncbi-biosample": 109194600,
-            "ncbi-nucleotide": 1759032197,
-            "ncbi-refseq": 2003682060,
-            "ncbi-taxonomy": 240630744,
-            "ncbi-genbank": 1632006425,
-            "ncbi-assemblyStats": 1145358378,
+            # "ncbi-biosample": 109194600,
+            "ncbi-nucleotide": 1182330400,
+            # "ncbi-refseq": 2003682060,
+            # "ncbi-taxonomy": 240630744,
+            # "ncbi-genbank": 1632006425,
+            # "ncbi-assemblyStats": 1145358378,
             "tern-portal": 1651969444,
             "tsi-koala": 975794491
         }
@@ -246,5 +246,10 @@ class MapRetriever:
         
         if any(value.startswith(val) for val in ("ARGA", '"', "/")): # Ignore values with these prefixes
             return []
+
+        openBrace = value.find("(")
+        closeBrace = value.rfind(")", openBrace)
+        if openBrace >= 0 and closeBrace >= 0:
+            value = value[:openBrace] + value[closeBrace+1:]
 
         return [elem.strip() for elem in value.split(",")]

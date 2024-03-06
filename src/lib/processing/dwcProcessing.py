@@ -7,6 +7,7 @@ from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.dwcMapping import Remapper, Events
 from lib.processing.parser import SelectorParser
 from lib.tools.logger import Logger
+import gc
 
 class DWCProcessor:
     def __init__(self, location: str, dwcProperties: dict, parser: SelectorParser):
@@ -32,6 +33,7 @@ class DWCProcessor:
             return
         
         # Get columns and create mappings
+        Logger.info("Getting column mappings")
         preGenerator = cmn.chunkGenerator(inputPath, 1, sep, header, encoding)
         headerChunk = next(preGenerator)
         self.remapper.createMappings(headerChunk.columns, self.skipRemap)
@@ -43,6 +45,7 @@ class DWCProcessor:
             
             self.remapper.forceUnique()
         
+        Logger.info("Resolving events")
         events = self.remapper.getEvents()
 
         writers: dict[str, BigFileWriter] = {}
@@ -50,18 +53,22 @@ class DWCProcessor:
             cleanedName = event.lower().replace(" ", "_")
             writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
-        for idx, chunk in enumerate(cmn.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
+        Logger.info("Processing chunks for DwC conversion")
+        for idx, df in enumerate(cmn.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding), start=1):
             print(f"At chunk: {idx}", end='\r')
 
-            df = self.remapper.applyMap(chunk) # Returns a multi-index dataframe
+            df = self.remapper.applyMap(df) # Returns a multi-index dataframe
             for na in self.setNA:
-                df.replace(na, np.NaN, inplace=True)
+                df = df.replace(na, np.NaN)
 
             df = self.fillNA.apply(df)
             df = self.applyAugments(df)
 
             for eventColumn in df.columns.levels[0]:
                 writers[eventColumn].writeDF(df[eventColumn])
+
+            del df
+            gc.collect()
 
         for writer in writers.values():
             writer.oneFile()
