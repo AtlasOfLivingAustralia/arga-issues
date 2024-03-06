@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import json
 import lib.commonFuncs as cmn
 from pathlib import Path
@@ -22,9 +23,9 @@ def _collectFields(stageFile: StageFile, remapper: Remapper, outputDir: Path, en
         print(f"Scanning chunk: {idx}", end='\r')
 
         for column in chunk.columns:
-            seriesValues = chunk[column].dropna().unique().tolist() # Convert column to list of unique values
+            seriesValues = [item.replace("\n", "").strip() for item in chunk[column].dropna().unique().tolist()] # Convert column to list of unique values
             with open(subFolder / f"{column}.txt", "+a") as fp:
-                fp.write("\n".join(seriesValues) + "\n")
+                fp.write("\n".join(list(seriesValues)) + "\n")
 
     print("\nPicking values")
     for column in data:
@@ -32,7 +33,10 @@ def _collectFields(stageFile: StageFile, remapper: Remapper, outputDir: Path, en
         with open(file) as fp:
             values = fp.read().rstrip("\n").split("\n")
 
-        values = list(set(values))
+        values = set(values)
+        values.discard("")
+        values = list(values)
+        
         if len(values) <= entryLimit or entryLimit <= 0:
             data[column]["Values"] = values
         else:
