@@ -9,5 +9,8 @@
                 "encoding": "iso-8859-1"
             }
         }
-    ]
+    ],
+    "dwcProperties": {
+        "mapID": 78385490
+    }
 }

@@ -9,5 +9,8 @@
         "outputs": [
             "{PATH, DOWNLOAD, dnazoo.csv}"
         ]
+    },
+    "dwcProperties": {
+        "mapID": 570069681
     }
 }

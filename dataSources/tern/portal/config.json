@@ -9,5 +9,8 @@
         "outputs": [
             "{PATH, DOWNLOAD, tern.csv}"
         ]
+    },
+    "dwcProperties": {
+        "mapID": 1651969444
     }
 }

@@ -56,6 +56,7 @@
         }
     ],
     "dwcProperties": {
+        "mapID": 109194600,
         "augment": [
             {
                 "path": "sourceProcessing/ncbi.py",

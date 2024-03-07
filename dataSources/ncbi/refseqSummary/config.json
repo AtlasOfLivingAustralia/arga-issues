@@ -11,7 +11,8 @@
         }
     ],
     "dwcProperties": {
-        "customMap": "{PATH, ROOT, customColumns.json}",
+        "mapID": 2003682060,
+        "customMapPath": "{PATH, ROOT, customColumns.json}"
         "setNA": [
             "na"
         ],

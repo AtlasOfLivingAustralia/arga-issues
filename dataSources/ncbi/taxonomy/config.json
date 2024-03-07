@@ -31,5 +31,8 @@
                 "{PATH, PREDWC, ncbiTaxonomy.csv}"
             ]
         }
-    ]
+    ],
+    "dwcProperties": {
+        "mapID": 240630744
+    }
 }

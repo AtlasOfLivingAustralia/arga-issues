@@ -10,5 +10,8 @@
         "outputs": [
             "{PATH, DOWNLOAD, genomes.csv}"
         ]
+    },
+    "dwcProperties": {
+        "mapID": 215504073
     }
 }
