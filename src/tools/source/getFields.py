@@ -1,10 +1,9 @@
 import pandas as pd
 import json
-import lib.commonFuncs as cmn
 from pathlib import Path
 from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile, StageFileStep
-from lib.processing.dwcMapping import Remapper, MapManager, MappedColumn
+from lib.processing.mapping import Remapper, MapManager
 import random
 from lib.tools.logger import Logger
 

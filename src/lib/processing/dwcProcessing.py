@@ -4,7 +4,7 @@ from pathlib import Path
 import lib.commonFuncs as cmn
 import lib.processing.processingFuncs as pFuncs
 from lib.tools.bigFileWriter import BigFileWriter
-from lib.processing.dwcMapping import Remapper, Event, Map, MapManager
+from lib.processing.mapping import Remapper, Event, MapManager
 from lib.processing.parser import SelectorParser
 from lib.tools.logger import Logger
 import gc
