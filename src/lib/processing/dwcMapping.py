@@ -1,147 +1,219 @@
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 import urllib.error
 import json
 import lib.config as cfg
-import lib.commonFuncs as cmn
 from pathlib import Path
 from enum import Enum
 from lib.tools.logger import Logger
 from dataclasses import dataclass
 
-class Events(Enum):
-    COLLECTIONS = "collections"
-    ACCESSIONS = "accessions"
-    SUBSAMPLES = "subsamples"
-    EXTRACTIONS = "dna_extractions"
-    SEQUENCES = "sequences"
-    ASSEMBLIES = "assemblies"
-    ANNOTATIONS = "annotations"
-    DEPOSITIONS = "depositions"
+class Event(Enum):
+    COLLECTION = "collections"
+    ACCESSION = "accessions"
+    SUBSAMPLE = "subsamples"
+    EXTRACTION = "dna_extractions"
+    SEQUENCE = "sequences"
+    ASSEMBLIE = "assemblies"
+    ANNOTATION = "annotations"
+    DEPOSITION = "depositions"
+    UNMAPPED = "unmapped"
+    PRESERVED = "preserved"
 
-@dataclass(eq=True, frozen=True)
+@dataclass(frozen=True, eq=True)
 class MappedColumn:
-    event: str
+    event: Event
     colName: str
 
-class Remapper:
-    def __init__(self, location: str, customMapPath: Path = None, preserveDwCMatch: bool = False, prefixMissing: bool = True) -> 'Remapper':
-        self.location = location
-        self.customMapPath = customMapPath
-        self.preserveDwCMatch = preserveDwCMatch
-        self.prefixMissing = prefixMissing
-
-        self.mappedColumns: dict[str, list[MappedColumn]] = {}
-        self.uniqueColumns: dict[MappedColumn, list[str]] = {}
-        self._loadMaps(customMapPath)
-
-    def getMappings(self) -> dict:
-        return self.mappedColumns
-
-    def _loadMaps(self, customMapPath: Path = None) -> None:
-        # DWC map
-        mapPath = cfg.Folders.mapping / f"{self.location}.json"
-        if mapPath.exists():
-            self.map = cmn.loadFromJson(mapPath)
-        else:
-            Logger.warning(f"No DWC map found for location {self.location}")
-            self.map = {}
+class Map:
+    def __init__(self, filePath: Path) -> (Map | None):
+        if not filePath.exists():
+            Logger.warning(f"No DWC map found at path: {filePath}")
+            return None
         
-        self.lookup = self._buildLookup(self.map)
+        self._mappings = self.loadFromFile(filePath)
+        self._lookup = self._reverseLookup(self._mappings)
+        
+    @classmethod
+    def fromSheets(cls, sheetID: int) -> (Map | None):
+        def init(self, mappings, lookup):
+            self._mappings = mappings
+            self._lookup = lookup
 
-        # Exit early if no custom path specified
-        if customMapPath is None:
-            self.customLookup = {}
-            return
+        documentID = "1dglYhHylG5_YvpslwuRWOigbF5qhU-uim11t_EE_cYE"
+        retrieveURL = f"https://docs.google.com/spreadsheets/d/{documentID}/export?format=csv&gid={sheetID}"
 
-        # Custom map
-        if customMapPath.exists():
-            self.customMap = cmn.loadFromJson(customMapPath)
-        else:
-            raise Exception(f"No custom map found at location: {customMapPath}") from FileNotFoundError
+        try:
+            df = pd.read_csv(retrieveURL, keep_default_na=False)
+        except urllib.error.HTTPError:
+            Logger.warning(f"Unable to read sheet with id: {sheetID}")
+            return None
 
-        self.customLookup = self._buildLookup(self.customMap)
+        fields = "Field Name"
+        eventColumns = [col for col in df.columns if col[0] == "T" and col[1].isdigit()]
+        _mappings: dict[Event, dict[str: list[str]]] = {event: {} for event in Event}
 
-    def _buildLookup(self, map: dict[str, dict[str, list[str]]]) -> dict[str, list[MappedColumn]]:
+        for column, event in zip(eventColumns, _mappings.keys()):
+            subDF = df[[fields, column]] # Select only the dwc name and event columns
+            for _, row in subDF.iterrows():
+                dwcName = row[fields]
+                oldName = row[column]
+
+                # Clean the old name cell
+                if not oldName:
+                    continue
+
+                if not isinstance(oldName, str): # Ignore float/int
+                    continue
+
+                if oldName in ("", "0", "1", "nan", "NaN", np.nan, np.NaN, np.NAN): # Ignore these values
+                    continue
+
+                if any(oldName.startswith(prefix) for prefix in ("ARGA", '"', "/")): # Ignore values with these prefixes
+                    continue
+
+                # Remove sections in braces
+                openBrace = oldName.find("(")
+                closeBrace = oldName.rfind(")", openBrace)
+                if openBrace >= 0 and closeBrace >= 0:
+                    oldName = oldName[:openBrace] + oldName[closeBrace+1:]
+
+                oldName = [subname.strip() for subname in oldName.split(",")] # Overwrite old name with list of subnames
+                _mappings[event][dwcName] = oldName
+
+        cls.__init__ = init
+        return cls(_mappings, cls._reverseLookup(cls, _mappings))
+    
+    def loadFromFile(self, filePath: Path) -> dict[Event, dict[str, list[str]]]:
+        with open(filePath) as fp:
+            rawMap = json.load(fp)
+
+        map = {}
+        for event, dwcMap in rawMap.items():
+            if event not in Event._value2member_map_:
+                Logger.warning(f"Unknown event: {event}, skipping")
+                continue
+
+            map[Event(event)] = dwcMap
+
+        return map
+
+    def saveToFile(self, filePath: Path) -> None:
+        output = {}
+        for event, dwcMap in self._mappings.items():
+            output[event.value] = dwcMap
+
+        with open(filePath, "w") as fp:
+            json.dump(output, fp, indent=4)
+
+    def getValue(self, fieldName: str) -> list[MappedColumn]:
+        return self._lookup.get(fieldName, [])
+    
+    def existsInMap(self, fieldName: str) -> bool:
+        return fieldName in self._mappings
+
+    def _reverseLookup(self, map: dict[Event, dict[str, list[str]]]) -> dict[str, list[MappedColumn]]:
         lookup: dict[str, list[MappedColumn]] = {}
 
-        for eventName, columnMap in map.items():
+        for event, columnMap in map.items():
             for newName, oldNameList in columnMap.items():
                 for oldName in oldNameList:
                     if oldName not in lookup:
                         lookup[oldName] = []
   
-                    lookup[oldName].append(MappedColumn(eventName, newName))
+                    lookup[oldName].append(MappedColumn(event.value, newName))
 
         return lookup
     
-    def createMappings(self, columns: list[str], skipRemap: list[str] = []) -> dict[str, list[MappedColumn]]:
-        self.mappedColumns.clear()
-        self.uniqueColumns.clear()
+class TranslationTable:
+    def __init__(self):
+        self._translationTable: dict[str, list[MappedColumn]] = {}
+        self._uniqueEntries: dict[MappedColumn, list[str]] = {}
+
+        self._eventsUsed = set()
+
+    def clear(self) -> None:
+        self._translationTable.clear()
+        self._uniqueEntries.clear()
+
+    def addColumn(self, column: str) -> None:
+        self._translationTable[column] = []
+
+    def addTranslation(self, column, columnMapping: MappedColumn) -> None:
+        self._translationTable[column].append(columnMapping)
+        self._eventsUsed.add(columnMapping.event)
+
+        if columnMapping not in self._uniqueEntries:
+            self._uniqueEntries[columnMapping] = [column]
+            return
+        
+        self._uniqueEntries[columnMapping].append(column)
+
+    def addMultipleTranslations(self, column, columnMappings: list[MappedColumn]) -> None:
+        for columnMapping in columnMappings:
+            self.addTranslation(column, columnMapping)
+
+    def getTranslation(self, column: str) -> list[MappedColumn]:
+        return self._translationTable.get(column, [])
+
+    def getEventCategories(self) -> list[Event]:
+        return list(self._eventsUsed)
+
+    def hasColumn(self, column: str) -> bool:
+        return column in self._translationTable
+    
+    def allUniqueColumns(self) -> bool:
+        return all(len(originalColumns) == 1 for originalColumns in self._uniqueEntries.values())
+    
+    def getNonUnique(self) -> list[tuple[Event, str, list[str]]]:
+        return [(mapping.event, oldCols[0], oldCols[1:]) for mapping, oldCols in self._uniqueEntries.items()]
+    
+    def forceUnique(self) -> None:
+        for mapping, oldColumns in self._uniqueEntries.items():
+            for column in oldColumns[1:]:
+                self._translationTable[column].remove(mapping)
+
+class Remapper:
+    def __init__(self, maps: list[Map], prefix: str, preserveDwC: bool = False, prefixUnmapped: bool = True):
+        self.maps = maps
+        self.prefix = prefix
+        self.preserveDwc = preserveDwC
+        self.prefixUnmapped = prefixUnmapped
+
+    def buildTable(self, columns: list[str], skipRemap: list[str] = []) -> TranslationTable:
+        table = TranslationTable()
 
         for column in columns:
-            self.mappedColumns[column] = []
+            table.addColumn(column)
 
             if column in skipRemap:
-                mapValue = MappedColumn("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column)
-                self.mappedColumns[column].append(mapValue)
+                mapping = MappedColumn(Event.UNMAPPED, f"{self.location}_{column}" if self.prefixUnmapped else column)
+                table.addTranslation(mapping)
                 continue
+ 
+            # Apply mapping
+            for map in self.maps:
+                values = map.getValue(column)
+                table.addMultipleTranslations(column, values)
 
-            # Apply DWC mapping
-            for lookup in (self.lookup, self.customLookup):
-                lookupValues = lookup.get(column, [])
-                self.mappedColumns[column].extend(lookupValues)
-                for mapping in lookupValues:
-                    if mapping not in self.uniqueColumns:
-                        self.uniqueColumns[mapping] = []
-                    
-                    self.uniqueColumns[mapping].append(column)
+                # If column matches an output column name
+                if map.existsInMap(column) and self.preserveDwCMatch:
+                    value = MappedColumn(Event.PRESERVED, f"{self.location}_{column}")
+                    table.addTranslation(value)
 
-            # If column matches an output column name
-            if column in self.map and self.preserveDwCMatch:
-                mapValue = MappedColumn("Preserved", f"{self.location}_{column}")
-                self.mappedColumns[column].append(mapValue)
+        # If no mapped value has been found yet
+        if not table.hasColumn(column):
+            value = MappedColumn(Event.UNMAPPED, f"{self.location}_{column}" if self.prefixUnmapped else column)
+            table.addTranslation(value)
 
-                if mapValue not in self.uniqueColumns:
-                    self.uniqueColumns[mapValue] = []
-                    
-                self.uniqueColumns[mapValue].append(column)
+        return table
 
-            # If no mapped value has been found yet
-            if not self.mappedColumns[column]:
-                mapValue = MappedColumn("Unmapped", f"{self.location}_{column}" if self.prefixMissing else column)
-                self.mappedColumns[column].append(mapValue)
-
-                if mapValue not in self.uniqueColumns:
-                    self.uniqueColumns[mapValue] = []
-                    
-                self.uniqueColumns[mapValue].append(column)
-
-        return self.mappedColumns
-    
-    def allUnique(self) -> bool:
-        return all(len(originalColumns) == 1 for originalColumns in self.uniqueColumns.values())
-
-    def getEvents(self) -> list[str]:
-        return list(set([mapping.event for mapList in self.mappedColumns.values() for mapping in mapList]))
-    
-    def reportMatches(self) -> None:
-        for mapping, oldColumns in self.uniqueColumns.items():
-            initialMapping = oldColumns[0]
-
-            for column in oldColumns[1:]:
-                Logger.info(f"Found mapping for column '{column}' that matches initial mapping '{initialMapping}' with event '{mapping.event}'")
-
-    def forceUnique(self) -> None:
-        for mapping, oldColumns in self.uniqueColumns.items():
-            for column in oldColumns[1:]:
-                self.mappedColumns[column].remove(mapping)
-
-    def applyMap(self, df: pd.DataFrame) -> pd.DataFrame:
+    def applyTranslation(self, df: pd.DataFrame, translationTable: TranslationTable) -> pd.DataFrame:
         eventColumns = {}
 
         for column in df.columns:
-            for mappedColumn in self.mappedColumns[column]:
+            for mappedColumn in translationTable.getTranslation(column):
                 if mappedColumn.event not in eventColumns:
                     eventColumns[mappedColumn.event] = {}
 
@@ -154,102 +226,32 @@ class Remapper:
 
         return pd.concat(eventColumns.values(), keys=eventColumns.keys(), axis=1)
 
-class MapRetriever:
-    def __init__(self):
-        self.documentID = "1dglYhHylG5_YvpslwuRWOigbF5qhU-uim11t_EE_cYE"
-        self.retrieveURL = f"https://docs.google.com/spreadsheets/d/{self.documentID}/export?format=csv&gid="
-        self.sheetIDs = {
-            "42bp-genomeArk": 84855374,
-            "ala-avh": 404635334,
-            "anemone-db": 286004534,
-            "bold-datapackage": 1154592624,
-            "bold-tsv": 78385490,
-            "bold-xml": 984983691,
-            "bpa-portal": 1982878906,
-            "bvbrc-db": 685936034,
-            "csiro-dap": 16336602,
-            "csiro-genomes": 215504073,
-            "dnazoo-db": 570069681,
-            "ena-genomes": 1058330275,
-            # "ncbi-biosample": 109194600,
-            "ncbi-nucleotide": 1182330400,
-            # "ncbi-refseq": 2003682060,
-            # "ncbi-taxonomy": 240630744,
-            # "ncbi-genbank": 1632006425,
-            # "ncbi-assemblyStats": 1145358378,
-            "tern-portal": 1651969444,
-            "tsi-koala": 975794491
-        }
+class MapManager:
+    def __init__(self, baseDir: Path):
+        self.baseDir = baseDir
+        self.localMapPath = baseDir / "map.json"
 
-    def run(self) -> None:
-        written = []
-        for database, sheetID in self.sheetIDs.items():
-            location, _ = database.split("-")
-            Logger.debug(f"Reading {database}")
+    def loadMaps(self, mapID: int = None, customMapID: int = None, customMapPath: Path = None, forceRetrieve: bool = False) -> list[Map]:
+        maps = []
 
-            try:
-                df = pd.read_csv(self.retrieveURL + str(sheetID), keep_default_na=False)
-            except urllib.error.HTTPError:
-                Logger.warning(f"Unable to read sheet for {database}")
-                continue
+        dwcMap = Map(self.localMapPath)
+        if dwcMap is None or forceRetrieve:
+            dwcMap = Map.fromSheets(mapID)
 
-            mappings = self.getMappings(df)
-            mapFile = cfg.Folders.mapping / f"{location}.json"
-
-            if mapFile.exists() and location not in written: # Old map file
-                mapFile.unlink()
-
-            if not mapFile.exists(): # First data source from location
-                with open(mapFile, "w") as fp:
-                    json.dump(mappings, fp, indent=4)
-                written.append(location)
-                Logger.debug(f"Created new {location} map")
-                continue
-
-            with open(mapFile) as fp:
-                columnMap = json.load(fp)
-
-            for eventName, dwcMap in mappings.items():
-                for keyword, names in dwcMap.items():
-                    if keyword not in columnMap[eventName]:
-                        columnMap[eventName][keyword] = names
-                    else:
-                        columnMap[eventName][keyword].extend(name for name in names if name not in columnMap[eventName][keyword])
-
-            with open(mapFile, "w") as fp:
-                json.dump(columnMap, fp, indent=4)
-
-            Logger.debug(f"Added new values to {location} map")
-            if location not in written:
-                written.append(location)
-
-    def getMappings(self, df: pd.DataFrame) -> dict[str, dict]:
-        fields = "Field Name"
-        eventColumns = [col for col in df.columns if col[0] == "T" and col[1].isdigit()]
-        mappings = {event.value: {} for event in Events}
-
-        for column, eventName in zip(eventColumns, mappings.keys()):
-            subDF = df[[fields, column]]
-            for _, row in subDF.iterrows():
-                filteredValues = self.filterEntry(row[column])
-                if filteredValues:
-                    mappings[eventName][row[fields]] = filteredValues
-
-        return mappings
-    
-    def filterEntry(self, value: any) -> list:
-        if not isinstance(value, str): # Ignore float/int
-            return []
+            if dwcMap is not None:
+                maps.append(dwcMap)
+                dwcMap.saveToFile(self.localMapPath)
         
-        if value in ("", "0", "1", "nan", "NaN", np.nan, np.NaN, np.NAN): # Ignore these values
-            return []
-        
-        if any(value.startswith(val) for val in ("ARGA", '"', "/")): # Ignore values with these prefixes
-            return []
+        if customMapPath is not None:
+            customMap = Map(customMapPath)
 
-        openBrace = value.find("(")
-        closeBrace = value.rfind(")", openBrace)
-        if openBrace >= 0 and closeBrace >= 0:
-            value = value[:openBrace] + value[closeBrace+1:]
+            if customMap is None and customMapID is not None:
+                customMap = Map.fromSheets(customMapID)
 
-        return [elem.strip() for elem in value.split(",")]
+                if customMap is not None:
+                    maps.append(customMap)
+
+                    if customMapPath is not None:
+                        customMap.saveToFile(customMapPath)
+
+        return maps
