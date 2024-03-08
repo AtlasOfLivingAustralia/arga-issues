@@ -27,7 +27,6 @@ hs_err_pid*
 # Local Folders #
 src/unsortedFiles
 src/tests
-mapping
 logs
 env
 
