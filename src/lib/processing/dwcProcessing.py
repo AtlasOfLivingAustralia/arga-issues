@@ -4,9 +4,10 @@ from pathlib import Path
 import lib.commonFuncs as cmn
 import lib.processing.processingFuncs as pFuncs
 from lib.tools.bigFileWriter import BigFileWriter
-from lib.processing.dwcMapping import Remapper, Events
+from lib.processing.mapping import Remapper, Event, MapManager
 from lib.processing.parser import SelectorParser
 from lib.tools.logger import Logger
+import gc
 
 class DWCProcessor:
     def __init__(self, location: str, dwcProperties: dict, parser: SelectorParser):
@@ -15,53 +16,75 @@ class DWCProcessor:
         self.parser = parser
         self.outputDir = self.parser.dwcDir
 
+        self.mapID = dwcProperties.pop("mapID", -1)
+
         self.augments = dwcProperties.pop("augment", [])
-        self.chunkSize = dwcProperties.pop("chunkSize", 100000)
+        self.chunkSize = dwcProperties.pop("chunkSize", 1024)
         self.setNA = dwcProperties.pop("setNA", [])
         self.fillNA = ColumnFiller(dwcProperties.pop("fillNA", {}))
         self.skipRemap = dwcProperties.pop("skipRemap", [])
-        self.customMapPath = self.parser.parseArg(dwcProperties.pop("customMap", None), [])
+        self.preserveDwC = dwcProperties.pop("preserveDwC", False)
+        self.prefixUnmapped = dwcProperties.pop("prefixUnmapped", True)
+
+        self.customMapID = dwcProperties.pop("customMapID", -1)
+        self.customMapPath = self.parser.parseArg(dwcProperties.pop("customMapPath", None), [])
 
         self.augmentSteps = [DWCAugment(augProperties) for augProperties in self.augments]
-        self.remapper = Remapper(location, self.customMapPath)
 
-    def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False, **kwargs: dict) -> Path:
+        self.mapManager = MapManager(self.parser.rootDir)
+
+    def getMappingProperties(self) -> tuple[int, int, Path]:
+        return self.mapID, self.customMapID, self.customMapPath
+
+    def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False, ignoreRemapErrors: bool = False, forceRetrieve: bool = False) -> Path:
         outputFolderPath = self.outputDir / outputFolderName
         if outputFolderPath.exists() and not overwrite:
             Logger.info(f"{outputFolderPath} already exists, exiting...")
             return
         
         # Get columns and create mappings
-        preGenerator = cmn.chunkGenerator(inputPath, 1, sep, header, encoding)
-        headerChunk = next(preGenerator)
-        self.remapper.createMappings(headerChunk.columns, self.skipRemap)
+        Logger.info("Getting column mappings")
+        columns = cmn.getColumns(inputPath, sep, header)
+
+        maps = self.mapManager.loadMaps(forceRetrieve)
+        if not maps:
+            Logger.error("Unable to retrieve any maps")
+            raise Exception("No mapping")
+
+        remapper = Remapper(maps, self.location, self.preserveDwC, self.prefixUnmapped)
+        translationTable = remapper.buildTable(columns, self.skipRemap)
         
-        if not self.remapper.allUnique(): # If there are non unique columns
-            if not kwargs["ignoreRemapErrors"]:
-                self.remapper.reportMatches()
+        if not translationTable.allUniqueColumns(): # If there are non unique columns
+            if not ignoreRemapErrors:
+                for event, firstCol, matchingCols in translationTable.getNonUnique():
+                    for col in matchingCols:
+                        Logger.info(f"Found mapping for column '{col}' that matches initial mapping '{firstCol}' under event '{event.value}'")
                 return
             
-            self.remapper.forceUnique()
+            translationTable.forceUnique()
         
-        events = self.remapper.getEvents()
-
+        Logger.info("Resolving events")
         writers: dict[str, BigFileWriter] = {}
-        for event in events:
+        for event in translationTable.getEventCategories():
             cleanedName = event.lower().replace(" ", "_")
             writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
-        for idx, chunk in enumerate(cmn.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding)):
+        Logger.info("Processing chunks for DwC conversion")
+        for idx, df in enumerate(cmn.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding), start=1):
             print(f"At chunk: {idx}", end='\r')
 
-            df = self.remapper.applyMap(chunk) # Returns a multi-index dataframe
+            df = remapper.applyTranslation(df, translationTable) # Returns a multi-index dataframe
             for na in self.setNA:
-                df.replace(na, np.NaN, inplace=True)
+                df = df.replace(na, np.NaN)
 
             df = self.fillNA.apply(df)
             df = self.applyAugments(df)
 
             for eventColumn in df.columns.levels[0]:
                 writers[eventColumn].writeDF(df[eventColumn])
+
+            del df
+            gc.collect()
 
         for writer in writers.values():
             writer.oneFile()
@@ -87,7 +110,7 @@ class ColumnFiller:
                         raise Exception(f"Unknown mapTo event: {event}") from AttributeError
 
     def _validEvent(self, event: str) -> bool:
-        return event in Events._value2member_map_
+        return event in Event._value2member_map_
     
     def apply(self, df: pd.DataFrame) -> pd.DataFrame:
         for event, columns in self.fillProperties.items():

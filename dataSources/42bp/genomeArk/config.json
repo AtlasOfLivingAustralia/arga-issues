@@ -11,5 +11,8 @@
         "outputs": [
             "{PATH, PROCESSING, genomeArk.csv}"
         ]
+    },
+    "dwcProperties": {
+        "mapID": 84855374
     }
 }

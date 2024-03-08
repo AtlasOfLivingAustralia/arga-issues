@@ -21,6 +21,7 @@
         "separator": "\t"
     },
     "dwcProperties": {
+        "mapID": 286004534,
         "augment": [
             {
                 "path": "sourceProcessing/anemone.py",

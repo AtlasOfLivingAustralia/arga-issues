@@ -1,25 +1,18 @@
 import pandas as pd
 import numpy as np
 import json
-import lib.commonFuncs as cmn
 from pathlib import Path
 from lib.sourceObjs.argParseWrapper import SourceArgParser
 from lib.processing.stageFile import StageFile, StageFileStep
-from lib.processing.dwcMapping import Remapper
+from lib.processing.mapping import Remapper, MapManager
 import random
 from lib.tools.logger import Logger
 
-def _collectFields(stageFile: StageFile, remapper: Remapper, outputDir: Path, entryLimit: int, chunkSize: int) -> dict:
-    chunkGen = cmn.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
-
+def _collectFields(stageFile: StageFile, dataStructure: dict, outputDir: Path, entryLimit: int, chunkSize: int) -> dict:
     subFolder = outputDir / "values"
     subFolder.mkdir(exist_ok=True)
 
-    columns = cmn.getColumns(stageFile.filePath, stageFile.separator, stageFile.firstRow)
-    mappedColumns = remapper.createMappings(columns)
-    data = {column: {"Maps to": [{"Event": mappedColumn.event, "Column": mappedColumn.colName} for mappedColumn in mapping], "Values": []} for column, mapping in mappedColumns.items()}
-
-    for idx, chunk in enumerate(chunkGen, start=1):
+    for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize), start=1):
         print(f"Scanning chunk: {idx}", end='\r')
 
         for column in chunk.columns:
@@ -28,7 +21,7 @@ def _collectFields(stageFile: StageFile, remapper: Remapper, outputDir: Path, en
                 fp.write("\n".join(list(seriesValues)) + "\n")
 
     print("\nPicking values")
-    for column in data:
+    for column in dataStructure:
         file = subFolder / f"{column}.txt"
         with open(file) as fp:
             values = fp.read().rstrip("\n").split("\n")
@@ -38,18 +31,16 @@ def _collectFields(stageFile: StageFile, remapper: Remapper, outputDir: Path, en
         values = list(values)
         
         if len(values) <= entryLimit or entryLimit <= 0:
-            data[column]["Values"] = values
+            dataStructure[column]["Values"] = values
         else:
-            data[column]["Values"] = random.sample(values, entryLimit)
+            dataStructure[column]["Values"] = random.sample(values, entryLimit)
 
         file.unlink()
 
-    return data
+    return dataStructure
 
-def _collectRecords(stageFile: StageFile, remapper: Remapper, entryLimit: int, chunkSize: int, seed: int) -> dict:
-    chunkGen = cmn.chunkGenerator(stageFile.filePath, chunkSize=chunkSize, sep=stageFile.separator, header=stageFile.firstRow, encoding=stageFile.encoding)
-
-    for idx, chunk in enumerate(chunkGen, start=1):
+def _collectRecords(stageFile: StageFile, dataStructure: dict, entryLimit: int, chunkSize: int, seed: int) -> dict:
+    for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize), start=1):
         print(f"Scanning chunk: {idx}", end='\r')
         sample = chunk.sample(n=entryLimit, random_state=seed)
 
@@ -62,8 +53,10 @@ def _collectRecords(stageFile: StageFile, remapper: Remapper, entryLimit: int, c
         indexes = [idx for idx, _ in sorted(emptyDF.items(), key=lambda x: x[1])]
         df = df.loc[indexes[:entryLimit]]
 
-    mappedColumns = remapper.createMappings(df.columns)
-    return {column: {"Maps to": [{"Event": mappedColumn.event, "Column": mappedColumn.colName} for mappedColumn in mapping], "Values": df[column].tolist()} for column, mapping in mappedColumns.items()}
+    for column in dataStructure:
+        dataStructure[column]["Values"] = df[column].tolist()
+    
+    return dataStructure
 
 if __name__ == '__main__':
     parser = SourceArgParser(description="Get column names of preDwc files")
@@ -83,13 +76,7 @@ if __name__ == '__main__':
 
         extension = "tsv" if args.tsv else "json"
         source.prepareStage(StageFileStep.PRE_DWC)
-        stageFiles = source.getPreDWCFiles(selectedFiles)
-        remapper = source.systemManager.dwcProcessor.remapper
-
-        for stageFile in stageFiles:
-            if not stageFile.filePath.exists():
-                print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
-                continue
+        stageFile = source.getPreDWCFiles(selectedFiles)[0] # Should be singular stage file before DwC
 
         if not stageFile.filePath.exists():
             print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
@@ -98,13 +85,26 @@ if __name__ == '__main__':
         seed = args.seed if args.seed >= 0 else random.randrange(2**32 - 1) # Max value for pandas seed
         random.seed(seed)
 
+        mapID, customMapID, customMapPath = source.systemManager.dwcProcessor.getMappingProperties()
+        mapManager = MapManager(source.getBaseDir())
+        maps = mapManager.loadMaps(mapID, customMapID, customMapPath, True)
+        if not maps:
+            Logger.error("No valid map files found")
+            exit()
+
+        remapper = Remapper(maps, source.location)
+
+        columns = stageFile.getColumns()
+        translationTable = remapper.buildTable(columns)
+        dataStructure = {column: {"Maps to": [{"Event": mappedColumn.event, "Column": mappedColumn.colName} for mappedColumn in translationTable.getTranslation(column)], "Values": []} for column in columns}
+
         if args.uniques:
             Logger.info("Collecting fields...")
-            data = _collectFields(stageFile, remapper, outputDir, args.entries, args.chunksize)
+            data = _collectFields(stageFile, dataStructure, outputDir, args.entries, args.chunksize)
             output = outputDir / f"fieldExamples_{args.chunksize}_{seed}.{extension}"
         else:
             Logger.info("Collecting records...")
-            data = _collectRecords(stageFile, remapper, args.entries, args.chunksize, seed)
+            data = _collectRecords(stageFile, dataStructure, args.entries, args.chunksize, seed)
             output = outputDir / f"recordExamples_{args.chunksize}_{seed}.{extension}"
 
         Logger.info(f"Writing to file {output}")

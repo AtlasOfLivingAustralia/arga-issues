@@ -28,5 +28,8 @@
                 "{PATH, PREDWC, nucHighGenomic.csv}"
             ]
         }
-    ]
+    ],
+    "dwcProperties": {
+        "mapID": 1182330400
+    }
 }

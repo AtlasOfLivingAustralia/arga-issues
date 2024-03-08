@@ -25,5 +25,8 @@
                 "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM, .csv}"
             ]
         }
-    ]
+    ],
+    "dwcProperties": {
+        "mapID": 1182330400
+    }
 }

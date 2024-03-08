@@ -47,6 +47,9 @@ class StageFile:
     def loadDataFrameIterator(self, chunkSize: int = 1024 * 1024) ->  Iterator[pd.DataFrame]:
         return cmn.chunkGenerator(self.filePath, chunkSize, self.separator, self.firstRow, self.encoding)
 
+    def getColumns(self) -> list[str]:
+        return cmn.getColumns(self.filePath, self.separator, self.firstRow)
+
     def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict) -> bool:
         if self.filePath.exists():
             if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE) or overwriteAmount <= 0:

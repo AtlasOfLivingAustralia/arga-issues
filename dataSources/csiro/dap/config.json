@@ -9,5 +9,8 @@
         "outputs": [
             "{PATH, DOWNLOAD, portalData.csv}"
         ]
+    },
+    "dwcProperties": {
+        "mapID": 16336602
     }
 }

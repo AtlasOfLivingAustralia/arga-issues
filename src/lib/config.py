@@ -23,5 +23,4 @@ class Files(metaclass=Meta):
 class Folders(metaclass=Meta):
     src: Path = "./src" # Source folder for all python code
     dataSources: Path = "./dataSources" # Location of all source related files
-    mapping: Path = "./mapping" # Location for map files
     logs: Path = "./logs" # Location of all logging files

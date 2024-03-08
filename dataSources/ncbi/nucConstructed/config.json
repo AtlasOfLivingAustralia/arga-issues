@@ -28,5 +28,8 @@
                 "{PATH, PREDWC, nucConstructed.csv}"
             ]
         }
-    ]
+    ],
+    "dwcProperties": {
+        "mapID": 1182330400
+    }
 }

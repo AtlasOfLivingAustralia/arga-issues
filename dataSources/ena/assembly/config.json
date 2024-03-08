@@ -8,5 +8,8 @@
                 "separator": "\t"
             }
         }
-    ]
+    ],
+    "dwcProperties": {
+        "mapID": 1058330275
+    }
 }

@@ -28,5 +28,9 @@
                 "{PATH, PREDWC, nucMammalian.csv}"
             ]
         }
-    ]
+    ],
+    "dwcProperties": {
+        "mapID": 1182330400,
+        "chunkSize": 512
+    }
 }
