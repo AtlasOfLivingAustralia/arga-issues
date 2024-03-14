@@ -8,38 +8,21 @@ from lib.processing.mapping import Remapper, MapManager
 import random
 from lib.tools.logger import Logger
 
-def _collectFields(stageFile: StageFile, dataStructure: dict, outputDir: Path, entryLimit: int, chunkSize: int) -> dict:
-    subFolder = outputDir / "values"
-    subFolder.mkdir(exist_ok=True)
-
+def _collectFields(stageFile: StageFile, entryLimit: int, chunkSize: int, seed: int) -> dict[str, pd.Series]:
     for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize), start=1):
         print(f"Scanning chunk: {idx}", end='\r')
+        sample = chunk.apply(lambda x: x.dropna().drop_duplicates())
 
-        for column in chunk.columns:
-            seriesValues = [item.replace("\n", "").strip() for item in chunk[column].dropna().unique().tolist()] # Convert column to list of unique values
-            with open(subFolder / f"{column}.txt", "+a") as fp:
-                fp.write("\n".join(list(seriesValues)) + "\n")
+        if idx == 1:
+            df = sample
+            continue
 
-    print("\nPicking values")
-    for column in dataStructure:
-        file = subFolder / f"{column}.txt"
-        with open(file) as fp:
-            values = fp.read().rstrip("\n").split("\n")
+        df = pd.concat([df, sample], ignore_index=True)
+        df = df.apply(lambda x: x.drop_duplicates().sample(n=entryLimit, replace=True, random_state=seed).drop_duplicates())
 
-        values = set(values)
-        values.discard("")
-        values = list(values)
-        
-        if len(values) <= entryLimit or entryLimit <= 0:
-            dataStructure[column]["Values"] = values
-        else:
-            dataStructure[column]["Values"] = random.sample(values, entryLimit)
+    return {column: df[column].dropna().tolist() for column in df.columns}
 
-        file.unlink()
-
-    return dataStructure
-
-def _collectRecords(stageFile: StageFile, dataStructure: dict, entryLimit: int, chunkSize: int, seed: int) -> dict:
+def _collectRecords(stageFile: StageFile, entryLimit: int, chunkSize: int, seed: int) -> dict[str, pd.Series]:
     for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize), start=1):
         print(f"Scanning chunk: {idx}", end='\r')
         sample = chunk.sample(n=entryLimit, random_state=seed)
@@ -48,15 +31,12 @@ def _collectRecords(stageFile: StageFile, dataStructure: dict, entryLimit: int, 
             df = sample
             continue
 
-        df = pd.concat([df, chunk])
+        df = pd.concat([df, sample])
         emptyDF = df.isna().sum(axis=1)
         indexes = [idx for idx, _ in sorted(emptyDF.items(), key=lambda x: x[1])]
         df = df.loc[indexes[:entryLimit]]
 
-    for column in dataStructure:
-        dataStructure[column]["Values"] = df[column].tolist()
-    
-    return dataStructure
+    return {column: df[column].tolist() for column in df.columns}
 
 if __name__ == '__main__':
     parser = SourceArgParser(description="Get column names of preDwc files")
@@ -96,16 +76,13 @@ if __name__ == '__main__':
 
         columns = stageFile.getColumns()
         translationTable = remapper.buildTable(columns)
-        dataStructure = {column: {"Maps to": [{"Event": mappedColumn.event, "Column": mappedColumn.colName} for mappedColumn in translationTable.getTranslation(column)], "Values": []} for column in columns}
 
-        if args.uniques:
-            Logger.info("Collecting fields...")
-            data = _collectFields(stageFile, dataStructure, outputDir, args.entries, args.chunksize)
-            output = outputDir / f"fieldExamples_{args.chunksize}_{seed}.{extension}"
-        else:
-            Logger.info("Collecting records...")
-            data = _collectRecords(stageFile, dataStructure, args.entries, args.chunksize, seed)
-            output = outputDir / f"recordExamples_{args.chunksize}_{seed}.{extension}"
+        valueType = "fields" if args.uniques else "records"
+        Logger.info(f"Collecting {valueType}...")
+
+        values = _collectFields(stageFile, args.entries, args.chunksize, seed) if args.uniques else _collectRecords(stageFile, args.entries, args.chunksize, seed)
+        output = outputDir / f"{valueType}_{args.chunksize}_{seed}.{extension}"
+        data = {column: {"Maps to": [{"Event": mappedColumn.event, "Column": mappedColumn.colName} for mappedColumn in translationTable.getTranslation(column)], "Values": values[column]} for column in columns}
 
         Logger.info(f"Writing to file {output}")
         if args.tsv:
