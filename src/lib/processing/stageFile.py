@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from lib.tools.logger import Logger
 
 if TYPE_CHECKING:
-    from lib.processing.stageScript import StageScript
+    from lib.processing.stageScript import StageScript, StageDWCConversion
 
 class StageFileStep(Enum):
     DOWNLOADED   = 0
@@ -59,3 +59,22 @@ class StageFile:
         self.filePath.parent.mkdir(parents=True, exist_ok=True)
         self.parentScript.run(overwriteStage, overwriteAmount, verbose, **kwargs)
         return True
+
+class StageDwCFile(StageFile):
+    def __init__(self, filePath: Path, parentScript: StageDWCConversion):
+        super().__init__(filePath, {}, parentScript, StageFileStep.DWC)
+        
+    def _getFiles(self) -> list[Path]:
+        return [file for file in self.filePath.iterdir() if file.suffix == ".csv"]
+
+    def loadDataFrame(self, offset: int = 0, rows: int = None) -> pd.DataFrame:
+        dfs = {file.stem: pd.read_csv(file, header=offset, nrows=rows) for file in self._getFiles()}
+        return pd.concat(dfs.values(), axis=1, keys=dfs.keys())
+    
+    def loadDataFrameIterator(self, chunkSize: int = 1024, offset: int = 0, rows: int = None) -> Iterator[pd.DataFrame]:
+        sections = {file.stem: pd.read_csv(file, chunksize=chunkSize, header=offset, nrows=rows) for file in self._getFiles()}
+        while True:
+            try:
+                yield pd.concat([next(chunk) for chunk in sections.values()], axis=1, keys=sections.keys())
+            except StopIteration:
+                return

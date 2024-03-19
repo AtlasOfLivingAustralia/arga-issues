@@ -15,6 +15,7 @@ class DWCProcessor:
         self.dwcProperties = dwcProperties
         self.parser = parser
         self.outputDir = self.parser.dwcDir
+        self.recordsFile = "records.txt"
 
         self.mapID = dwcProperties.pop("mapID", -1)
 
@@ -46,7 +47,7 @@ class DWCProcessor:
         Logger.info("Getting column mappings")
         columns = cmn.getColumns(inputPath, sep, header)
 
-        maps = self.mapManager.loadMaps(forceRetrieve)
+        maps = self.mapManager.loadMaps(self.mapID, self.customMapID, self.customMapPath, forceRetrieve)
         if not maps:
             Logger.error("Unable to retrieve any maps")
             raise Exception("No mapping")
@@ -69,6 +70,7 @@ class DWCProcessor:
             cleanedName = event.lower().replace(" ", "_")
             writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
+        totalRows = 0
         Logger.info("Processing chunks for DwC conversion")
         for idx, df in enumerate(cmn.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding), start=1):
             print(f"At chunk: {idx}", end='\r')
@@ -83,11 +85,15 @@ class DWCProcessor:
             for eventColumn in df.columns.levels[0]:
                 writers[eventColumn].writeDF(df[eventColumn])
 
+            totalRows += len(df)
             del df
             gc.collect()
 
         for writer in writers.values():
             writer.oneFile()
+
+        with open(outputFolderPath / self.recordsFile, "w") as fp:
+            fp.write(str(totalRows))
 
         return outputFolderPath
 

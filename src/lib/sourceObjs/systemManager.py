@@ -1,5 +1,5 @@
 from pathlib import Path
-from lib.processing.stageFile import StageFileStep, StageFile
+from lib.processing.stageFile import StageFileStep, StageFile, StageDwCFile
 from lib.processing.stageScript import StageDownloadScript, StageScript, StageDWCConversion
 from lib.processing.parser import SelectorParser
 from lib.processing.dwcProcessing import DWCProcessor
@@ -112,5 +112,5 @@ class SystemManager:
         for file in self.stageFiles[StageFileStep.PRE_DWC]:
             conversionScript = StageDWCConversion(file, self.dwcProcessor)
             dwcOutput = conversionScript.getOutput()
-            convertedFile = StageFile(dwcOutput, {}, conversionScript, StageFileStep.DWC)
+            convertedFile = StageDwCFile(dwcOutput, conversionScript)
             self.stageFiles[StageFileStep.DWC].append(convertedFile)
