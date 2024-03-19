@@ -52,7 +52,14 @@ class StageFile:
 
     def create(self, overwriteStage: StageFileStep, overwriteAmount: int = 0, verbose: bool = False, **kwargs: dict) -> bool:
         if self.filePath.exists():
-            if self.stage not in (overwriteStage, StageFileStep.INTERMEDIATE) or overwriteAmount <= 0:
+
+            # Valid overwrite if stage matches overwrite, stage is intermediate, or preDwC overwriting processing steps
+            validOverwrite = self.stage in (overwriteStage, StageFileStep.INTERMEDIATE) or (overwriteStage == StageFileStep.PRE_DWC and self.stage == StageFileStep.PROCESSED)
+
+            if not validOverwrite:
+                return False
+            
+            if validOverwrite and overwriteAmount <= 0:
                 Logger.info(f"{self.filePath} already exists")
                 return False
         

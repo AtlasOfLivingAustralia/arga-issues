@@ -8,4 +8,4 @@ if __name__ == '__main__':
     kwargs = parser.namespaceKwargs(args)
     for source in sources:
         source.prepareStage(StageFileStep.DOWNLOADED)
-        source.createStage(StageFileStep.DOWNLOADED, selectedFiles, overwrite, **vars(kwargs))
+        source.createStage(StageFileStep.DOWNLOADED, selectedFiles, overwrite, **kwargs)
