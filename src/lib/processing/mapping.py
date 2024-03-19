@@ -79,8 +79,8 @@ class Map:
                 if openBrace >= 0 and closeBrace >= 0:
                     oldName = oldName[:openBrace] + oldName[closeBrace+1:]
 
-                oldName = [subname.strip() for subname in oldName.split(",")] # Overwrite old name with list of subnames
-                _mappings[event][dwcName] = oldName
+                oldName = [subname.split("::")[-1].strip(" :") for subname in oldName.split(",")] # Overwrite old name with list of subnames
+                _mappings[Event(event)][dwcName] = oldName
 
         cls.__init__ = init
         return cls(_mappings, cls._reverseLookup(cls, _mappings))
@@ -107,7 +107,7 @@ class Map:
         with open(filePath, "w") as fp:
             json.dump(output, fp, indent=4)
 
-    def getValue(self, fieldName: str) -> list[MappedColumn]:
+    def getValues(self, fieldName: str) -> list[MappedColumn]:
         return self._lookup.get(fieldName, [])
     
     def existsInMap(self, fieldName: str) -> bool:
@@ -122,7 +122,7 @@ class Map:
                     if oldName not in lookup:
                         lookup[oldName] = []
   
-                    lookup[oldName].append(MappedColumn(event.value, newName))
+                    lookup[oldName].append(MappedColumn(event, newName))
 
         return lookup
     
@@ -137,10 +137,10 @@ class TranslationTable:
         self._translationTable.clear()
         self._uniqueEntries.clear()
 
-    def addColumn(self, column: str) -> None:
-        self._translationTable[column] = []
+    def addTranslation(self, column: str, columnMapping: MappedColumn) -> None:
+        if column not in self._translationTable:
+            self._translationTable[column] = []
 
-    def addTranslation(self, column, columnMapping: MappedColumn) -> None:
         self._translationTable[column].append(columnMapping)
         self._eventsUsed.add(columnMapping.event)
 
@@ -149,10 +149,6 @@ class TranslationTable:
             return
         
         self._uniqueEntries[columnMapping].append(column)
-
-    def addMultipleTranslations(self, column, columnMappings: list[MappedColumn]) -> None:
-        for columnMapping in columnMappings:
-            self.addTranslation(column, columnMapping)
 
     def getTranslation(self, column: str) -> list[MappedColumn]:
         return self._translationTable.get(column, [])
@@ -185,8 +181,6 @@ class Remapper:
         table = TranslationTable()
 
         for column in columns:
-            table.addColumn(column)
-
             if column in skipRemap:
                 mapping = MappedColumn(Event.UNMAPPED, f"{self.location}_{column}" if self.prefixUnmapped else column)
                 table.addTranslation(mapping)
@@ -194,18 +188,21 @@ class Remapper:
  
             # Apply mapping
             for map in self.maps:
-                values = map.getValue(column)
-                table.addMultipleTranslations(column, values)
+                for value in map.getValues(column):
+                    if not value:
+                        continue
+
+                    table.addTranslation(column, value)
 
                 # If column matches an output column name
                 if map.existsInMap(column) and self.preserveDwCMatch:
-                    value = MappedColumn(Event.PRESERVED, f"{self.location}_{column}")
-                    table.addTranslation(value)
+                    value = MappedColumn(Event.PRESERVED, f"{self.prefixs}_{column}")
+                    table.addTranslation(column, value)
 
-        # If no mapped value has been found yet
-        if not table.hasColumn(column):
-            value = MappedColumn(Event.UNMAPPED, f"{self.location}_{column}" if self.prefixUnmapped else column)
-            table.addTranslation(value)
+            # If no mapped value has been found yet
+            if not table.hasColumn(column):
+                value = MappedColumn(Event.UNMAPPED, f"{self.prefix}_{column}" if self.prefixUnmapped else column)
+                table.addTranslation(column, value)
 
         return table
 
@@ -221,8 +218,7 @@ class Remapper:
 
         for eventName, colMap in eventColumns.items():
             subDF: pd.DataFrame = df[colMap.keys()].copy() # Select only relevant columns
-            subDF.rename(colMap, axis=1, inplace=True)
-            eventColumns[eventName] = subDF
+            eventColumns[eventName] = subDF.rename(colMap, axis=1)
 
         return pd.concat(eventColumns.values(), keys=eventColumns.keys(), axis=1)
 
@@ -239,19 +235,28 @@ class MapManager:
             dwcMap = Map.fromSheets(mapID)
 
             if dwcMap is not None:
+                Logger.info("Added sheets map")
                 maps.append(dwcMap)
                 dwcMap.saveToFile(self.localMapPath)
+        else:
+            Logger.info("Added local map")
+            maps.append(dwcMap)
         
         if customMapPath is not None:
             customMap = Map(customMapPath)
 
-            if customMap is None and customMapID is not None:
-                customMap = Map.fromSheets(customMapID)
+            if customMap is None:
+                if customMapID is not None:
+                    customMap = Map.fromSheets(customMapID)
 
-                if customMap is not None:
-                    maps.append(customMap)
+                    if customMap is not None:
+                        Logger.info("Added sheets custom map")
+                        maps.append(customMap)
 
-                    if customMapPath is not None:
-                        customMap.saveToFile(customMapPath)
+                        if customMapPath is not None:
+                            customMap.saveToFile(customMapPath)
+            else:
+                Logger.info("Added local custom map")
+                maps.append(customMap)
 
         return maps

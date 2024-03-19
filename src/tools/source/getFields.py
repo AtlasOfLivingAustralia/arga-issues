@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
         values = _collectFields(stageFile, args.entries, args.chunksize, seed) if args.uniques else _collectRecords(stageFile, args.entries, args.chunksize, seed)
         output = outputDir / f"{valueType}_{args.chunksize}_{seed}.{extension}"
-        data = {column: {"Maps to": [{"Event": mappedColumn.event, "Column": mappedColumn.colName} for mappedColumn in translationTable.getTranslation(column)], "Values": values[column]} for column in columns}
+        data = {column: {"Maps to": [{"Event": mappedColumn.event.value, "Column": mappedColumn.colName} for mappedColumn in translationTable.getTranslation(column)], "Values": values[column]} for column in columns}
 
         Logger.info(f"Writing to file {output}")
         if args.tsv:
