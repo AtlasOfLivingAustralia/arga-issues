@@ -41,7 +41,7 @@ class Extractor:
                 outputFile = outputFile.with_suffix(addSuffix)
 
             if outputFile.exists() and not overwrite:
-                Logger.info("Output file already exists.... Skipping extraction stage")
+                Logger.info(f"Output {outputFile.name} exists, Skipping extraction stage")
                 filePath = outputFile
                 continue
 
@@ -62,8 +62,9 @@ class Extractor:
 
                 if extractType == ExtractTypes.TAR:
                     with tarfile.open(filePath, 'r') as tar:
-                        tar.extractall(outputFile)
+                        tar.extractall(outputFile, filter="data")
             except EOFError:
+                outputFile.unlink()
                 return None
 
             filePath = outputFile

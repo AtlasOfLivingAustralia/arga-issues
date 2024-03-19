@@ -1,10 +1,11 @@
 import csv
 import json
-import platform
-import subprocess
+import requests
+from requests.auth import HTTPBasicAuth
 import pandas as pd
 from typing import Generator
 from lib.tools.logger import Logger
+from pathlib import Path
 
 def reverseLookup(lookup: dict) -> dict:
     nameMap = {}
@@ -56,8 +57,8 @@ def flatten(inputDict: dict, parent: str = "") -> dict:
 
     return res
 
-def chunkGenerator(filePath: str, chunkSize: int, sep: str = ",", header: int = 0, encoding: str = "utf-8", usecols: list = None) -> Generator[pd.DataFrame, None, None]:
-    return (chunk for chunk in pd.read_csv(filePath, on_bad_lines="skip", chunksize=chunkSize, sep=sep, header=header, encoding=encoding, dtype=object, usecols=usecols))
+def chunkGenerator(filePath: str, chunkSize: int, sep: str = ",", header: int = 0, encoding: str = "utf-8", usecols: list = None, nrows: int = None) -> Generator[pd.DataFrame, None, None]:
+    return (chunk for chunk in pd.read_csv(filePath, on_bad_lines="skip", chunksize=chunkSize, sep=sep, header=header, encoding=encoding, dtype=object, usecols=usecols, nrows=nrows))
 
 def getColumns(filePath: str, separator: str = ',', headerRow: int = 0) -> str:
     with open(filePath, encoding='utf-8') as fp:
@@ -95,15 +96,17 @@ def dictListToCSV(dictList: list, columns: list, filePath: str) -> None:
         for d in dictList:
             writer.writerow(d)
 
-def downloadFile(url: str, filePath: str, user: str = "", password: str = "", verbose: bool = True):
-    curl = "curl.exe" if platform.system() == 'Windows' else "curl"
-    args = [curl, url, "-o", filePath]
-    if user:
-        args.extend(["--user", f"{user}:{password}"])
+def downloadFile(url: str, filePath: str, user: str = "", chunkSize: int = 1024*64, password: str = "", verbose: bool = True) -> Path:
+    auth = HTTPBasicAuth(user, password) if user else None
 
     if verbose:
         Logger.info(f"Downloading from {url} to file {filePath}")
-    else:
-        args.append("-s")
+    
+    with requests.get(url, stream=True, auth=auth) as stream:
+        stream.raise_for_status()
 
-    subprocess.run(args)
+        with open(filePath, "wb") as fp:
+            for chunk in stream.iter_content(chunkSize):
+                fp.write(chunk)
+
+    return Path(filePath)
