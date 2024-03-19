@@ -3,7 +3,7 @@ from pathlib import Path
 from enum import Enum
 from lib.sourceObjs.systemManager import SystemManager
 from lib.sourceObjs.timeManager import TimeManager
-from lib.processing.stageFile import StageFile, StageFileStep
+from lib.processing.stageFile import StageFile, StageDwCFile, StageFileStep
 from lib.tools.crawler import Crawler
 from lib.tools.logger import Logger
 
@@ -89,7 +89,7 @@ class Database:
     def getPreDWCFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
         return self._selectFiles(StageFileStep.PRE_DWC, selectIndexes)
     
-    def getDWCFiles(self, selectIndexes: list[int] = []) -> list[StageFile]:
+    def getDWCFiles(self, selectIndexes: list[int] = []) -> list[StageDwCFile]:
         return self._selectFiles(StageFileStep.DWC, selectIndexes)
 
     def _selectFiles(self, stage: StageFileStep, indexes: list[int]) -> list[StageFile]:
