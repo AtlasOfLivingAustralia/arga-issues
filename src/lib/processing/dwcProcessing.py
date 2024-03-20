@@ -67,7 +67,7 @@ class DWCProcessor:
         Logger.info("Resolving events")
         writers: dict[str, BigFileWriter] = {}
         for event in translationTable.getEventCategories():
-            cleanedName = event.lower().replace(" ", "_")
+            cleanedName = event.value.lower().replace(" ", "_")
             writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
         totalRows = 0
