@@ -27,20 +27,35 @@ class MappedColumn:
     colName: str
 
 class Map:
-    def __init__(self, filePath: Path) -> (Map | None):
+    def __init__(self, mappings: dict = {}) -> Map:
+        self._mappings = mappings
+
+        if mappings:
+            self._lookup = self._reverseLookup(mappings)
+        else:
+            self._lookup = {}
+
+    @classmethod
+    def fromFile(cls, filePath: Path) -> Map:
         if not filePath.exists():
             Logger.warning(f"No DWC map found at path: {filePath}")
-            return None
+            return cls()
         
-        self._mappings = self.loadFromFile(filePath)
-        self._lookup = self._reverseLookup(self._mappings)
-        
-    @classmethod
-    def fromSheets(cls, sheetID: int) -> (Map | None):
-        def init(self, mappings, lookup):
-            self._mappings = mappings
-            self._lookup = lookup
+        with open(filePath) as fp:
+            rawMap = json.load(fp)
 
+        mappings = {}
+        for event, dwcMap in rawMap.items():
+            if event not in Event._value2member_map_:
+                Logger.warning(f"Unknown event: {event}, skipping")
+                continue
+
+            mappings[Event(event)] = dwcMap
+
+        return cls(mappings)
+
+    @classmethod
+    def fromSheets(cls, sheetID: int) -> Map:
         documentID = "1dglYhHylG5_YvpslwuRWOigbF5qhU-uim11t_EE_cYE"
         retrieveURL = f"https://docs.google.com/spreadsheets/d/{documentID}/export?format=csv&gid={sheetID}"
 
@@ -48,13 +63,13 @@ class Map:
             df = pd.read_csv(retrieveURL, keep_default_na=False)
         except urllib.error.HTTPError:
             Logger.warning(f"Unable to read sheet with id: {sheetID}")
-            return None
+            return cls()
 
         fields = "Field Name"
         eventColumns = [col for col in df.columns if col[0] == "T" and col[1].isdigit()]
-        _mappings: dict[Event, dict[str: list[str]]] = {event: {} for event in Event}
+        mappings = {event: {} for event in Event}
 
-        for column, event in zip(eventColumns, _mappings.keys()):
+        for column, event in zip(eventColumns, mappings.keys()):
             subDF = df[[fields, column]] # Select only the dwc name and event columns
             for _, row in subDF.iterrows():
                 dwcName = row[fields]
@@ -80,24 +95,12 @@ class Map:
                     oldName = oldName[:openBrace] + oldName[closeBrace+1:]
 
                 oldName = [subname.split("::")[-1].strip(" :") for subname in oldName.split(",")] # Overwrite old name with list of subnames
-                _mappings[Event(event)][dwcName] = oldName
+                mappings[Event(event)][dwcName] = oldName
 
-        cls.__init__ = init
-        return cls(_mappings, cls._reverseLookup(cls, _mappings))
+        return cls(mappings)
     
-    def loadFromFile(self, filePath: Path) -> dict[Event, dict[str, list[str]]]:
-        with open(filePath) as fp:
-            rawMap = json.load(fp)
-
-        map = {}
-        for event, dwcMap in rawMap.items():
-            if event not in Event._value2member_map_:
-                Logger.warning(f"Unknown event: {event}, skipping")
-                continue
-
-            map[Event(event)] = dwcMap
-
-        return map
+    def hasMappings(self) -> bool:
+        return len(self._mappings) > 0
 
     def saveToFile(self, filePath: Path) -> None:
         output = {}
@@ -113,7 +116,8 @@ class Map:
     def existsInMap(self, fieldName: str) -> bool:
         return fieldName in self._mappings
 
-    def _reverseLookup(self, map: dict[Event, dict[str, list[str]]]) -> dict[str, list[MappedColumn]]:
+    @staticmethod
+    def _reverseLookup(map: dict[Event, dict[str, list[str]]]) -> dict[str, list[MappedColumn]]:
         lookup: dict[str, list[MappedColumn]] = {}
 
         for event, columnMap in map.items():
@@ -230,11 +234,11 @@ class MapManager:
     def loadMaps(self, mapID: int = None, customMapID: int = None, customMapPath: Path = None, forceRetrieve: bool = False) -> list[Map]:
         maps = []
 
-        dwcMap = Map(self.localMapPath)
-        if dwcMap is None or forceRetrieve:
+        dwcMap = Map.fromFile(self.localMapPath)
+        if not dwcMap.hasMappings() or forceRetrieve:
             dwcMap = Map.fromSheets(mapID)
 
-            if dwcMap is not None:
+            if dwcMap.hasMappings():
                 Logger.info("Added sheets map")
                 maps.append(dwcMap)
                 dwcMap.saveToFile(self.localMapPath)
@@ -243,13 +247,13 @@ class MapManager:
             maps.append(dwcMap)
         
         if customMapPath is not None:
-            customMap = Map(customMapPath)
+            customMap = Map.fromFile(customMapPath)
 
-            if customMap is None:
+            if not customMap.hasMappings():
                 if customMapID is not None:
                     customMap = Map.fromSheets(customMapID)
 
-                    if customMap is not None:
+                    if customMap.hasMappings():
                         Logger.info("Added sheets custom map")
                         maps.append(customMap)
 
