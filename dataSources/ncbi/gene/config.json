@@ -6,8 +6,8 @@
             "downloadedFile": "All_data_gene_info.csv.gz",
             "processing": [
                 {
-                    "path": "lib/tools/extractor.py",
-                    "function": "Extractor.extract",
+                    "path": "lib/tools/zipping.py",
+                    "function": "extract",
                     "args": [
                         "{INPUT, 0, FILEPATH}",
                         "{PATH, PROCESSING}"

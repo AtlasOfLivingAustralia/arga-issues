@@ -5,8 +5,8 @@
     "regexMatch": ".*\\.txt\\.gz",
     "perFileProcessing": [
         {
-            "path": "lib/tools/extractor.py",
-            "function": "Extractor.extract",
+            "path": "lib/tools/zipfiles.py",
+            "function": "extract",
             "args": [
                 "{INPUT, 0, FILEPATH}",
                 "{PATH, PROCESSING}"
