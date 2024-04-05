@@ -6,6 +6,7 @@ import tarfile
 from pathlib import Path
 from lib.tools.logger import Logger
 from enum import Enum
+import os
 
 class Extension(Enum):
     ZIP = ".zip"
@@ -67,3 +68,28 @@ def extract(filePath: Path, outputDir: str = "", addSuffix: str = "", overwrite:
         filePath = outputFile
 
     return filePath
+
+def compress(filePath: Path, outputDir: Path = None, zipName: str = None) -> Path | None:
+
+    def compressFolder(folderPath: Path, parentFolder: Path, fp: zipfile.ZipFile):
+        for item in folderPath.iterdir():
+            itemPath = Path(parentFolder, item.name)
+            if item.is_file():
+                fp.write(item, itemPath)
+            else:
+                compressFolder(item, itemPath, fp)
+
+    if zipName is None:
+        zipName = filePath.stem
+    if outputDir is None:
+        outputDir = filePath.absolute().parent
+
+    outputFile = outputDir / f"{zipName}.zip"
+
+    with zipfile.ZipFile(outputFile, "w", zipfile.ZIP_DEFLATED) as zipfp:
+        if filePath.is_file:
+            zipfp.write(filePath, outputFile.stem)
+        else:
+            compressFolder(filePath, outputFile.stem, zipfp)
+    
+    return outputFile

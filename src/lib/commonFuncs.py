@@ -110,3 +110,13 @@ def downloadFile(url: str, filePath: str, user: str = "", chunkSize: int = 1024*
                 fp.write(chunk)
 
     return Path(filePath)
+
+def clearFolder(folderPath: Path, delete: bool = False) -> None:
+    for item in folderPath.iterdir():
+        if item.is_file():
+            item.unlink()
+        else:
+            clearFolder(item, True)
+    
+    if delete:
+        folderPath.rmdir()
