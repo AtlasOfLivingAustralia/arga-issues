@@ -54,3 +54,7 @@ datasources/*/*/*.json
 
 # Cached Files #
 *__pycache__
+
+# Update bot
+src/tools/updateBot/*.json
+src/tools/updateBot/*.txt
