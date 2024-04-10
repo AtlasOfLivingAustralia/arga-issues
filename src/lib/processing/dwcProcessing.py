@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 import lib.commonFuncs as cmn
 import lib.processing.processingFuncs as pFuncs
+import lib.tools.zipping as zp
 from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.mapping import Remapper, Event, MapManager
 from lib.processing.parser import SelectorParser
@@ -37,7 +38,7 @@ class DWCProcessor:
     def getMappingProperties(self) -> tuple[int, int, Path]:
         return self.mapID, self.customMapID, self.customMapPath
 
-    def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False, ignoreRemapErrors: bool = False, forceRetrieve: bool = False) -> Path:
+    def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> Path:
         outputFolderPath = self.outputDir / outputFolderName
         if outputFolderPath.exists() and not overwrite:
             Logger.info(f"{outputFolderPath} already exists, exiting...")
@@ -94,6 +95,10 @@ class DWCProcessor:
 
         with open(outputFolderPath / self.recordsFile, "w") as fp:
             fp.write(str(totalRows))
+
+        if zip:
+            Logger.info(f"Zipping {outputFolderPath}")
+            outputFolderPath = zp.compress(outputFolderPath)
 
         return outputFolderPath
 

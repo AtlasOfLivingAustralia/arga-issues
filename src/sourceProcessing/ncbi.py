@@ -5,7 +5,7 @@ from pathlib import Path
 from lib.tools.bigFileWriter import BigFileWriter
 import concurrent.futures
 from sourceProcessing.ncbiFlatfileParser import FlatFileParser
-from lib.tools.extractor import Extractor
+from lib.tools.zipping import RepeatExtractor
 from io import StringIO
 import json
 
@@ -113,14 +113,14 @@ def compileAssemblyStats(inputFolder: Path, outputFilePath: Path) -> None:
     writer.oneFile()
 
 def parseNucleotide(filePath: Path, outputFilePath: Path, verbose: bool = True) -> None:
-    extractor = Extractor(outputFilePath.parent)
+    extractor = RepeatExtractor(outputFilePath.parent)
     flatfileParser = FlatFileParser()
 
     records = []
     if verbose:
         print(f"Extracting file {filePath}")
     
-    extractedFile = extractor.run(filePath)
+    extractedFile = extractor.extract(filePath)
 
     if extractedFile is None:
         print("Failed to extract file, skipping")
