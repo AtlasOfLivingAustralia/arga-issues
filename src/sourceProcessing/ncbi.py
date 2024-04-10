@@ -4,7 +4,7 @@ import lib.dataframeFuncs as dff
 from pathlib import Path
 from lib.tools.bigFileWriter import BigFileWriter
 import concurrent.futures
-from sourceProcessing.ncbiFlatfileParser import FlatFileParser
+import sourceProcessing.ncbiFlatfileParser as ffp
 from lib.tools.zipping import RepeatExtractor
 from io import StringIO
 import json
@@ -114,28 +114,25 @@ def compileAssemblyStats(inputFolder: Path, outputFilePath: Path) -> None:
 
 def parseNucleotide(filePath: Path, outputFilePath: Path, verbose: bool = True) -> None:
     extractor = RepeatExtractor(outputFilePath.parent)
-    flatfileParser = FlatFileParser()
 
-    records = []
-    if verbose:
-        print(f"Extracting file {filePath}")
+    for idx, file in enumerate(rawFilesPath.iterdir(), start=1):
+        if verbose:
+            print(f"Extracting file {file.name}")
+        else:
+            print(f"Processing file: {idx}", end="\r")
     
     extractedFile = extractor.extract(filePath)
 
-    if extractedFile is None:
-        print("Failed to extract file, skipping")
-        return
+        if extractedFile is None:
+            print(f"Failed to extract file {file.name}, skipping")
+            continue
 
-    if verbose:
-        print(f"Parsing file {extractedFile}")
+        if verbose:
+            print(f"Parsing file {extractedFile}")
 
-    records = flatfileParser.parse(extractedFile, verbose)
-    df = pd.DataFrame.from_records(records)
-    df.to_parquet(outputFilePath, index=False)
+        df = ffp.parseFlatfile(extractedFile, verbose)
+        writer.writeDF(df)
 
-    extractedFile.unlink()
+        extractedFile.unlink()
 
-def compileNucleotide(folderPath: Path, outputFilePath: Path) -> None:
-    writer = BigFileWriter(outputFilePath, "seqChunks", "chunk")
-    writer.populateFromFolder(folderPath)
-    writer.oneFile(False)
+    writer.oneFile()
