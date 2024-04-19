@@ -35,6 +35,7 @@ datasources/*/*/data
 datasources/*/*/examples
 datasources/*/*/crawlerProgress
 datasources/*/*/*.json
+!datasources/*/*/config.json
 
 # Data Files #
 *.tsv
