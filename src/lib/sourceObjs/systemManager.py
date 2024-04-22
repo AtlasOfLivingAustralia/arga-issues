@@ -45,7 +45,7 @@ class SystemManager:
                     Logger.error(f"Invalid number provided: {number}")
 
         if len(files) <= 10: # Skip threadpool if only 1 file being processed
-            Logger.info("Creating files one at a time")
+            Logger.info("Running one task at a time")
 
             createdFile = False
             for idx, file in enumerate(files):
