@@ -13,6 +13,7 @@ class SystemManager:
         self.dwcProperties = dwcProperties
         self.authFileName = authFileName
         self.maxWorkers = maxWorkers
+        self.inlineLimit = 10
 
         self.user = ""
         self.password = ""
@@ -44,40 +45,53 @@ class SystemManager:
                 else:
                     Logger.error(f"Invalid number provided: {number}")
 
-        if len(files) <= 10: # Skip threadpool if only 1 file being processed
-            Logger.info("Running one task at a time")
+        if len(files) >= self.inlineLimit: # Parallel process large number of tasks
+            return self._createParallel(files, stage, overwrite, verbose, **kwargs) > 0
+        else:
+            return self._createInline(files, stage, overwrite, verbose, **kwargs) > 0
 
-            createdFile = False
-            for idx, file in enumerate(files):
-                success = file.create(stage, overwrite, verbose, **kwargs)
+    def _createInline(files: list[StageFile], stage: StageFileStep, overwrite: int, verbose: bool, **kwargs: dict) -> int:
+        Logger.info("Running one task at a time")
+        successCount = 0
+        fileCount = len(files)
 
-                if success:
-                    print(f"Created file: {idx} of {len(files)}", end="\r")
-                    createdFile = True
+        for idx, file in enumerate(files):
+            success = file.create(stage, overwrite, verbose, **kwargs)
 
-            return createdFile
+            if success:
+                Logger.info(f"Created file {idx}/{fileCount}: {file.filePath}")
+                successCount += 1
+            else:
+                Logger.warning(f"Failed to create file {idx}/{fileCount}: {file.filePath}")
 
+        return successCount
+
+    def _createParallel(files: list[StageFile], stage: StageFileStep, overwrite: int, verbose: bool, **kwargs: dict) -> int:
         Logger.info("Using concurrency for large quantity of tasks")
-        createdFile = False # Check if any new files were actually created
+        successCount = 0
+        fileCount = len(files)
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.maxWorkers) as executor:
             futures = (executor.submit(file.create, stage, overwrite, verbose, **kwargs) for file in files)
+
             try:
                 for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
                     success = future.result()
+                    print(f"Completion: {idx/fileCount:0.2f}%", end="\r")
 
                     if success:
-                        print(f"Created file: {idx} of {len(files)}", end="\r")
-                        createdFile = True
+                        successCount += 1
                     
             except KeyboardInterrupt:
                 Logger.info("\nExiting...")
                 executor.shutdown(cancel_futures=True)
-                return False
+                return 0
             
             print()
 
-        return createdFile
-
+        Logger.info(f"Successfully created {successCount}/{fileCount} files")
+        return successCount
+    
     def buildProcessingChain(self, processingSteps: list[dict], initialInputs: list[StageFile], finalStage: StageFileStep) -> None:
         inputs = initialInputs.copy()
         for idx, step in enumerate(processingSteps, start=1):
