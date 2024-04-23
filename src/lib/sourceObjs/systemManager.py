@@ -46,16 +46,17 @@ class SystemManager:
                     Logger.error(f"Invalid number provided: {number}")
 
         if len(files) >= self.inlineLimit: # Parallel process large number of tasks
+            Logger.info("Running tasks in parallel")
             return self._createParallel(files, stage, overwrite, verbose, **kwargs) > 0
         else:
+            Logger.info("Running one task at a time")
             return self._createInline(files, stage, overwrite, verbose, **kwargs) > 0
 
-    def _createInline(files: list[StageFile], stage: StageFileStep, overwrite: int, verbose: bool, **kwargs: dict) -> int:
-        Logger.info("Running one task at a time")
+    def _createInline(self, files: list[StageFile], stage: StageFileStep, overwrite: int, verbose: bool, **kwargs: dict) -> int:
         successCount = 0
         fileCount = len(files)
 
-        for idx, file in enumerate(files):
+        for idx, file in enumerate(files, start=1):
             success = file.create(stage, overwrite, verbose, **kwargs)
 
             if success:
@@ -66,8 +67,7 @@ class SystemManager:
 
         return successCount
 
-    def _createParallel(files: list[StageFile], stage: StageFileStep, overwrite: int, verbose: bool, **kwargs: dict) -> int:
-        Logger.info("Using concurrency for large quantity of tasks")
+    def _createParallel(self, files: list[StageFile], stage: StageFileStep, overwrite: int, verbose: bool, **kwargs: dict) -> int:
         successCount = 0
         fileCount = len(files)
 
