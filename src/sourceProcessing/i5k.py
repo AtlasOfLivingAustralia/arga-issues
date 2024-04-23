@@ -16,7 +16,11 @@ def _parseAnalysisRow(tableRow: ResultSet[any]) -> dict:
     program = columns[1].get_text()
     constructed = columns[2].get_text()
 
-    analysis = {"program": program, "date": constructed}
+    analysis = {
+        program: {
+            "date": constructed
+        }
+    }
 
     subSoup = _getSoup(subHref)
     subTable = subSoup.find("table")
@@ -38,13 +42,13 @@ def _parseAnalysisRow(tableRow: ResultSet[any]) -> dict:
                 except AttributeError:
                     sourceURI = source[1].get_text()
 
-            analysis["source"] = {
+            analysis[program]["source"] = {
                     "source name": sourceName,
                     "source uri": sourceURI
             }
             continue
 
-        analysis[subKey] = subValue.get_text().replace("\n", " ")
+        analysis[program][subKey] = subValue.get_text().replace("\n", " ")
 
     return analysis
 
@@ -52,13 +56,13 @@ def _parseOrganism(organismLink: ResultSet[any]) -> dict:
     name = organismLink.get_text()
     href = organismLink.get("href")
 
-    organism = {"name": name, "analysis": []}
+    organism = {"name": name, "analysis": {}}
 
     soup = _getSoup(href)
     for idx, table in enumerate(soup.find_all("tbody")): # Summary, Analysis, Assembly stats, Other information
         for row in table.find_all("tr"):
             if idx == 1: # Analysis handling
-                organism["analysis"].append(_parseAnalysisRow(row))
+                organism["analysis"] |= _parseAnalysisRow(row)
                 continue
 
             key = row.find("th")
@@ -66,10 +70,10 @@ def _parseOrganism(organismLink: ResultSet[any]) -> dict:
 
             if idx == 3: # Other information
                 if key.get_text() == "Links":
-                    organism["Links"] = [link.get("href") for link in value.find_all("a")]
+                    organism["Links"] = {link.get_text(): link.get("href") for link in value.find_all("a")}
                     continue
 
-            if key.get_text() in ("Resource Type", "Description", "Organism Image", "Image Credit"):
+            if key.get_text() in ("Resource Type", "Organism Image", "Image Credit"):
                 continue
 
             organism[key.get_text()] = value.get_text().replace("\n", " ")
