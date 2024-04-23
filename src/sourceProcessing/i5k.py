@@ -1,11 +1,11 @@
-from pathlib import Path
 import requests
-from bs4 import BeautifulSoup, ResultSet
 import pandas as pd
-
-baseURL = "https://i5k.nal.usda.gov"
+import concurrent.futures
+from pathlib import Path
+from bs4 import BeautifulSoup, ResultSet
 
 def _getSoup(suffix: str) -> BeautifulSoup:
+    baseURL = "https://i5k.nal.usda.gov"
     response = requests.get(baseURL + suffix)
     return BeautifulSoup(response.text, "html.parser")
 
@@ -30,7 +30,13 @@ def _parseAnalysisRow(tableRow: ResultSet[any]) -> dict:
         if subKey == "Data Source":
             source = subValue.find_all("dd")
             sourceName = source[0].get_text()
-            sourceURI = "" if len(source) == 1 else source[1].find("a").get("href")
+            sourceURI = ""
+
+            if len(source) > 1:
+                try:
+                    sourceURI = source[1].find("a").get("href")
+                except AttributeError:
+                    sourceURI = source[1].get_text()
 
             analysis["source"] = {
                     "source name": sourceName,
@@ -40,40 +46,55 @@ def _parseAnalysisRow(tableRow: ResultSet[any]) -> dict:
 
         analysis[subKey] = subValue.get_text().replace("\n", " ")
 
+    return analysis
+
+def _parseOrganism(organismLink: ResultSet[any]) -> dict:
+    name = organismLink.get_text()
+    href = organismLink.get("href")
+
+    organism = {"name": name, "analysis": []}
+
+    soup = _getSoup(href)
+    for idx, table in enumerate(soup.find_all("tbody")): # Summary, Analysis, Assembly stats, Other information
+        for row in table.find_all("tr"):
+            if idx == 1: # Analysis handling
+                organism["analysis"].append(_parseAnalysisRow(row))
+                continue
+
+            key = row.find("th")
+            value = row.find("td")
+
+            if idx == 3: # Other information
+                if key.get_text() == "Links":
+                    organism["Links"] = [link.get("href") for link in value.find_all("a")]
+                    continue
+
+            if key.get_text() in ("Resource Type", "Description", "Organism Image", "Image Credit"):
+                continue
+
+            organism[key.get_text()] = value.get_text().replace("\n", " ")
+
+    organism["analysis"] = organism.pop("analysis") # Move analysis to end of dict
+    return organism
+
 def retrieve(outputFilePath: Path) -> None:
     organisms = []
+    links = []
 
     for i in range(6):
-        print(f"Scraping page: {i+1}/6", end="\r")
-
         soup = _getSoup(f"/organisms?page={i}")
         table = soup.find("tbody")
-        for link in table.find_all("a"):
-            name = link.get_text()
-            href = link.get("href")
+        links.extend(table.find_all("a"))
 
-            organism = {"name": name, "analysis": []}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        futures = (executor.submit(_parseOrganism, link) for link in links)
+        try:
+            for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
+                print(f"Scraped organism: {idx}/{len(links)}", end="\r")
+                organisms.append(future.result())
 
-            soup = _getSoup(href)
-            for idx, table in enumerate(soup.find_all("tbody")): # Summary, Analysis, Assembly stats, Other information
-                for row in table.find_all("tr"):
-                    if idx == 1: # Analysis handling
-                        organism["analysis"].append(_parseAnalysisRow(row))
-                        continue
-
-                    key = row.find("th")
-                    value = row.find("td")
-
-                    if idx == 3: # Other information
-                        if key == "Links":
-                            organism["Links"] = [link.get("href") for link in value.find_all("a")]
-                            continue
-
-                    if key.get_text() in ("Resource Type", "Description", "Organism Image", "Image Credit"):
-                        continue
-
-                    organism[key.get_text()] = value.get_text().replace("\n", " ")
-
-            organisms.append(organism)
+        except KeyboardInterrupt:
+            executor.shutdown(cancel_futures=True)
+            exit()
     
     pd.DataFrame.from_records(organisms).to_csv(outputFilePath, index=False)
