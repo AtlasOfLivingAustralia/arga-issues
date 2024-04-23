@@ -1,0 +1,13 @@
+{
+    "dbType": "script",
+    "script": {
+        "path": "sourceProcessing/i5k.py",
+        "function": "retrieve",
+        "args": [
+            "{PATH, DOWNLOAD, i5k.csv}"
+        ],
+        "outputs": [
+            "{PATH, DOWNLOAD, i5k.csv}"
+        ]
+    }
+}
