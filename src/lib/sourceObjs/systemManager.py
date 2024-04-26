@@ -77,7 +77,7 @@ class SystemManager:
             try:
                 for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
                     success = future.result()
-                    print(f"Completion: {idx/fileCount:0.2f}%", end="\r")
+                    print(f"Completion: {(idx/fileCount)*100:0.2f}%", end="\r")
 
                     if success:
                         successCount += 1
