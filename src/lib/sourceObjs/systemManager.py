@@ -7,13 +7,14 @@ import concurrent.futures
 from lib.tools.logger import Logger
 
 class SystemManager:
-    def __init__(self, location: str, rootDir: Path, dwcProperties: dict, authFileName: str = "", maxWorkers: int = 100):
+    def __init__(self, location: str, rootDir: Path, dwcProperties: dict, authFileName: str = "", maxWorkers: int = 20):
         self.location = location
         self.rootDir = rootDir
         self.dwcProperties = dwcProperties
         self.authFileName = authFileName
         self.maxWorkers = maxWorkers
         self.inlineLimit = 10
+        self.timeout = 5
 
         self.user = ""
         self.password = ""
@@ -76,8 +77,8 @@ class SystemManager:
 
             try:
                 for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
-                    success = future.result()
-                    print(f"Completion: {idx/fileCount:0.2f}%", end="\r")
+                    success = future.result(self.timeout)
+                    print(f"Completion: {(idx/fileCount)*100:0.2f}%", end="\r")
 
                     if success:
                         successCount += 1
