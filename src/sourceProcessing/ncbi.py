@@ -82,18 +82,6 @@ def compileAssemblyStats(inputFolder: Path, outputFilePath: Path) -> None:
     writer = BigFileWriter(outputFilePath, "assemblySections", "section")
 
     records = []
-    # for idx, file in enumerate(inputFolder.iterdir(), start=1):
-    #     print(f"At entry: {idx}", end="\r")
-
-    #     result = parseStats(file)
-    #     if not result:
-    #         continue
-
-    #     records.append(result)
-
-    #     if len(records) >= 100000:
-    #         writer.writeDF(pd.DataFrame.from_records(records))
-    #         records.clear()
     with concurrent.futures.ProcessPoolExecutor(max_workers=20) as executor:
         futures = (executor.submit(parseStats, filePath) for filePath in inputFolder.iterdir())
         for idx, future in enumerate(concurrent.futures.as_completed(futures), start=1):
@@ -114,14 +102,15 @@ def compileAssemblyStats(inputFolder: Path, outputFilePath: Path) -> None:
 
 def parseNucleotide(filePath: Path, outputFilePath: Path, verbose: bool = True) -> None:
     extractor = RepeatExtractor(outputFilePath.parent)
+    writer = BigFileWriter(outputFilePath, "seqChunks", "chunk")
 
-    for idx, file in enumerate(rawFilesPath.iterdir(), start=1):
+    for idx, file in enumerate(filePath.iterdir(), start=1):
         if verbose:
             print(f"Extracting file {file.name}")
         else:
             print(f"Processing file: {idx}", end="\r")
     
-    extractedFile = extractor.extract(filePath)
+        extractedFile = extractor.extract(filePath)
 
         if extractedFile is None:
             print(f"Failed to extract file {file.name}, skipping")
@@ -132,7 +121,6 @@ def parseNucleotide(filePath: Path, outputFilePath: Path, verbose: bool = True) 
 
         df = ffp.parseFlatfile(extractedFile, verbose)
         writer.writeDF(df)
-
         extractedFile.unlink()
 
     writer.oneFile()
