@@ -5,7 +5,7 @@ from lib.processing.dwcProcessing import DWCProcessor
 import lib.processing.processingFuncs as pFuncs
 import lib.commonFuncs as cmn
 from lib.tools.logger import Logger
-from lib.processing.stageFile import StageFile, StageFileStep
+from lib.processing.stages import StageFile, StageFileStep
 
 if TYPE_CHECKING:
     from lib.processing.parser import SelectorParser

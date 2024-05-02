@@ -4,7 +4,7 @@ from pathlib import Path
 from enum import Enum
 
 if TYPE_CHECKING:
-    from lib.processing.stageFile import StageFile
+    from lib.processing.stages import File
 
 class StageFileProperty(Enum):
     DIRECTORY = "DIRECTORY"
@@ -15,21 +15,19 @@ class PathProperty(Enum):
     STEM   = "STEM"
 
 class SelectorParser:
-    def __init__(self, rootDir: Path):
+    def __init__(self, rootDir: Path, dataDir: Path, downloadDir: Path, processingDir: Path, convertedDir: Path):
         self.rootDir = rootDir
-        self.dataDir = self.rootDir / "data"
-        self.downloadDir = self.dataDir / "raw"
-        self.processingDir = self.dataDir / "processing"
-        self.preDwcDir = self.dataDir / "preConversion"
-        self.dwcDir = self.dataDir / "dwc"
+        self.dataDir = dataDir
+        self.downloadDir = downloadDir
+        self.processingDir = processingDir
+        self.convertedDir = convertedDir
 
         self.mapping = {
             "ROOT": self.rootDir,
             "DATA": self.dataDir,
             "DOWNLOAD": self.downloadDir,
             "PROCESSING": self.processingDir,
-            "PREDWC": self.preDwcDir,
-            "DWC": self.dwcDir
+            "CONVERTED": self.convertedDir
         }
 
     def parseArg(self, arg: str, inputs: list[StageFile]) -> [StageFile | Path]:

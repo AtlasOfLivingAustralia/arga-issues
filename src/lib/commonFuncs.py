@@ -96,7 +96,7 @@ def dictListToCSV(dictList: list, columns: list, filePath: str) -> None:
         for d in dictList:
             writer.writerow(d)
 
-def downloadFile(url: str, filePath: str, user: str = "", chunkSize: int = 1024*64, password: str = "", verbose: bool = True) -> Path:
+def downloadFile(url: str, filePath: str, chunkSize: int = 1024*64, user: str = "", password: str = "", verbose: bool = True) -> Path:
     auth = HTTPBasicAuth(user, password) if user else None
 
     if verbose:

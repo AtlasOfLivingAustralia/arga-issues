@@ -1,5 +1,5 @@
-from lib.sourceObjs.argParseWrapper import SourceArgParser
-from lib.processing.stageFile import StageFileStep
+from lib.data.argParser import SourceArgParser
+from lib.processing.stages import StageFileStep
 
 if __name__ == '__main__':
     parser = SourceArgParser(description="Download source data")

@@ -1,4 +1,4 @@
-from lib.sourceObjs.sourceDatabase import Database, SpecificDB, LocationDB, ScriptDB
+from lib.data.database import Database, SpecificDB, LocationDB, ScriptDB
 import json
 
 class SourceLocation:

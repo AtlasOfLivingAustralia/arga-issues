@@ -1,8 +1,8 @@
 import argparse
 from lib.sourceManager import SourceManager
-from lib.sourceObjs.sourceDatabase import Database
+from lib.data.database import Database
 
-class SourceArgParser:
+class ArgParser:
     def __init__(self, description=""):
         self.parser = argparse.ArgumentParser(description=description)
         self.manager = SourceManager()

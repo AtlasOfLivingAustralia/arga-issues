@@ -1,6 +1,6 @@
 import lib.config as cfg
-from lib.sourceObjs.sourceLocation import SourceLocation
-from lib.sourceObjs.sourceDatabase import Database
+from lib.data.location import SourceLocation
+from lib.data.database import Database
 
 class SourceManager:
     

@@ -1,7 +1,7 @@
 import pandas as pd
 import json
-from lib.sourceObjs.argParseWrapper import SourceArgParser
-from lib.processing.stageFile import StageFile, StageFileStep
+from lib.data.argParser import SourceArgParser
+from lib.processing.stages import StageFile, StageFileStep
 from lib.processing.mapping import Remapper, MapManager
 import random
 from lib.tools.logger import Logger

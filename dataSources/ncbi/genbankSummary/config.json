@@ -1,16 +1,18 @@
 {
-    "dbType": "specific",
-    "files" : [
-        {
-            "url": "https://ftp.ncbi.nih.gov/genomes/genbank/assembly_summary_genbank.txt",
-            "downloadedFile": "assembly_summary_genbank.tsv",
-            "fileProperties": {
-                "separator": "\t",
-                "firstrow": 1
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://ftp.ncbi.nih.gov/genomes/genbank/assembly_summary_genbank.txt",
+                "name": "assembly_summary_genbank.tsv",
+                "properties": {
+                    "separator": "\t",
+                    "firstrow": 1
+                }
             }
-        }
-    ],
-    "dwcProperties": {
+        ]
+    },
+    "conversion": {
         "mapID": 1632006425
     }
 }

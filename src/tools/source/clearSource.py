@@ -1,4 +1,4 @@
-from lib.sourceObjs.argParseWrapper import SourceArgParser
+from lib.data.argParser import SourceArgParser
 import lib.commonFuncs as cmn
 from lib.tools.logger import Logger
 

@@ -10,28 +10,26 @@ from lib.processing.parser import SelectorParser
 from lib.tools.logger import Logger
 import gc
 
-class DWCProcessor:
-    def __init__(self, location: str, dwcProperties: dict, parser: SelectorParser):
+class ConversionManager:
+    def __init__(self, converionDir: Path, properties: dict, location: str):
+        self.conversionDir = converionDir
         self.location = location
-        self.dwcProperties = dwcProperties
-        self.parser = parser
-        self.outputDir = self.parser.dwcDir
+
         self.recordsFile = "records.txt"
 
-        self.mapID = dwcProperties.pop("mapID", -1)
+        self.mapID = properties.pop("mapID", -1)
+        self.augments = properties.pop("augment", [])
+        self.chunkSize = properties.pop("chunkSize", 1024)
+        self.setNA = properties.pop("setNA", [])
+        self.fillNA = ColumnFiller(properties.pop("fillNA", {}))
+        self.skipRemap = properties.pop("skipRemap", [])
+        self.preserveDwC = properties.pop("preserveDwC", False)
+        self.prefixUnmapped = properties.pop("prefixUnmapped", True)
 
-        self.augments = dwcProperties.pop("augment", [])
-        self.chunkSize = dwcProperties.pop("chunkSize", 1024)
-        self.setNA = dwcProperties.pop("setNA", [])
-        self.fillNA = ColumnFiller(dwcProperties.pop("fillNA", {}))
-        self.skipRemap = dwcProperties.pop("skipRemap", [])
-        self.preserveDwC = dwcProperties.pop("preserveDwC", False)
-        self.prefixUnmapped = dwcProperties.pop("prefixUnmapped", True)
+        self.customMapID = properties.pop("customMapID", -1)
+        self.customMapPath = self.parser.parseArg(properties.pop("customMapPath", None), [])
 
-        self.customMapID = dwcProperties.pop("customMapID", -1)
-        self.customMapPath = self.parser.parseArg(dwcProperties.pop("customMapPath", None), [])
-
-        self.augmentSteps = [DWCAugment(augProperties) for augProperties in self.augments]
+        self.augmentSteps = [Augment(augProperties) for augProperties in self.augments]
 
         self.mapManager = MapManager(self.parser.rootDir)
 
@@ -132,7 +130,7 @@ class ColumnFiller:
 
         return df
 
-class DWCAugment:
+class Augment:
     def __init__(self, augmentProperties: list[dict]):
         self.augmentProperties = augmentProperties.copy()
 
