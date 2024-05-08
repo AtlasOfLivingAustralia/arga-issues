@@ -1,27 +1,24 @@
 import lib.config as cfg
-from pathlib import Path
 from enum import Enum
-
-from lib.tools.crawler import Crawler
-from lib.tools.logger import Logger
 
 from lib.systemManagers.timeManager import TimeManager
 from lib.systemManagers.downloadManager import DownloadManager
 from lib.systemManagers.processingManager import ProcessingManager
 from lib.systemManagers.conversionManager import ConversionManager
 
-from lib.processing.parser import SelectorParser
-from lib.processing.stages import File, Step
+from lib.processing.stages import Step
+
+from lib.tools.crawler import Crawler
+from lib.tools.logger import Logger
 
 class Retrieve(Enum):
-    UNKNWON = -1
     URL     = 0
     CRAWL   = 1
     SCRIPT  = 2
 
 class Database:
 
-    retrieveType = Retrieve.UNKNWON
+    retrieveType = Retrieve.URL
 
     def __init__(self, location: str, database: str, config: dict = {}):
         self.location = location
@@ -46,8 +43,6 @@ class Database:
         self.processingDir = self.database / "processing"
         self.convertedDir = self.database / "converted"
 
-        self.parser = SelectorParser(self.database, self.dataDir, self.downloadDir, self.processingDir, self.convertedDir)
-
         # System Managers
         self.downloadManager = DownloadManager(self.downloadDir, self.authFile)
         self.processingManager = ProcessingManager(self.processingDir)
@@ -68,35 +63,6 @@ class Database:
             Logger.debug(f"{self.location}-{self.database} unknown config item: {property}")
 
     def _prepareDownload(self, overwrite: bool = False) -> None:
-        raise NotImplementedError
-    
-    def _prepareProcessing(self, overwrite: bool = False) -> None:
-        raise NotImplementedError
-    
-    def _prepareConversion(self, overwrite: bool = False) -> None:
-        raise NotImplementedError
-
-    def prepare(self, step: Step, overwrite: bool = False) -> None:
-        self._prepareDownload(overwrite)
-
-        if step == Step.DOWNLOAD:
-            return
-        
-        self._prepareProcessing(overwrite)
-
-        if step == Step.PROCESSING:
-            return
-        
-        self._prepareConversion(overwrite)
-
-    def execute(self, step: Step) -> None:
-        raise NotImplementedError
-
-class UrlDB(Database):
-
-    retrieveType = Retrieve.URL
-
-    def _prepareDownload(self, overwrite: bool = False) -> None:
         files: list[dict] = self.downloadConfig.pop("files", [])
 
         for file in files:
@@ -111,6 +77,49 @@ class UrlDB(Database):
                 raise Exception("No filename provided to download to") from AttributeError
             
             self.downloadManager.registerFromURL(url, name, properties)
+    
+    def _prepareProcessing(self, overwrite: bool = False) -> None:
+        specificProcessing: dict[int, list[dict]] = self.processingConfig.pop("specific")
+        perFileProcessing: list[dict] = self.processingConfig.pop("perFile")
+        finalProcessing: list[dict] = self.processingConfig.pop("final")
+
+        for idx, file in enumerate(self.downloadManager.getFiles()):
+            tree = self.processingManager.registerFile(file)
+            if idx in specificProcessing:
+                self.processingManager.addProcessing(tree, specificProcessing[idx])
+
+        self.processingManager.addAllProcessing(perFileProcessing)
+        self.processingManager.addAllProcessing(finalProcessing)
+    
+    def _prepareConversion(self, overwrite: bool = False) -> None:
+        for file in self.processingManager.getLatestNodes():
+            self.conversionManager.addFile(file, self.conversionConfig, self.databaseDir)
+
+    def prepare(self, step: Step, overwrite: bool = False) -> None:
+        self._prepareDownload(overwrite)
+
+        if step == Step.DOWNLOAD:
+            return
+        
+        self._prepareProcessing(overwrite)
+
+        if step == Step.PROCESSING:
+            return
+        
+        self._prepareConversion(overwrite)
+
+    def execute(self, step: Step, overwrite: bool = False) -> None:
+        self.downloadManager.download(overwrite)
+
+        if step == Step.DOWNLOAD:
+            return
+        
+        self.processingManager.process(overwrite)
+        
+        if step == Step.PROCESSING:
+            return
+        
+        self.conversionManager.convert(overwrite)
 
 class CrawlDB(Database):
 

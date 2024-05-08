@@ -10,11 +10,23 @@ class _Node:
     def attachBranch(self, branch: '_Branch'):
         self.lowerBranch = branch
 
+    def runBranch(self, overwrite: bool = False):
+        if self.lowerBranch is not None:
+            self.lowerBranch.execute(overwrite)
+
 class _Branch:
     def __init__(self, script: Script, parents: list[_Node]):
         self.script = script
         self.parentNodes = parents
-        self.childrenNodes = [_Node(file, self) for file in script.outputs]
+        self.childrenNodes = [_Node(file, self) for file in script.getOutputs()]
+
+    def execute(self, overwrite: bool = False, chain: bool = True):
+        self.script.run(overwrite)
+        if not chain:
+            return
+        
+        for node in self.childrenNodes:
+            node.runBranch(overwrite)
 
 class ProcessingTree:
     def __init__(self, rootNode: _Node):
@@ -32,7 +44,20 @@ class ProcessingTree:
 class ProcessingManager():
     def __init__(self, processingDir: Path):
         self.processingDir = processingDir
-        self.trees = []
+        self.trees: list[ProcessingTree] = []
+
+    def process(self, overwrite: bool = False, verbose: bool = False) -> None:
+        for tree in self.trees:
+            tree.root.runBranch(overwrite)
+
+    def getLatestNodes(self) -> list[File]:
+        nodes: list[_Node] = []
+        for tree in self.trees:
+            for node in tree.lowestNodes:
+                if node not in nodes:
+                    nodes.append(node)
+
+        return [node.file for node in nodes]
 
     def registerFile(self, file: File) -> ProcessingTree:
         node = _Node(file)
@@ -45,10 +70,6 @@ class ProcessingManager():
             script = Script(step, self.processingDir)
             tree.extend(script)
 
-    def addPerFileProcessing(self, processingSteps: list[dict]):
+    def addAllProcessing(self, processingSteps: list[dict]):
         for tree in self.trees:
             self.addProcessing(tree, processingSteps)
-
-    def addFinalProcessing(self, processingSteps):
-        for step in processingSteps:
-            pass

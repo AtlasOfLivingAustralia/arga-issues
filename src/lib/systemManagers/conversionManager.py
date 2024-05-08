@@ -6,45 +6,43 @@ import lib.processing.processingFuncs as pFuncs
 import lib.tools.zipping as zp
 from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.mapping import Remapper, Event, MapManager
-from lib.processing.parser import SelectorParser
+from lib.processing.stages import File
 from lib.tools.logger import Logger
 import gc
 
 class ConversionManager:
-    def __init__(self, converionDir: Path, properties: dict, location: str):
+    def __init__(self, converionDir: Path, location: str):
         self.conversionDir = converionDir
         self.location = location
 
         self.recordsFile = "records.txt"
 
+    def addFile(self, file: File, properties: dict, mapDir: Path) -> None:
+        self.preConversionFile = file
+        self.outputFolderPath = self.conversionDir / f"{file.filePath.stem}-converted"
+
         self.mapID = properties.pop("mapID", -1)
-        self.augments = properties.pop("augment", [])
+        self.customMapID = properties.pop("customMapID", -1)
+        self.customMapPath = self.parser.parseArg(properties.pop("customMapPath", None), [])
+
         self.chunkSize = properties.pop("chunkSize", 1024)
         self.setNA = properties.pop("setNA", [])
         self.fillNA = ColumnFiller(properties.pop("fillNA", {}))
         self.skipRemap = properties.pop("skipRemap", [])
         self.preserveDwC = properties.pop("preserveDwC", False)
         self.prefixUnmapped = properties.pop("prefixUnmapped", True)
+        self.augments = [Augment(augProperties) for augProperties in properties.pop("augment", [])]
 
-        self.customMapID = properties.pop("customMapID", -1)
-        self.customMapPath = self.parser.parseArg(properties.pop("customMapPath", None), [])
+        self.mapManager = MapManager(mapDir)
 
-        self.augmentSteps = [Augment(augProperties) for augProperties in self.augments]
-
-        self.mapManager = MapManager(self.parser.rootDir)
-
-    def getMappingProperties(self) -> tuple[int, int, Path]:
-        return self.mapID, self.customMapID, self.customMapPath
-
-    def process(self, inputPath: Path, outputFolderName: str, sep: str = ",", header: int = 0, encoding: str = "utf-8", overwrite: bool = False, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> Path:
-        outputFolderPath = self.outputDir / outputFolderName
-        if outputFolderPath.exists() and not overwrite:
+    def convert(self, overwrite: bool = False, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> Path:
+        if self.outputFolderPath.exists() and not overwrite:
             Logger.info(f"{outputFolderPath} already exists, exiting...")
             return
         
         # Get columns and create mappings
         Logger.info("Getting column mappings")
-        columns = cmn.getColumns(inputPath, sep, header)
+        columns = cmn.getColumns(self.file.filePath, self.file.separator, self.file.firstRow)
 
         maps = self.mapManager.loadMaps(self.mapID, self.customMapID, self.customMapPath, forceRetrieve)
         if not maps:
@@ -70,8 +68,9 @@ class ConversionManager:
             writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
         totalRows = 0
-        Logger.info("Processing chunks for DwC conversion")
-        for idx, df in enumerate(cmn.chunkGenerator(inputPath, self.chunkSize, sep, header, encoding), start=1):
+        Logger.info("Processing chunks for conversion")
+        chunks = cmn.chunkGenerator(self.preConversionFile.filePath, self.chunkSize, self.file.separator, self.file.firstRow, self.file.encoding)
+        for idx, df in enumerate(chunks, start=1):
             print(f"At chunk: {idx}", end='\r')
 
             df = remapper.applyTranslation(df, translationTable) # Returns a multi-index dataframe

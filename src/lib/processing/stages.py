@@ -1,15 +1,11 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
-from pathlib import Path
-from enum import Enum
 import pandas as pd
 import lib.commonFuncs as cmn
+import lib.processing.processingFuncs as pFuncs
+from pathlib import Path
+from enum import Enum
 from collections.abc import Iterator
 from lib.tools.logger import Logger
-import lib.processing.processingFuncs as pFuncs
-
-if TYPE_CHECKING:
-    from lib.processing.stageScript import StageScript, StageDWCConversion
+from lib.processing.parser import Parser
 
 class Step(Enum):
     DOWNLOAD   = 0
@@ -67,6 +63,7 @@ class StackedFile(File):
 
 class Script:
     def __init__(self, scriptInfo: dict, outputDir: Path):
+        self.outputDir = outputDir
         scriptInfo = scriptInfo.copy()
         
         self.path = scriptInfo.pop("path", None)
@@ -74,6 +71,7 @@ class Script:
         self.args = scriptInfo.pop("args", [])
         self.kwargs = scriptInfo.pop("kwargs", {})
         self.outputs = scriptInfo.pop("outputs", [])
+        self.outputStructure = scriptInfo.pop("outputStructure", "")
         self.outputProperties = scriptInfo.pop("outputProperties", {})
 
         if self.path is None:
@@ -82,11 +80,19 @@ class Script:
         if self.function is None:
             raise Exception("No script function specified") from AttributeError
 
-        self.outputs: list[File] = [File(outputDir / output, {}) for output in self.outputs]
         self.scriptRun = False
 
         for parameter in scriptInfo:
             Logger.debug(f"Unknown step parameter: {parameter}")
+
+    def getOutputs(self, inputs: list[File] = []) -> list[File]:
+        if self.outputs:
+            return [File(self.outputDir / output, {}) for output in self.outputs]
+        
+        if self.outputStructure:
+            return [File(self.outputDir / output, {}) for output in Parser().parse(self.outputStructure, inputs)]
+        
+        return []
 
     def run(self, overwrite: bool = False, verbose: bool = False, **kwargs: dict):
         if self.scriptRun:
@@ -96,7 +102,7 @@ class Script:
             Logger.info(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
             return
         
-        for output in self.outputs:
+        for output in self.getOutputs():
             output.delete()
         
         if verbose:
@@ -112,7 +118,7 @@ class Script:
         processFunction = pFuncs.importFunction(self.path, self.function)
         output = processFunction(*self.args, **self.kwargs)
 
-        for outputFile in self.outputs:
+        for outputFile in self.getOutputs():
             if not outputFile.exists():
                 Logger.warning(f"Output {outputFile} was not created")
 
