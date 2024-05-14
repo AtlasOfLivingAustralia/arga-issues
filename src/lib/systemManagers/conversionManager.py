@@ -6,7 +6,7 @@ import lib.processing.processingFuncs as pFuncs
 import lib.tools.zipping as zp
 from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.mapping import Remapper, Event, MapManager
-from lib.processing.stages import File
+from lib.processing.stages import File, StackedFile
 from lib.tools.logger import Logger
 import gc
 
@@ -19,7 +19,7 @@ class ConversionManager:
 
     def addFile(self, file: File, properties: dict, mapDir: Path) -> None:
         self.file = file
-        self.outputFolderPath = self.conversionDir / f"{file.filePath.stem}-converted"
+        self.output = StackedFile(self.conversionDir / f"{file.filePath.stem}-converted")
 
         self.mapID = properties.pop("mapID", -1)
         self.customMapID = properties.pop("customMapID", -1)
@@ -36,8 +36,8 @@ class ConversionManager:
         self.mapManager = MapManager(mapDir)
 
     def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> Path:
-        if self.outputFolderPath.exists() and not overwrite:
-            Logger.info(f"{self.outputFolderPath} already exists, exiting...")
+        if self.output.filePath.exists() and not overwrite:
+            Logger.info(f"{self.output.filePath} already exists, exiting...")
             return
         
         # Get columns and create mappings
@@ -65,7 +65,7 @@ class ConversionManager:
         writers: dict[str, BigFileWriter] = {}
         for event in translationTable.getEventCategories():
             cleanedName = event.value.lower().replace(" ", "_")
-            writers[event] = BigFileWriter(self.outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
+            writers[event] = BigFileWriter(self.output.filePath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
         totalRows = 0
         Logger.info("Processing chunks for conversion")
@@ -91,14 +91,14 @@ class ConversionManager:
         for writer in writers.values():
             writer.oneFile()
 
-        with open(self.outputFolderPath / self.recordsFile, "w") as fp:
+        with open(self.output.filePath / self.recordsFile, "w") as fp:
             fp.write(str(totalRows))
 
         if not zip:
-            return self.outputFolderPath
+            return self.output.filePath
         
-        Logger.info(f"Zipping {self.outputFolderPath}")
-        return zp.compress(self.outputFolderPath)
+        Logger.info(f"Zipping {self.output.filePath}")
+        return zp.compress(self.output.filePath)
 
     def applyAugments(self, df: pd.DataFrame) -> pd.DataFrame:
         for augment in self.augments:

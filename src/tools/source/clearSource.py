@@ -1,9 +1,9 @@
-from lib.data.argParser import SourceArgParser
+from lib.data.argParser import ArgParser
 import lib.commonFuncs as cmn
 from lib.tools.logger import Logger
 
 if __name__ == '__main__':
-    parser = SourceArgParser(description="Clean up source to save space")
+    parser = ArgParser(description="Clean up source to save space")
     parser.add_argument("-r", "--raw", action="store_true", help="Clear raw/downloaded files too")
 
     sources, _, _, args = parser.parse_args()

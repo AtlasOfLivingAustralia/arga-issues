@@ -39,8 +39,8 @@ class File:
         return cmn.getColumns(self.filePath, self.separator, self.firstRow)
 
 class StackedFile(File):
-    def __init__(self, filePath: Path, fileProperties: dict):
-        super().__init__(filePath, fileProperties)
+    def __init__(self, filePath: Path):
+        super().__init__(filePath, {})
 
     def delete(self) -> None:
         cmn.clearFolder(self.filePath, True)

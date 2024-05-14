@@ -1,10 +1,10 @@
-from lib.data.argParser import SourceArgParser
-from lib.processing.stages import StageFileStep
+from lib.data.argParser import ArgParser
+from lib.processing.stages import Step
 from lib.processing.mapping import Event
 from lib.tools.logger import Logger
 
 if __name__ == '__main__':
-    parser = SourceArgParser(description="View portion of DWC file")
+    parser = ArgParser(description="View portion of DWC file")
     parser.add_argument("-e", "--entries", type=int, default=100, help="Amount of entries to view")
     parser.add_argument("-t", "--tsv", action="store_true", help="Output file as TSV instead")
     columnGroup = parser.add_mutually_exclusive_group()
@@ -16,29 +16,29 @@ if __name__ == '__main__':
     delim = "\t" if args.tsv else ","
 
     for source in sources:
-        source.prepareStage(StageFileStep.DWC)
-        dwcFiles = source.getDWCFiles(selectedFiles)
-        for file in dwcFiles:
-            if not file.filePath.exists():
-                print(f"DwC file {file.filePath} does not exist, have you run dwcCreate.py?")
+        source._prepare(Step.CONVERSION)
+        dwcFile = source.conversionManager.output
+
+        if not dwcFile.filePath.exists():
+            print(f"DwC file {dwcFile.filePath} does not exist, have you run dwcCreate.py?")
+            continue
+
+        df = next(dwcFile.loadDataFrameIterator(args.entries))
+        folderName = dwcFile.filePath.name
+        if args.mapped:
+            folderName += "_mapped"
+        elif args.unmapped:
+            folderName += "_unmapped"
+        folderName += "_example"
+
+        folderPath = source.getBaseDir() / "examples" / folderName
+        folderPath.mkdir(exist_ok=True)
+
+        for event in df.columns.levels[0]:
+            if (args.mapped and event == Event.UNMAPPED.value) or (args.unmapped and event != Event.UNMAPPED.value):
                 continue
 
-            df = next(file.loadDataFrameIterator(args.entries))
-            folderName = file.filePath.name
-            if args.mapped:
-                folderName += "_mapped"
-            elif args.unmapped:
-                folderName += "_unmapped"
-            folderName += "_example"
+            fileName = f"{event}{suffix}"
+            df[event].to_csv(folderPath / fileName, sep=delim, index=False)
 
-            folderPath = source.getBaseDir() / "examples" / folderName
-            folderPath.mkdir(exist_ok=True)
-
-            for event in df.columns.levels[0]:
-                if (args.mapped and event == Event.UNMAPPED.value) or (args.unmapped and event != Event.UNMAPPED.value):
-                    continue
-
-                fileName = f"{event}{suffix}"
-                df[event].to_csv(folderPath / fileName, sep=delim, index=False)
-
-            Logger.info(f"Created folder: {folderPath}")
+        Logger.info(f"Created folder: {folderPath}")

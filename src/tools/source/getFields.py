@@ -1,12 +1,12 @@
 import pandas as pd
 import json
-from lib.data.argParser import SourceArgParser
-from lib.processing.stages import StageFile, StageFileStep
+from lib.data.argParser import ArgParser
+from lib.processing.stages import File, Step
 from lib.processing.mapping import Remapper, MapManager
 import random
 from lib.tools.logger import Logger
 
-def _collectFields(stageFile: StageFile, entryLimit: int, chunkSize: int, seed: int, offset: int = 0, rows: int = None) -> dict[str, pd.Series]:
+def _collectFields(stageFile: File, entryLimit: int, chunkSize: int, seed: int, offset: int = 0, rows: int = None) -> dict[str, pd.Series]:
     for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize, offset, rows), start=1):
         print(f"Scanning chunk: {idx}", end='\r')
         sample = chunk.apply(lambda x: x.dropna().drop_duplicates())
@@ -20,7 +20,7 @@ def _collectFields(stageFile: StageFile, entryLimit: int, chunkSize: int, seed: 
 
     return {column: df[column].dropna().tolist() for column in df.columns}
 
-def _collectRecords(stageFile: StageFile, entryLimit: int, chunkSize: int, seed: int, offset: int = 0, rows: int = None) -> dict[str, pd.Series]:
+def _collectRecords(stageFile: File, entryLimit: int, chunkSize: int, seed: int, offset: int = 0, rows: int = None) -> dict[str, pd.Series]:
     for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize, offset, rows), start=1):
         print(f"Scanning chunk: {idx}", end='\r')
         sample = chunk.sample(n=entryLimit, random_state=seed)
@@ -37,7 +37,7 @@ def _collectRecords(stageFile: StageFile, entryLimit: int, chunkSize: int, seed:
     return {column: df[column].tolist() for column in df.columns}
 
 if __name__ == '__main__':
-    parser = SourceArgParser(description="Get column names of preDwc files")
+    parser = ArgParser(description="Get column names of preDwc files")
     parser.add_argument('-e', '--entries', type=int, default=50, help="Number of unique entries to get")
     parser.add_argument('-t', '--tsv', action="store_true", help="Output as tsv instead")
     parser.add_argument('-u', '--uniques', action="store_true", help="Find unique values only, ignoring record")
@@ -46,17 +46,17 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--firstrow', type=int, default=0, help="First row offset for reading data")
     parser.add_argument('-r', '--rows', type=int, help="Maximum amount of rows to read from file")
 
-    sources, selectedFiles, overwrite, args = parser.parse_args()
+    sources, overwrite, verbose, args = parser.parse_args()
     entryLimit = args.entries
 
     for source in sources:
-        outputDir = source.getBaseDir() / "examples"
+        outputDir = source.databaseDir / "examples"
         if not outputDir.exists():
             outputDir.mkdir()
 
         extension = "tsv" if args.tsv else "json"
-        source.prepareStage(StageFileStep.PRE_DWC)
-        stageFile = source.getPreDWCFiles(selectedFiles)[0] # Should be singular stage file before DwC
+        source._prepare(Step.CONVERSION)
+        stageFile = source.processingManager.getLatestNodes()[0] # Should be singular stage file before DwC
 
         if not stageFile.filePath.exists():
             print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")

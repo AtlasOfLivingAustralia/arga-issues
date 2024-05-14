@@ -15,7 +15,7 @@ class ArgParser:
     def add_argument(self, *args, **kwargs) -> None:
         self.parser.add_argument(*args, **kwargs)
 
-    def parse_args(self, *args, **kwargs) -> tuple[list[Database], tuple[bool, bool], argparse.Namespace]:
+    def parse_args(self, *args, **kwargs) -> tuple[list[Database], tuple[bool, bool], bool, argparse.Namespace]:
         parsedArgs = self.parser.parse_args(*args, **kwargs)
 
         sources = self.manager.getDB(self._extract(parsedArgs, "sources"))
