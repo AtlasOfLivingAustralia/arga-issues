@@ -1,7 +1,5 @@
 import csv
 import json
-import requests
-from requests.auth import HTTPBasicAuth
 import pandas as pd
 from typing import Generator
 from lib.tools.logger import Logger
@@ -95,21 +93,6 @@ def dictListToCSV(dictList: list, columns: list, filePath: str) -> None:
 
         for d in dictList:
             writer.writerow(d)
-
-def downloadFile(url: str, filePath: str, chunkSize: int = 1024*64, user: str = "", password: str = "", verbose: bool = True) -> Path:
-    auth = HTTPBasicAuth(user, password) if user else None
-
-    if verbose:
-        Logger.info(f"Downloading from {url} to file {filePath}")
-    
-    with requests.get(url, stream=True, auth=auth) as stream:
-        stream.raise_for_status()
-
-        with open(filePath, "wb") as fp:
-            for chunk in stream.iter_content(chunkSize):
-                fp.write(chunk)
-
-    return Path(filePath)
 
 def clearFolder(folderPath: Path, delete: bool = False) -> None:
     for item in folderPath.iterdir():

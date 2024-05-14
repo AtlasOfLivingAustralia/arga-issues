@@ -1,5 +1,5 @@
 from datetime import datetime
-from lib.processing.stages import StageFileStep
+from lib.processing.stages import Step
 import json
 from pathlib import Path
 
@@ -14,7 +14,7 @@ class TimeManager:
         with open(self.timeFile) as fp:
             self.timeData = json.load(fp)
 
-    def update(self, stageFileStep: StageFileStep):
+    def update(self, stageFileStep: Step):
         self.timeData[stageFileStep.name.lower()] = datetime.now().isoformat()
         
         with open(self.timeFile, "w") as fp:

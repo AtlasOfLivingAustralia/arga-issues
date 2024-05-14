@@ -1,6 +1,6 @@
 import lib.config as cfg
 import argparse
-from lib.sourceManager import SourceManager
+from lib.data.sources import SourceManager
 from pathlib import Path
 import json
 

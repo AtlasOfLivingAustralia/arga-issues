@@ -1,11 +1,10 @@
-from lib.data.argParser import SourceArgParser
-from lib.processing.stages import StageFileStep
+from lib.data.argParser import ArgParser
+from lib.processing.stages import Step
 
 if __name__ == '__main__':
-    parser = SourceArgParser(description="Download source data")
+    parser = ArgParser(description="Download source data")
 
-    sources, selectedFiles, overwrite, args = parser.parse_args()
+    sources, overwrite, verbose, args = parser.parse_args()
     kwargs = parser.namespaceKwargs(args)
     for source in sources:
-        source.prepareStage(StageFileStep.DOWNLOADED)
-        source.createStage(StageFileStep.DOWNLOADED, selectedFiles, overwrite, **kwargs)
+        source.create(Step.DOWNLOAD, overwrite, verbose, kwargs)

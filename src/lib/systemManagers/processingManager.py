@@ -60,7 +60,7 @@ class ProcessingManager():
         return [node.file for node in nodes]
 
     def registerFile(self, file: File) -> ProcessingTree:
-        node = _Node(file)
+        node = _Node(file, None)
         tree = ProcessingTree(node)
         self.trees.append(tree)
         return tree

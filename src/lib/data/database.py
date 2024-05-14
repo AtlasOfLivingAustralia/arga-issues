@@ -32,16 +32,16 @@ class Database:
         self.processingConfig: dict = config.pop("processing", {})
         self.conversionConfig: dict = config.pop("conversion", {})
 
-        if self.download is None:
+        if self.downloadConfig is None:
             raise Exception("No download config specified as required") from AttributeError
 
         # Relative folders
         self.locationDir = cfg.Folders.dataSources / location
         self.databaseDir = self.locationDir / database
-        self.dataDir = self.database / "data"
-        self.downloadDir = self.database / "download"
-        self.processingDir = self.database / "processing"
-        self.convertedDir = self.database / "converted"
+        self.dataDir = self.databaseDir / "data"
+        self.downloadDir = self.dataDir / "download"
+        self.processingDir = self.dataDir / "processing"
+        self.convertedDir = self.dataDir / "converted"
 
         # System Managers
         self.downloadManager = DownloadManager(self.downloadDir, self.authFile)
@@ -62,7 +62,7 @@ class Database:
         for property in properties:
             Logger.debug(f"{self.location}-{self.database} unknown config item: {property}")
 
-    def _prepareDownload(self, overwrite: bool = False) -> None:
+    def _prepareDownload(self, overwrite: bool, verbose: bool) -> None:
         files: list[dict] = self.downloadConfig.pop("files", [])
 
         for file in files:
@@ -78,10 +78,10 @@ class Database:
             
             self.downloadManager.registerFromURL(url, name, properties)
     
-    def _prepareProcessing(self, overwrite: bool = False) -> None:
-        specificProcessing: dict[int, list[dict]] = self.processingConfig.pop("specific")
-        perFileProcessing: list[dict] = self.processingConfig.pop("perFile")
-        finalProcessing: list[dict] = self.processingConfig.pop("final")
+    def _prepareProcessing(self, overwrite: bool, verbose: bool) -> None:
+        specificProcessing: dict[int, list[dict]] = self.processingConfig.pop("specific", {})
+        perFileProcessing: list[dict] = self.processingConfig.pop("perFile", {})
+        finalProcessing: list[dict] = self.processingConfig.pop("final", {})
 
         for idx, file in enumerate(self.downloadManager.getFiles()):
             tree = self.processingManager.registerFile(file)
@@ -91,35 +91,45 @@ class Database:
         self.processingManager.addAllProcessing(perFileProcessing)
         self.processingManager.addAllProcessing(finalProcessing)
     
-    def _prepareConversion(self, overwrite: bool = False) -> None:
+    def _prepareConversion(self, overwrite: bool, verbose: bool) -> None:
         for file in self.processingManager.getLatestNodes():
             self.conversionManager.addFile(file, self.conversionConfig, self.databaseDir)
 
-    def prepare(self, step: Step, overwrite: bool = False) -> None:
-        self._prepareDownload(overwrite)
+    def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> None:
+        callbacks = {
+            Step.DOWNLOAD: self._prepareDownload,
+            Step.PROCESSING: self._prepareProcessing,
+            Step.CONVERSION: self._prepareConversion
+        }
 
+        if step not in callbacks:
+            raise Exception(f"Uknown step to prepare: {step}")
+
+        for stepType, callback in callbacks.items():
+            callback(overwrite if step == stepType else False, verbose)
+            if step == stepType:
+                return
+
+    def _execute(self, step: Step, overwrite: bool, verbose: bool, **kwargs: dict) -> None:
         if step == Step.DOWNLOAD:
+            self.downloadManager.download(overwrite, verbose, **kwargs)
             return
-        
-        self._prepareProcessing(overwrite)
-
-        if step == Step.PROCESSING:
-            return
-        
-        self._prepareConversion(overwrite)
-
-    def execute(self, step: Step, overwrite: bool = False) -> None:
-        self.downloadManager.download(overwrite)
-
-        if step == Step.DOWNLOAD:
-            return
-        
-        self.processingManager.process(overwrite)
         
         if step == Step.PROCESSING:
+            self.processingManager.process(overwrite, verbose, **kwargs)
             return
         
-        self.conversionManager.convert(overwrite)
+        if step == Step.CONVERSION:
+            self.conversionManager.convert(overwrite, verbose, **kwargs)
+            return
+        
+        raise Exception(f"Unknown step to execute: {step}")
+    
+    def create(self, step: Step, overwrite: tuple[bool, bool], verbose: bool, **kwargs: dict) -> None:
+        prepare, reprocess = overwrite
+
+        self._prepare(step, prepare, verbose)
+        self._execute(step, reprocess, verbose, **kwargs)
 
 class CrawlDB(Database):
 

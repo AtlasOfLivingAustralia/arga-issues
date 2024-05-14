@@ -18,12 +18,12 @@ class ConversionManager:
         self.recordsFile = "records.txt"
 
     def addFile(self, file: File, properties: dict, mapDir: Path) -> None:
-        self.preConversionFile = file
+        self.file = file
         self.outputFolderPath = self.conversionDir / f"{file.filePath.stem}-converted"
 
         self.mapID = properties.pop("mapID", -1)
         self.customMapID = properties.pop("customMapID", -1)
-        self.customMapPath = self.parser.parseArg(properties.pop("customMapPath", None), [])
+        # self.customMapPath = self.parser.parseArg(properties.pop("customMapPath", None), [])
 
         self.chunkSize = properties.pop("chunkSize", 1024)
         self.setNA = properties.pop("setNA", [])
@@ -35,16 +35,16 @@ class ConversionManager:
 
         self.mapManager = MapManager(mapDir)
 
-    def convert(self, overwrite: bool = False, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> Path:
+    def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> Path:
         if self.outputFolderPath.exists() and not overwrite:
-            Logger.info(f"{outputFolderPath} already exists, exiting...")
+            Logger.info(f"{self.outputFolderPath} already exists, exiting...")
             return
         
         # Get columns and create mappings
         Logger.info("Getting column mappings")
         columns = cmn.getColumns(self.file.filePath, self.file.separator, self.file.firstRow)
 
-        maps = self.mapManager.loadMaps(self.mapID, self.customMapID, self.customMapPath, forceRetrieve)
+        maps = self.mapManager.loadMaps(self.mapID, self.customMapID, None, forceRetrieve)
         if not maps:
             Logger.error("Unable to retrieve any maps")
             raise Exception("No mapping")
@@ -65,13 +65,14 @@ class ConversionManager:
         writers: dict[str, BigFileWriter] = {}
         for event in translationTable.getEventCategories():
             cleanedName = event.value.lower().replace(" ", "_")
-            writers[event] = BigFileWriter(outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
+            writers[event] = BigFileWriter(self.outputFolderPath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
         totalRows = 0
         Logger.info("Processing chunks for conversion")
-        chunks = cmn.chunkGenerator(self.preConversionFile.filePath, self.chunkSize, self.file.separator, self.file.firstRow, self.file.encoding)
+        chunks = cmn.chunkGenerator(self.file.filePath, self.chunkSize, self.file.separator, self.file.firstRow, self.file.encoding)
         for idx, df in enumerate(chunks, start=1):
-            print(f"At chunk: {idx}", end='\r')
+            if verbose:
+                print(f"At chunk: {idx}", end='\r')
 
             df = remapper.applyTranslation(df, translationTable) # Returns a multi-index dataframe
             for na in self.setNA:
@@ -90,17 +91,17 @@ class ConversionManager:
         for writer in writers.values():
             writer.oneFile()
 
-        with open(outputFolderPath / self.recordsFile, "w") as fp:
+        with open(self.outputFolderPath / self.recordsFile, "w") as fp:
             fp.write(str(totalRows))
 
-        if zip:
-            Logger.info(f"Zipping {outputFolderPath}")
-            outputFolderPath = zp.compress(outputFolderPath)
-
-        return outputFolderPath
+        if not zip:
+            return self.outputFolderPath
+        
+        Logger.info(f"Zipping {self.outputFolderPath}")
+        return zp.compress(self.outputFolderPath)
 
     def applyAugments(self, df: pd.DataFrame) -> pd.DataFrame:
-        for augment in self.augmentSteps:
+        for augment in self.augments:
             df = augment.process(df)
         return df
     

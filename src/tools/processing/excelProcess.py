@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 from pathlib import Path
-from lib.sourceManager import SourceManager
+from lib.data.sources import SourceManager
 
 def process(filePath):
     if not isinstance(filePath, Path):

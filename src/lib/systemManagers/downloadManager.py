@@ -1,8 +1,8 @@
 from pathlib import Path
 import lib.commonFuncs as cmn
-from lib.processing.parser import SelectorParser
 from lib.processing.stages import File, Script
 from lib.tools.logger import Logger
+from lib.tools.downloader import Downloader
 
 class _Download:
     def retrieve(self, overwrite: bool) -> Path:
@@ -15,12 +15,14 @@ class _URLDownload(_Download):
         self.username = username
         self.password = password
 
-    def retrieve(self, overwrite: bool, verbose: bool) -> Path:
+    def retrieve(self, overwrite: bool, verbose: bool) -> bool:
         if not overwrite and self.file.exists():
+            Logger.info(f"Output file {self.file.filePath} already exists")
             return self.file.filePath
         
         self.file.filePath.unlink(True)
-        return cmn.downloadFile(self.url, self.filePath, user=self.user, password=self.password)
+        downloader = Downloader(username=self.username, password=self.password)
+        return downloader.download(self.url, self.file.filePath, verbose=True)
 
 class _ScriptDownload(_Download):
     def __init__(self, scriptInfo: dict, dir: Path):
@@ -43,6 +45,9 @@ class DownloadManager:
         return self.files[-1].file
 
     def download(self, overwrite: bool = False, verbose: bool = False) -> None:
+        if not self.downloadDir.exists():
+            self.downloadDir.mkdir()
+
         for download in self.downloads:
             download.retrieve(overwrite, verbose)
 

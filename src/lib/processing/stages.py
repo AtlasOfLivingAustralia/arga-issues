@@ -5,7 +5,6 @@ from pathlib import Path
 from enum import Enum
 from collections.abc import Iterator
 from lib.tools.logger import Logger
-from lib.processing.parser import Parser
 
 class Step(Enum):
     DOWNLOAD   = 0
@@ -62,6 +61,30 @@ class StackedFile(File):
                 return
 
 class Script:
+    class Parser:
+        def __init__(self):
+            self.functionMap = {
+                "STEM": self._stem
+            }
+
+        def _stem(self, filePath: Path) -> str:
+            return str(filePath.stem)
+        
+        def parse(self, structure: str, inputs: list[File]) -> list[str]:
+            start = structure.find("{")
+            end = structure.find("}")
+
+            prefix = structure[:start]
+            suffix = structure[end+1:]
+            body = structure[start+1:end]
+            bodyFunction = self.functionMap[body]
+
+            outputs = []
+            for file in inputs:
+                outputs.append(f"{prefix}{bodyFunction(file.filePath)}{suffix}")
+
+            return outputs
+
     def __init__(self, scriptInfo: dict, outputDir: Path):
         self.outputDir = outputDir
         scriptInfo = scriptInfo.copy()
@@ -90,7 +113,8 @@ class Script:
             return [File(self.outputDir / output, {}) for output in self.outputs]
         
         if self.outputStructure:
-            return [File(self.outputDir / output, {}) for output in Parser().parse(self.outputStructure, inputs)]
+            parser = self.Parser()
+            return [File(self.outputDir / output, {}) for output in parser.parse(self.outputStructure, inputs)]
         
         return []
 
