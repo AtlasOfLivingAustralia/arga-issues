@@ -1,6 +1,7 @@
 from pathlib import Path
 import lib.commonFuncs as cmn
-from lib.processing.stages import File, Script
+from lib.processing.stages import File
+from lib.processing.scripts import Script
 from lib.tools.logger import Logger
 from lib.tools.downloader import Downloader
 

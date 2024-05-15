@@ -1,5 +1,6 @@
 from pathlib import Path
-from lib.processing.stages import File, Script
+from lib.processing.stages import File
+from lib.processing.scripts import Script
 
 class _Node:
     def __init__(self, file: File, upperBranch: '_Branch'):
