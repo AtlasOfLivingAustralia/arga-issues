@@ -30,7 +30,7 @@ class _ScriptDownload(_Download):
         self.script = Script(scriptInfo, dir)
 
     def retrieve(self, overwrite: bool, verbose: bool) -> Path:
-        self.script.run(overwrite, verbose)
+        self.script.run(True, overwrite, verbose)
 
 class DownloadManager:
     def __init__(self, downloadDir: Path, authFile: Path):

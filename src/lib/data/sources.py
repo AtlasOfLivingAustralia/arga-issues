@@ -1,5 +1,6 @@
 import json
 import lib.config as cfg
+from pathlib import Path
 from lib.data.database import Database, CrawlDB, ScriptDB
 from lib.tools.logger import Logger
 
@@ -11,14 +12,8 @@ class SourceManager:
             if locationPath.is_file(): # Ignore files in directory
                 continue
 
-            location = locationPath.stem
-
-            databases = {}
-            for databaseFolder in locationPath.iterdir():
-                databaseName = databaseFolder.stem
-                databases[databaseName] = databaseFolder / "config.json"
-
-            self.locations[location] = Location(location, databases)
+            locationObj = Location(locationPath)
+            self.locations[locationObj.locationName] = locationObj
 
     def _packDB(self, location: str, database: str) -> str:
         return f"{location}-{database}"
@@ -40,7 +35,7 @@ class SourceManager:
         return self.locations
 
     def getDB(self, sources: list[str]) -> list[Database]:
-        locations = []
+        databases = []
 
         for source in sources:
             location, database = self._unpackDB(source)
@@ -49,16 +44,20 @@ class SourceManager:
             if location is None:
                 raise Exception(f"Invalid location: {location}")
 
-            locations.append(location.loadDB(database))
+            databases.append(location.loadDB(database))
 
-        return locations
+        return databases
 
 class Location:
-    def __init__(self, location: str, databaseItems: dict):
-        self.location = location
-        self.databaseItems = databaseItems
-        self.databases = {}
+    def __init__(self, locationPath: Path):
+        self.locationPath = locationPath
+        self.locationName = locationPath.stem
 
+        self.databases: list[str] = []
+        for databaseFolder in locationPath.iterdir():
+            self.databases.append(databaseFolder.stem)
+
+        self.configFile = "config.json"
         self.dbMapping = {
             "url": Database,
             "crawl": CrawlDB,
@@ -66,25 +65,29 @@ class Location:
         }
 
     def getDatabaseList(self) -> list:
-        return list(self.databaseItems.keys())
-
-    def createDB(self, database: str, databaseInfo: dict) -> Database:
-        retrieveType = databaseInfo.pop("retrieveType", "(Not Provided)")
-        db = self.dbMapping.get(retrieveType, None)
-
-        if db is None:
-            Logger.error(f"Invalid retrieveType: {retrieveType}")
-            raise Exception(f"Invalid retrieveType: {retrieveType}. Should be one of ({self.dbMapping.keys()})")
+        return self.databases
+    
+    def _loadConfig(self, database: str) -> dict:
+        if database not in self.databases:
+            raise Exception(f"Invalid database '{database}' for location '{self.locationName}'")
         
-        return db(self.location, database, databaseInfo)
+        configPath = self.locationPath / database / self.configFile
+        if not configPath.exists():
+            raise Exception(f"No config file found for database '{database}'")
+        
+        with open(configPath) as fp:
+            return json.load(fp)
 
     def loadDB(self, database: str) -> Database:
-        databasePath = self.databaseItems.get(database, None)
+        config = self._loadConfig(database)
 
-        if databasePath is None:
-            raise Exception(f"Invalid database selected: {database}")
+        retrieveType = config.pop("retrieveType", None)
+        if retrieveType is None:
+            raise Exception("No retrieve type specified for database")
         
-        with open(databasePath) as fp:
-            databaseInfo = json.load(fp)
+        dbType = self.dbMapping.get(retrieveType, None)
 
-        return self.createDB(database, databaseInfo)
+        if dbType is None:
+            raise Exception(f"Invalid retrieve type: {retrieveType}. Should be one of ({self.dbMapping.keys()})")
+        
+        return dbType(self.location, database, config)

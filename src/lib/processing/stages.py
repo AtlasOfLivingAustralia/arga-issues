@@ -11,7 +11,7 @@ class Step(Enum):
     CONVERSION = 2
 
 class File:
-    def __init__(self, filePath: Path, fileProperties: dict):
+    def __init__(self, filePath: Path, fileProperties: dict = {}):
         self.filePath = filePath
         self.fileProperties = fileProperties.copy()
 

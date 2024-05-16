@@ -5,16 +5,16 @@ import lib.processing.processingFuncs as pFuncs
 
 class Script:
     def __init__(self, scriptInfo: dict, outputDir: Path):
+        info = scriptInfo.copy()
         self.outputDir = outputDir
-        scriptInfo = scriptInfo.copy()
         
-        self.path = scriptInfo.pop("path", None)
-        self.function = scriptInfo.pop("function", None)
-        self.args = scriptInfo.pop("args", [])
-        self.kwargs = scriptInfo.pop("kwargs", {})
-        self.outputs = scriptInfo.pop("outputs", [])
-        self.outputStructure = scriptInfo.pop("outputStructure", "")
-        self.outputProperties = scriptInfo.pop("outputProperties", {})
+        self.path = info.pop("path", None)
+        self.function = info.pop("function", None)
+        self.args = info.pop("args", [])
+        self.kwargs = info.pop("kwargs", {})
+        self.outputs = info.pop("output", [])
+        self.outputStructure = info.pop("outputStructure", "")
+        self.outputProperties = info.pop("outputProperties", {})
 
         if self.path is None:
             raise Exception("No script path specified") from AttributeError
@@ -24,7 +24,7 @@ class Script:
 
         self.scriptRun = False
 
-        for parameter in scriptInfo:
+        for parameter in info:
             Logger.debug(f"Unknown step parameter: {parameter}")
 
     def getOutputs(self, inputs: list[File] = []) -> list[File]:

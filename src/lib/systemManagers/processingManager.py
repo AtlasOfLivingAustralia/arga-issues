@@ -19,7 +19,7 @@ class _Branch:
     def __init__(self, script: Script, parents: list[_Node]):
         self.script = script
         self.parentNodes = parents
-        self.childrenNodes = [_Node(file, self) for file in script.getOutputs()]
+        self.childrenNodes = [_Node(file, self) for file in script.getOutputs([node.file for node in self.parentNodes])]
 
     def execute(self, overwrite: bool = False, chain: bool = True):
         self.script.run(overwrite)
