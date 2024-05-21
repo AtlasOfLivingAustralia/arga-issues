@@ -1,17 +1,14 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/bpa.py",
         "function": "build",
         "args": [
-            "{PATH, DOWNLOAD, bpa.csv}",
             1000
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, bpa.csv}"
-        ]
+        "output": "bpa.csv"
     },
-    "dwcProperties": {
+    "conversion": {
         "mapID": 1982878906
     }
 }

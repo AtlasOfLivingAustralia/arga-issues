@@ -26,16 +26,29 @@ class _URLDownload(_Download):
         return downloader.download(self.url, self.file.filePath, verbose=True)
 
 class _ScriptDownload(_Download):
-    def __init__(self, scriptInfo: dict, dir: Path):
-        self.script = Script(scriptInfo, dir)
+    def __init__(self, baseDir: Path, downloadDir: Path, scriptInfo: dict):
+        self.script = Script(baseDir, downloadDir, scriptInfo)
 
     def retrieve(self, overwrite: bool, verbose: bool) -> Path:
-        self.script.run(True, overwrite, verbose)
+        self.script.run([], overwrite, verbose)
 
 class DownloadManager:
-    def __init__(self, downloadDir: Path, authFile: Path):
+    def __init__(self, baseDir: Path, downloadDir: Path, authFile: str):
+        self.baseDir = baseDir
         self.downloadDir = downloadDir
         self.authFile = authFile
+
+        authPath = self.baseDir / self.authFile
+        if authFile and authPath.exists():
+            with open(authPath) as fp:
+                data = fp.read().rstrip("\n").split()
+
+            self.username = data[0]
+            self.password = data[1]
+
+        else:
+            self.username = ""
+            self.password = ""
 
         self.downloads: list[_Download] = []
 
@@ -52,10 +65,10 @@ class DownloadManager:
         for download in self.downloads:
             download.retrieve(overwrite, verbose)
 
-    def registerFromURL(self, url: str, fileName: str, fileProperties: dict = {}, username = "", password = "") -> None:
-        download = _URLDownload(url, self.downloadDir / fileName, fileProperties, username, password)
+    def registerFromURL(self, url: str, fileName: str, fileProperties: dict = {}) -> None:
+        download = _URLDownload(url, self.downloadDir / fileName, fileProperties, self.username, self.password)
         self.downloads.append(download)
 
     def registerFromScript(self, scriptInfo: dict) -> None:
-        download = _ScriptDownload(scriptInfo, self.downloadDir)
+        download = _ScriptDownload(self.baseDir, self.downloadDir, scriptInfo)
         self.downloads.append(download)

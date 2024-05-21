@@ -2,91 +2,112 @@ from pathlib import Path
 from lib.processing.stages import File
 from lib.tools.logger import Logger
 import lib.processing.processingFuncs as pFuncs
+from enum import Enum
+from functools import wraps
 
 class Script:
-    def __init__(self, scriptInfo: dict, outputDir: Path):
-        info = scriptInfo.copy()
+    def __init__(self, baseDir: Path, outputDir: Path, scriptInfo: dict):
+        self.baseDir = baseDir
         self.outputDir = outputDir
-        
+        self.parser = Parser(baseDir, outputDir)
+
+        self._readInfo(scriptInfo)
+
+        for parameter in scriptInfo:
+            Logger.debug(f"Unknown step parameter: {parameter}")
+
+    def _readInfo(self, info: dict) -> None:
+        # Input information
         self.path = info.pop("path", None)
         self.function = info.pop("function", None)
         self.args = info.pop("args", [])
         self.kwargs = info.pop("kwargs", {})
-        self.outputs = info.pop("output", [])
-        self.outputStructure = info.pop("outputStructure", "")
-        self.outputProperties = info.pop("outputProperties", {})
+        self.variable = info.pop("variable", [])
 
         if self.path is None:
             raise Exception("No script path specified") from AttributeError
         
         if self.function is None:
             raise Exception("No script function specified") from AttributeError
-
-        self.scriptRun = False
-
-        for parameter in info:
-            Logger.debug(f"Unknown step parameter: {parameter}")
-
+        
+        # Output information
+        self.output = info.pop("output", "")
+        self.outputProperties = info.pop("outputProperties", {})
+        
     def getOutputs(self, inputs: list[File] = []) -> list[File]:
-        if self.outputs:
-            return [File(self.outputDir / output, {}) for output in self.outputs]
-        
-        if self.outputStructure:
-            parser = self.Parser()
-            return [File(self.outputDir / output, {}) for output in parser.parse(self.outputStructure, inputs)]
-        
-        return []
+        return [File(self.outputDir / name, self.outputProperties) for name in self.parser.parseArg(self.output, self.variable, inputs)]
 
-    def run(self, overwrite: bool = False, verbose: bool = False, **kwargs: dict):
-        if self.scriptRun:
-            return
-        
-        if not overwrite and any(output.exists() for output in self.outputs):
-            Logger.info(f"All outputs {self.outputs} exist and not overwriting, skipping '{self.function}'")
-            return
-        
-        for output in self.getOutputs():
-            output.delete()
-        
+    def _runScript(self, outputFile: Path | None, verbose: bool, *args: list, **kwargs: dict) -> any:
+        processFunction = pFuncs.importFunction(self.path, self.function)
+
         if verbose:
             msg = f"Running {self.path} function '{self.function}'"
-            if self.args:
-                msg += f" with args {self.args}"
-            if self.kwargs:
+            if args:
+                msg += f" with args {args}"
+            if kwargs:
                 if self.args:
                     msg += " and"
-                msg += f" with kwargs {self.kwargs}"
-            print(msg)
+                msg += f" with kwargs {kwargs}"
+            Logger.info(msg)
 
-        processFunction = pFuncs.importFunction(self.path, self.function)
-        output = processFunction(*self.args, **self.kwargs)
+        output = processFunction(*args, **kwargs)
 
-        for outputFile in self.getOutputs():
+        if outputFile is not None:
             if not outputFile.exists():
                 Logger.warning(f"Output {outputFile} was not created")
-
+            
         return output
 
+    def run(self, overwrite: bool = False, verbose: bool = False, inputs: list[File] = [], **runtimeKwargs: dict) -> any:
+        outputs = self.getOutputs(inputs)
+        for output in outputs:
+            if output.exists():
+                if not overwrite:
+                    Logger.info(f"Output {output} exist and not overwriting, skipping '{self.function}'")
+                    return
+                
+                output.delete()
+
+        if self.variable: # Parallelise
+            for var in self.variable:
+                
+                
+        args = [self.parser.parseArg(arg) for arg in self.args]
+        kwargs = {key: self.parser.parseArg(value) for key, value in self.kwargs} | {key: self.parser.parseArg(value) for key, value in runtimeKwargs}
+
+        return self._runScript(output, verbose, *args, **kwargs)
+
 class Parser:
-    def __init__(self):
-        self.functionMap = {
-            "STEM": self._stem
-        }
+    class Key(Enum):
+        INPUT_STEM = "S"
+        INPUT_PARENT = "P"
+        VARIABLE = "V"
 
-    def _stem(self, filePath: Path) -> str:
-        return str(filePath.stem)
-    
-    def parse(self, structure: str, inputs: list[File]) -> list[str]:
-        start = structure.find("{")
-        end = structure.find("}")
+    def __init__(self, baseDir: Path, outputDir: Path, inputs: list[File], variable: list[str], outputs: list[File]) -> None:
+        self.baseDir = baseDir
+        self.outputDir = outputDir
 
-        prefix = structure[:start]
-        suffix = structure[end+1:]
-        body = structure[start+1:end]
-        bodyFunction = self.functionMap[body]
+    def parseArg(self, arg: str) -> Path | str:
+        pass
 
-        outputs = []
-        for file in inputs:
-            outputs.append(f"{prefix}{bodyFunction(file.filePath)}{suffix}")
+    def parseArgList(self, args: list[str]) -> list[Path | str]:
+        return [self.parseArg(arg) for arg in args]
 
-        return outputs
+    def parseKwargs(self, args: dict[any, str]) -> dict[any, Path | str]:
+        return {key: self.parseArg(value) for key, value in args.items()}
+
+    def _checkForPaths(self, arg: str) -> Path | str:
+        if arg.startswith("./"):
+            workingDir = self.baseDir
+            return workingDir / arg[2:]
+         
+        if arg.startswith("../"):
+            workingDir = self.baseDir.parent
+            newStructure = arg[3:]
+            while newStructure.startswith("../"):
+                workingDir = workingDir.parent
+                newStructure = newStructure[3:]
+
+            return workingDir / newStructure
+        
+        return arg

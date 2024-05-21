@@ -18,7 +18,7 @@ class ArgParser:
     def parse_args(self, *args, **kwargs) -> tuple[list[Database], tuple[bool, bool], bool, argparse.Namespace]:
         parsedArgs = self.parser.parse_args(*args, **kwargs)
 
-        sources = self.manager.getDB(self._extract(parsedArgs, "sources"))
+        sources = self.manager.getMultipleDBs(self._extract(parsedArgs, "sources"))
         prepare = self._extract(parsedArgs, "prepare")
         overwrite = self._extract(parsedArgs, "overwrite")
         verbose = self._extract(parsedArgs, "quiet")

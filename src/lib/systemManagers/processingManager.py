@@ -42,8 +42,9 @@ class ProcessingTree:
 
         self.lowestNodes = branch.childrenNodes
 
-class ProcessingManager():
-    def __init__(self, processingDir: Path):
+class ProcessingManager:
+    def __init__(self, baseDir: Path, processingDir: Path):
+        self.baseDir = baseDir
         self.processingDir = processingDir
         self.trees: list[ProcessingTree] = []
 
@@ -68,7 +69,7 @@ class ProcessingManager():
 
     def addProcessing(self, tree: ProcessingTree, processingSteps: list[dict]):
         for step in processingSteps:
-            script = Script(step, self.processingDir)
+            script = Script(self.baseDir, self.processingDir, step)
             tree.extend(script)
 
     def addAllProcessing(self, processingSteps: list[dict]):

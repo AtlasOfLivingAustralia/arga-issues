@@ -1,18 +1,14 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/42bp.py",
         "function": "build",
         "args": [
-            "{PATH, ROOT, species.json}",
-            "{PATH, DOWNLOAD}",
-            "{PATH, PROCESSING, genomeArk.csv}"
+            "./species.json"
         ],
-        "outputs": [
-            "{PATH, PROCESSING, genomeArk.csv}"
-        ]
+        "output": "genomeArk.csv"
     },
-    "dwcProperties": {
+    "conversion": {
         "mapID": 84855374
     }
 }

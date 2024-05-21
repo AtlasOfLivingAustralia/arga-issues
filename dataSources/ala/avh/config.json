@@ -3,9 +3,7 @@
     "download": {
         "path": "sourceProcessing/ala.py",
         "function": "build",
-        "outputs": [
-            "avh.csv"
-        ]
+        "output": "avh.csv"
     },
     "conversion": {
         "mapID": 404635334

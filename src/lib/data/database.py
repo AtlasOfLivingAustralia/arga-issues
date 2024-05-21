@@ -44,8 +44,8 @@ class Database:
         self.convertedDir = self.dataDir / "converted"
 
         # System Managers
-        self.downloadManager = DownloadManager(self.downloadDir, self.authFile)
-        self.processingManager = ProcessingManager(self.processingDir)
+        self.downloadManager = DownloadManager(self.databaseDir, self.downloadDir, self.authFile)
+        self.processingManager = ProcessingManager(self.databaseDir, self.processingDir)
         self.conversionManager = ConversionManager(self.convertedDir, location)
         self.timeManager = TimeManager(self.databaseDir)
 
@@ -80,8 +80,8 @@ class Database:
     
     def _prepareProcessing(self, overwrite: bool, verbose: bool) -> None:
         specificProcessing: dict[int, list[dict]] = self.processingConfig.pop("specific", {})
-        perFileProcessing: list[dict] = self.processingConfig.pop("perFile", {})
-        finalProcessing: list[dict] = self.processingConfig.pop("final", {})
+        perFileProcessing: list[dict] = self.processingConfig.pop("perFile", [])
+        finalProcessing: list[dict] = self.processingConfig.pop("final", [])
 
         for idx, file in enumerate(self.downloadManager.getFiles()):
             tree = self.processingManager.registerFile(file)
@@ -135,7 +135,7 @@ class CrawlDB(Database):
 
     retrieveType = Retrieve.CRAWL
 
-    def _prepareDownload(self, overwrite: bool = False) -> None:
+    def _prepareDownload(self, overwrite: bool, verbose: bool) -> None:
         properties = self.downloadConfig.pop("properties", {})
         saveFile = self.downloadConfig.pop("saveFile", "crawl.txt")
         saveFilePath = self.databaseDir / saveFile
@@ -185,10 +185,5 @@ class ScriptDB(Database):
 
     retrieveType = Retrieve.SCRIPT
 
-    def _prepareDownload(self, overwrite: bool = False) -> None:
-        script = self.downloadConfig.pop("script", None)
-
-        if self.script is None:
-            raise Exception("No script specified") from AttributeError
-
-        self.downloadManager.registerFromScript(script)
+    def _prepareDownload(self, overwrite: bool, verbose: bool) -> None:
+        self.downloadManager.registerFromScript(self.downloadConfig)

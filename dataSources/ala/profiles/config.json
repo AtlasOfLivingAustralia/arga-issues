@@ -1,25 +1,19 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/ala.py",
         "function": "collect",
-        "args": [
-            "{PATH, DOWNLOAD}",
-            [
-                "kamilaroi",
-                "noongar",
-                "southeastarnhemland",
-                "mangrovewatch",
-                "weeds-australia"
-            ],
-            "{PATH, ROOT, token.json}"
+        "variable": [
+            "kamilaroi",
+            "noongar",
+            "southeastarnhemland",
+            "mangrovewatch",
+            "weeds-australia"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, kamilaroi.csv}",
-            "{PATH, DOWNLOAD, noongar.csv}",
-            "{PATH, DOWNLOAD, southeastarnhemland.csv}",
-            "{PATH, DOWNLOAD, mangrovewatch.csv}",
-            "{PATH, DOWNLOAD, weeds-australia.csv}"
-        ]
+        "args": [
+            "{V}",
+            "./token.json"
+        ],
+        "output": "{V}.csv"
     }
 }

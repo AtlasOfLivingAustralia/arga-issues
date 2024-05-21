@@ -1,14 +1,11 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/algaebase.py",
         "function": "build",
         "args": [
-            "{PATH, DOWNLOAD, algaeBase.csv}",
-            "{PATH, ROOT, apiKey.txt}"
+            "./apiKey.txt"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, algaeBase.csv}"
-        ]
+        "output": "algaeBase.csv"
     }
 }

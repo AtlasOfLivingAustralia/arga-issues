@@ -9,12 +9,10 @@
             {
                 "path": "sourceProcessing/ncbi.py",
                 "function": "compileAssemblyStats",
-                "outputs": [
-                    "gcfStats.csv"
+                "args": [
+                    "./data/download"
                 ],
-                "additionalArgs": [
-                    "{FOLDER, DOWNLOAD}"
-                ]
+                "output": "gcfStats.csv"
             }
         ]
     }

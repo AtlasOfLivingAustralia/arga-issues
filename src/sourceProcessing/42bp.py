@@ -5,8 +5,11 @@ import yaml
 import csv
 from yaml.scanner import ScannerError
 import json
+from lib.processing.scripts import ScriptWrapper
+from lib.tools.downloader import Downloader
 
-def build(savedFilePath: Path, downloadDir: Path, outputFilePath: Path) -> None:
+# @ScriptWrapper(singleInput=True)
+def build(outputFilePath: Path, savedFilePath: Path) -> None:
     location = "https://42basepairs.com/api/v1/files/s3/genomeark/species/"
     baseDLUrl = "https://42basepairs.com/download/s3/genomeark/species/"
 
@@ -24,6 +27,7 @@ def build(savedFilePath: Path, downloadDir: Path, outputFilePath: Path) -> None:
 
     allData = []
     columns = []
+    downloader = Downloader()
     for species in speciesList:
         name = species.get("name", "")
 
@@ -31,9 +35,11 @@ def build(savedFilePath: Path, downloadDir: Path, outputFilePath: Path) -> None:
             continue
 
         downloadURL = baseDLUrl + name + "metadata.yaml"
-        filePath = downloadDir / f"{name[:-1]}_metadata.yaml"
+        filePath = outputFilePath.parent / f"{name[:-1]}_metadata.yaml"
         if not filePath.exists():
-            cmn.downloadFile(downloadURL, filePath)
+            success = downloader.download(downloadURL, filePath)
+            if not success:
+                continue
 
         try:
             with open(filePath) as fp:

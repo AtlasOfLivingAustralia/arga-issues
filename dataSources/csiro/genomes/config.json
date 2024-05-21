@@ -1,17 +1,14 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/csiro.py",
         "function": "build",
         "args": [
-            "genomes",
-            "{PATH, DOWNLOAD, genomes.csv}"
+            "genomes"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, genomes.csv}"
-        ]
+        "output": "genomes.csv"
     },
-    "dwcProperties": {
+    "conversion": {
         "mapID": 215504073
     }
 }

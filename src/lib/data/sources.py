@@ -9,9 +9,6 @@ class SourceManager:
         self.locations: dict[str, Location] = {}
         
         for locationPath in cfg.Folders.dataSources.iterdir():
-            if locationPath.is_file(): # Ignore files in directory
-                continue
-
             locationObj = Location(locationPath)
             self.locations[locationObj.locationName] = locationObj
 
@@ -33,20 +30,18 @@ class SourceManager:
     
     def getLocations(self) -> dict[str, 'Location']:
         return self.locations
+    
+    def getDB(self, source: str) -> Database:
+        location, database = self._unpackDB(source)
+        location = self.locations.get(location, None)
 
-    def getDB(self, sources: list[str]) -> list[Database]:
-        databases = []
+        if location is None:
+            raise Exception(f"Invalid location: {location}")
+        
+        return location.loadDB(database)
 
-        for source in sources:
-            location, database = self._unpackDB(source)
-            location = self.locations.get(location, None)
-
-            if location is None:
-                raise Exception(f"Invalid location: {location}")
-
-            databases.append(location.loadDB(database))
-
-        return databases
+    def getMultipleDBs(self, sources: list[str]) -> list[Database]:
+        return [self.getDB(source) for source in sources]
 
 class Location:
     def __init__(self, locationPath: Path):
@@ -55,6 +50,9 @@ class Location:
 
         self.databases: list[str] = []
         for databaseFolder in locationPath.iterdir():
+            if databaseFolder.is_file(): # Skip files
+                continue
+
             self.databases.append(databaseFolder.stem)
 
         self.configFile = "config.json"
@@ -88,6 +86,6 @@ class Location:
         dbType = self.dbMapping.get(retrieveType, None)
 
         if dbType is None:
-            raise Exception(f"Invalid retrieve type: {retrieveType}. Should be one of ({self.dbMapping.keys()})")
+            raise Exception(f"Invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
         
-        return dbType(self.location, database, config)
+        return dbType(self.locationName, database, config)

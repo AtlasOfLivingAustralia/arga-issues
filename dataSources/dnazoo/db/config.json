@@ -1,16 +1,11 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/dnazoo.py",
         "function": "build",
-        "args": [
-            "{PATH, DOWNLOAD, dnazoo.csv}"
-        ],
-        "outputs": [
-            "{PATH, DOWNLOAD, dnazoo.csv}"
-        ]
+        "output": "dnazoo.csv"
     },
-    "dwcProperties": {
+    "conversion": {
         "mapID": 570069681
     }
 }
