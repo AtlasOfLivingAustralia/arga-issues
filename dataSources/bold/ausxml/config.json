@@ -14,8 +14,8 @@
                 "path": "tools/processing/xmlProcess.py",
                 "function": "process",
                 "args": [
-                    "{INPUT, 0, FILEPATH}",
-                    "{PATH, PROCESSING, bold_xml.csv}"
+                    "{INPATH}",
+                    "{OUTPATH}"
                 ],
                 "kwargs": {
                     "encoding": "iso-8859-1",

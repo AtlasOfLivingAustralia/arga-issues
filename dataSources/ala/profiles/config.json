@@ -1,19 +1,19 @@
 {
     "retrieveType": "script",
+    "variable": [
+        "kamilaroi",
+        "noongar",
+        "southeastarnhemland",
+        "mangrovewatch",
+        "weeds-australia"
+    ],
     "download": {
         "path": "sourceProcessing/ala.py",
         "function": "collect",
-        "variable": [
-            "kamilaroi",
-            "noongar",
-            "southeastarnhemland",
-            "mangrovewatch",
-            "weeds-australia"
-        ],
         "args": [
-            "{V}",
+            "{VARIABLE}",
             "./token.json"
         ],
-        "output": "{V}.csv"
+        "output": "{VARIABLE}.csv"
     }
 }

@@ -3,6 +3,9 @@
     "download": {
         "path": "sourceProcessing/csiro.py",
         "function": "getPortalData",
+        "args": [
+            "{OUTPATH}"
+        ],
         "output": "portalData.csv"
     },
     "conversion": {

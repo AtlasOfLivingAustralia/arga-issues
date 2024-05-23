@@ -8,7 +8,6 @@ import json
 from lib.processing.scripts import ScriptWrapper
 from lib.tools.downloader import Downloader
 
-# @ScriptWrapper(singleInput=True)
 def build(outputFilePath: Path, savedFilePath: Path) -> None:
     location = "https://42basepairs.com/api/v1/files/s3/genomeark/species/"
     baseDLUrl = "https://42basepairs.com/download/s3/genomeark/species/"

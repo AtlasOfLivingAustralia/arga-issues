@@ -11,10 +11,13 @@
             {
                 "path": "lib/tools/zipping.py",
                 "function": "extract",
+                "args": [
+                    "{INPATH}"
+                ],
+                "output": "{INSTEM}",
                 "properties": {
                     "separator": "\t"
-                },
-                "output": "{STEM}"
+                }
             }
         ]
     },

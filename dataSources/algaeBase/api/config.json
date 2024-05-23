@@ -4,6 +4,7 @@
         "path": "sourceProcessing/algaebase.py",
         "function": "build",
         "args": [
+            "{OUTPATH}",
             "./apiKey.txt"
         ],
         "output": "algaeBase.csv"

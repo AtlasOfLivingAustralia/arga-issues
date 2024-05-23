@@ -4,6 +4,7 @@
         "path": "sourceProcessing/bpa.py",
         "function": "build",
         "args": [
+            "{OUTPATH}",
             1000
         ],
         "output": "bpa.csv"

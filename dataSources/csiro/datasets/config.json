@@ -4,7 +4,8 @@
         "path": "sourceProcessing/csiro.py",
         "function": "build",
         "args": [
-            "datasets"
+            "datasets",
+            "{OUTPATH}"
         ],
         "output": "dataset.csv"
     }

@@ -4,7 +4,8 @@
         "path": "sourceProcessing/csiro.py",
         "function": "build",
         "args": [
-            "genomes"
+            "genomes",
+            "{OUTPATH}"
         ],
         "output": "genomes.csv"
     },

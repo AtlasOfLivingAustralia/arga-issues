@@ -1,13 +1,11 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/ensembl.py",
         "function": "speciesDownload",
         "args": [
-            "{PATH, DOWNLOAD, species.csv}"
+            "{OUTPATH}"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, species.csv}"
-        ]
+        "output": "species.csv"
     }
 }

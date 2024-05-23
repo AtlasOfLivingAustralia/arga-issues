@@ -10,13 +10,19 @@
             {
                 "path": "lib/tools/zipping.py",
                 "function": "extract",
+                "args": [
+                    "{INPATH}"
+                ],
                 "output": "datapackage"
             },
             {
                 "path": "sourceProcessing/bold.py",
                 "function": "cleanUp",
+                "args": [
+                    "{INPATH}"
+                ],
                 "output": "dataPackage.tsv",
-                "outputProperties": {
+                "properties": {
                     "separator": "\t",
                     "encoding": "iso-8859-1"
                 }

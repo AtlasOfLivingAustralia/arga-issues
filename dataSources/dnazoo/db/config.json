@@ -3,6 +3,9 @@
     "download": {
         "path": "sourceProcessing/dnazoo.py",
         "function": "build",
+        "args": [
+            "{OUTPATH}"
+        ],
         "output": "dnazoo.csv"
     },
     "conversion": {

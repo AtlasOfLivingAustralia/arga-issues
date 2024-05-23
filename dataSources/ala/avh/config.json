@@ -3,6 +3,9 @@
     "download": {
         "path": "sourceProcessing/ala.py",
         "function": "build",
+        "args": [
+            "{OUTPATH}"
+        ],
         "output": "avh.csv"
     },
     "conversion": {

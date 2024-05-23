@@ -27,10 +27,10 @@ class _URLDownload(_Download):
 
 class _ScriptDownload(_Download):
     def __init__(self, baseDir: Path, downloadDir: Path, scriptInfo: dict):
-        self.script = Script(baseDir, downloadDir, scriptInfo)
+        self.script = Script(baseDir, downloadDir, scriptInfo, [])
 
     def retrieve(self, overwrite: bool, verbose: bool) -> Path:
-        self.script.run([], overwrite, verbose)
+        self.script.run(overwrite, verbose)
 
 class DownloadManager:
     def __init__(self, baseDir: Path, downloadDir: Path, authFile: str):

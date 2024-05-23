@@ -30,11 +30,15 @@ class _Branch:
             node.runBranch(overwrite)
 
 class ProcessingTree:
-    def __init__(self, rootNode: _Node):
+    def __init__(self, rootNode: _Node, baseDir: Path, processingDir: Path):
         self.root = rootNode
+        self.baseDir = baseDir
+        self.processingDir = processingDir
+
         self.lowestNodes = [rootNode]
 
-    def extend(self, script: Script):
+    def extend(self, step: dict):
+        script = Script(self.baseDir, self.processingDir, step, [node.file.filePath for node in self.lowestNodes])
         branch = _Branch(script, self.lowestNodes)
 
         for node in self.lowestNodes:
@@ -64,13 +68,12 @@ class ProcessingManager:
     def registerFile(self, file: File) -> ProcessingTree:
         node = _Node(file, None)
         tree = ProcessingTree(node)
-        self.trees.append(tree)
+        self.trees.append(tree, self.baseDir, self.processingDir)
         return tree
 
     def addProcessing(self, tree: ProcessingTree, processingSteps: list[dict]):
         for step in processingSteps:
-            script = Script(self.baseDir, self.processingDir, step)
-            tree.extend(script)
+            tree.extend(step)
 
     def addAllProcessing(self, processingSteps: list[dict]):
         for tree in self.trees:

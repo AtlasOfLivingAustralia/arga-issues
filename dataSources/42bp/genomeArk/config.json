@@ -4,6 +4,7 @@
         "path": "sourceProcessing/42bp.py",
         "function": "build",
         "args": [
+            "{OUTPATH}",
             "./species.json"
         ],
         "output": "genomeArk.csv"
