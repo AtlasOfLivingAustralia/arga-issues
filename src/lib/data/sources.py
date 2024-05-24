@@ -23,7 +23,7 @@ class SourceManager:
         # return [f"{location}-{db}" for location, source in self.locations.items() for db in source.getDatabaseList()]
         output = []
         for locationName, sourceLocation in self.locations.items():
-            for database in sourceLocation.getDatabaseList():
+            for database in sourceLocation.getDatabases():
                 output.append(self._packDB(locationName, database))
 
         return output
@@ -31,29 +31,19 @@ class SourceManager:
     def getLocations(self) -> dict[str, 'Location']:
         return self.locations
     
-    def getDB(self, source: str) -> Database:
+    def getDBs(self, source: str, subsection: str = "all") -> list[Database]:
         location, database = self._unpackDB(source)
         location = self.locations.get(location, None)
 
         if location is None:
             raise Exception(f"Invalid location: {location}")
         
-        return location.loadDB(database)
-
-    def getMultipleDBs(self, sources: list[str]) -> list[Database]:
-        return [self.getDB(source) for source in sources]
-
+        return location.loadDBs(database, subsection)
+        
 class Location:
     def __init__(self, locationPath: Path):
         self.locationPath = locationPath
         self.locationName = locationPath.stem
-
-        self.databases: list[str] = []
-        for databaseFolder in locationPath.iterdir():
-            if databaseFolder.is_file(): # Skip files
-                continue
-
-            self.databases.append(databaseFolder.stem)
 
         self.configFile = "config.json"
         self.dbMapping = {
@@ -62,7 +52,15 @@ class Location:
             "script": ScriptDB
         }
 
-    def getDatabaseList(self) -> list:
+        # Setup databases
+        self.databases: list = []
+        for databaseFolder in locationPath.iterdir():
+            if databaseFolder.is_file(): # Skip files
+                continue
+
+            self.databases.append(databaseFolder.stem)
+
+    def getDatabases(self) -> list[str]:
         return self.databases
     
     def _loadConfig(self, database: str) -> dict:
@@ -76,7 +74,7 @@ class Location:
         with open(configPath) as fp:
             return json.load(fp)
 
-    def loadDB(self, database: str) -> Database:
+    def loadDBs(self, database: str, subsection: str = "all") -> Database:
         config = self._loadConfig(database)
 
         retrieveType = config.pop("retrieveType", None)
@@ -88,4 +86,14 @@ class Location:
         if dbType is None:
             raise Exception(f"Invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
         
-        return dbType(self.locationName, database, config)
+        subsections = config.pop("subsections", [])
+        if not subsections:
+            return [dbType(self.locationName, database, "", config)]
+
+        if subsection == "all":
+            return [dbType(self.locationName, database, section, config) for section in subsections]
+        
+        if subsection not in subsections:
+            raise Exception(f"Invalid subsection: {subsection}")
+        
+        return [dbType(self.locationName, database, subsection, config)]

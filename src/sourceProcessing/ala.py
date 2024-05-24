@@ -27,33 +27,31 @@ def build(outputFilePath: Path) -> None:
     df = pd.DataFrame.from_records(occurrences)
     df.to_csv(outputFilePath, index=False)
 
-def collect(outputDir: Path, profileList: list[str], tokenFilePath: Path) -> None:
+def collect(outputDir: Path, profile: str, tokenFilePath: Path) -> None:
     with open(tokenFilePath) as fp:
         token = json.load(fp)
 
     bearerToken = token["access_token"]
     baseURL = "https://api.ala.org.au/profiles"
+    endpoint = f"/api/opus/{profile}/profile?pageSize=1000"
+    response = requests.get(baseURL + endpoint, headers={"Authorization": f"Bearer {bearerToken}"})
+    data = response.json()
 
-    for profile in profileList:
-        endpoint = f"/api/opus/{profile}/profile?pageSize=1000"
-        response = requests.get(baseURL + endpoint, headers={"Authorization": f"Bearer {bearerToken}"})
-        data = response.json()
+    if "message" in data and "not authorized" in data["message"]:
+        print("Failed to authorize, please make sure bearer token is valid.")
+        return
+    
+    print(f"Accessing profile: {profile}")
 
-        if "message" in data and "not authorized" in data["message"]:
-            print("Failed to authorize, please make sure bearer token is valid.")
-            return
-        
-        print(f"Accessing profile: {profile}")
+    records = []
+    for idx, entry in enumerate(data, start=1):
+        uuid = entry["uuid"]
+        print(f"At record: {idx}", end="\r")
 
-        records = []
-        for idx, entry in enumerate(data, start=1):
-            uuid = entry["uuid"]
-            print(f"At record: {idx}", end="\r")
+        response = requests.get(baseURL + f"/api/opus/{profile}/profile/{uuid}", headers={"Authorization": f"Bearer {bearerToken}"})
+        records.append(response.json())
+    print()
 
-            response = requests.get(baseURL + f"/api/opus/{profile}/profile/{uuid}", headers={"Authorization": f"Bearer {bearerToken}"})
-            records.append(response.json())
-        print()
-
-        df = pd.DataFrame.from_records(records)
-        df = dff.removeSpaces(df)
-        df.to_csv(outputDir / f"{profile}.csv", index=False)
+    df = pd.DataFrame.from_records(records)
+    df = dff.removeSpaces(df)
+    df.to_csv(outputDir / f"{profile}.csv", index=False)

@@ -60,7 +60,7 @@ class DownloadManager:
 
     def download(self, overwrite: bool = False, verbose: bool = False) -> None:
         if not self.downloadDir.exists():
-            self.downloadDir.mkdir()
+            self.downloadDir.mkdir(parents=True)
 
         for download in self.downloads:
             download.retrieve(overwrite, verbose)

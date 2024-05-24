@@ -20,9 +20,13 @@ class Database:
 
     retrieveType = Retrieve.URL
 
-    def __init__(self, location: str, database: str, config: dict = {}):
+    def __init__(self, location: str, database: str, subsection: str = "", config: dict = {}):
         self.location = location
         self.database = database
+
+        # Insert subsection
+        if subsection:
+            config = self._translateSubsection(config, subsection)
 
         # Auth
         self.authFile: str = config.pop("auth", "")
@@ -38,7 +42,7 @@ class Database:
         # Relative folders
         self.locationDir = cfg.Folders.dataSources / location
         self.databaseDir = self.locationDir / database
-        self.dataDir = self.databaseDir / "data"
+        self.dataDir = self.databaseDir / subsection / "data"
         self.downloadDir = self.dataDir / "download"
         self.processingDir = self.dataDir / "processing"
         self.convertedDir = self.dataDir / "converted"
@@ -57,6 +61,26 @@ class Database:
 
     def __repr__(self):
         return str(self)
+    
+    def _translateSubsection(self, config: dict, subsection: str) -> dict:
+
+        def replaceValue(item: any, subsection: str) -> any:
+            if isinstance(item, str):
+                return item.replace("{SUBSECTION}", subsection)
+            return item
+
+        updatedConfig = {}
+        for key, value in config.items():
+            if isinstance(value, list):
+                updatedConfig[key] = [replaceValue(item, subsection) for item in value]
+
+            elif isinstance(value, dict):
+                updatedConfig[key] = self._translateSubsection(value, subsection)
+
+            else:
+                updatedConfig[key] = replaceValue(value, subsection)
+
+        return updatedConfig
     
     def _reportLeftovers(self, properties: dict) -> None:
         for property in properties:

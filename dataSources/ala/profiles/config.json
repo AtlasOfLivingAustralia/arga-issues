@@ -1,6 +1,6 @@
 {
     "retrieveType": "script",
-    "variable": [
+    "subsections": [
         "kamilaroi",
         "noongar",
         "southeastarnhemland",
@@ -11,9 +11,10 @@
         "path": "sourceProcessing/ala.py",
         "function": "collect",
         "args": [
-            "{VARIABLE}",
+            "{OUTDIR}",
+            "{SUBSECTION}",
             "./token.json"
         ],
-        "output": "{VARIABLE}.csv"
+        "output": "{SUBSECTION}.csv"
     }
 }

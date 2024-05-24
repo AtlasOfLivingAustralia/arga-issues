@@ -4,10 +4,12 @@ from lib.data.database import Database
 
 class ArgParser:
     def __init__(self, description=""):
+        self.sourceWarning = 4
         self.parser = argparse.ArgumentParser(description=description)
         self.manager = SourceManager()
 
-        self.parser.add_argument("sources", choices=self.manager.choices(), nargs="+", help="Database to interact with", metavar="SOURCE")
+        self.parser.add_argument("source", choices=self.manager.choices(), help="Database to interact with", metavar="SOURCE")
+        self.parser.add_argument("-s", "--subsection", type=str, default="all", help="Database subsection, defaults to all.")
         self.parser.add_argument("-p", "--prepare", action="store_true", help="Force redoing preparation")
         self.parser.add_argument("-o", "--overwrite", action="store_true", help="Force overwriting files")
         self.parser.add_argument("-q", "--quiet", action="store_false", help="Suppress output")
@@ -18,7 +20,12 @@ class ArgParser:
     def parse_args(self, *args, **kwargs) -> tuple[list[Database], tuple[bool, bool], bool, argparse.Namespace]:
         parsedArgs = self.parser.parse_args(*args, **kwargs)
 
-        sources = self.manager.getMultipleDBs(self._extract(parsedArgs, "sources"))
+        sources = self.manager.getDBs(self._extract(parsedArgs, "source"), self._extract(parsedArgs, "subsection"))
+        if len(sources) >= self.sourceWarning:
+            passed = self._warnSources(len(sources))
+            if not passed:
+                sources = []
+
         prepare = self._extract(parsedArgs, "prepare")
         overwrite = self._extract(parsedArgs, "overwrite")
         verbose = self._extract(parsedArgs, "quiet")
@@ -35,3 +42,10 @@ class ArgParser:
         attr = getattr(namespace, attribute)
         delattr(namespace, attribute)
         return attr
+
+    def _warnSources(self, sourceCount: int) -> bool:
+        response = input(f"WARNING: Attempting to do work on {sourceCount} sources, which may take a long time, are you sure you want to coninue? (y/n): ")
+        while response.lower() not in ("y", "n"):
+            response = input(f"Invalid response '{response}', continue? (y/n): ")
+
+        return response == "y"
