@@ -1,5 +1,6 @@
 import lib.config as cfg
 from enum import Enum
+from pathlib import Path
 
 from lib.systemManagers.timeManager import TimeManager
 from lib.systemManagers.downloadManager import DownloadManager
@@ -20,13 +21,9 @@ class Database:
 
     retrieveType = Retrieve.URL
 
-    def __init__(self, location: str, database: str, subsection: str = "", config: dict = {}):
+    def __init__(self, location: str, database: str, subsection: str, config: dict):
         self.location = location
         self.database = database
-
-        # Insert subsection
-        if subsection:
-            config = self._translateSubsection(config, subsection)
 
         # Auth
         self.authFile: str = config.pop("auth", "")
@@ -42,7 +39,8 @@ class Database:
         # Relative folders
         self.locationDir = cfg.Folders.dataSources / location
         self.databaseDir = self.locationDir / database
-        self.dataDir = self.databaseDir / subsection / "data"
+        self.subsectionDir = self.databaseDir / subsection # If no subsection, does nothing
+        self.dataDir = self.subsectionDir / "data"
         self.downloadDir = self.dataDir / "download"
         self.processingDir = self.dataDir / "processing"
         self.convertedDir = self.dataDir / "converted"
@@ -61,26 +59,6 @@ class Database:
 
     def __repr__(self):
         return str(self)
-    
-    def _translateSubsection(self, config: dict, subsection: str) -> dict:
-
-        def replaceValue(item: any, subsection: str) -> any:
-            if isinstance(item, str):
-                return item.replace("{SUBSECTION}", subsection)
-            return item
-
-        updatedConfig = {}
-        for key, value in config.items():
-            if isinstance(value, list):
-                updatedConfig[key] = [replaceValue(item, subsection) for item in value]
-
-            elif isinstance(value, dict):
-                updatedConfig[key] = self._translateSubsection(value, subsection)
-
-            else:
-                updatedConfig[key] = replaceValue(value, subsection)
-
-        return updatedConfig
     
     def _reportLeftovers(self, properties: dict) -> None:
         for property in properties:
@@ -108,12 +86,11 @@ class Database:
         finalProcessing: list[dict] = self.processingConfig.pop("final", [])
 
         for idx, file in enumerate(self.downloadManager.getFiles()):
-            tree = self.processingManager.registerFile(file)
-            if idx in specificProcessing:
-                self.processingManager.addProcessing(tree, specificProcessing[idx])
+            processing = specificProcessing.get(idx, [])
+            self.processingManager.registerFile(file, processing)
 
         self.processingManager.addAllProcessing(perFileProcessing)
-        self.processingManager.addAllProcessing(finalProcessing)
+        self.processingManager.addFinalProcessing(finalProcessing)
     
     def _prepareConversion(self, overwrite: bool, verbose: bool) -> None:
         for file in self.processingManager.getLatestNodes():
@@ -161,8 +138,9 @@ class CrawlDB(Database):
 
     def _prepareDownload(self, overwrite: bool, verbose: bool) -> None:
         properties = self.downloadConfig.pop("properties", {})
+        folderPrefix = self.downloadConfig.pop("prefix", False)
         saveFile = self.downloadConfig.pop("saveFile", "crawl.txt")
-        saveFilePath = self.databaseDir / saveFile
+        saveFilePath: Path = self.subsectionDir / saveFile
 
         if not overwrite and saveFilePath.exists():
             Logger.info("Local file found, skipping crawling")
@@ -171,35 +149,34 @@ class CrawlDB(Database):
         else:
             saveFilePath.unlink(True)
 
-            urls = self._crawl()
-            self.databaseDir.mkdir(parents=True, exist_ok=True) # Create base directory if it doesn't exist to put the file
+            urls = self._crawl(saveFilePath.parent)
+            saveFilePath.parent.mkdir(parents=True, exist_ok=True) # Create base directory if it doesn't exist to put the file
             with open(saveFilePath, 'w') as fp:
                 fp.write("\n".join(urls))
 
         for url in urls:
-            fileName = self._getFileNameFromURL(url)
+            fileName = self._getFileNameFromURL(url, folderPrefix)
             self.downloadManager.registerFromURL(url, fileName, properties)
 
-    def _crawl(self) -> None:
+    def _crawl(self, crawlerDirectory: Path) -> None:
         url = self.downloadConfig.pop("url", None)
         regex = self.downloadConfig.pop("regex", ".*")
         link = self.downloadConfig.pop("link", "")
         maxDepth = self.downloadConfig.pop("maxDepth", -1)
 
-        crawler = Crawler(self.databaseDir, regex, link, maxDepth, self.downloadManager.username, self.downloadManager.password)
+        crawler = Crawler(crawlerDirectory, regex, link, maxDepth, user=self.downloadManager.username, password=self.downloadManager.password)
 
         if url is None:
             raise Exception("No file location for source") from AttributeError
         
-        Logger.info("Crawling...")
-        crawler.crawl(url)
+        crawler.crawl(url, True)
         return crawler.getURLList()
     
-    def _getFileNameFromURL(self, url: str) -> str:
+    def _getFileNameFromURL(self, url: str, folderPrefix: bool) -> str:
         urlParts = url.split('/')
         fileName = urlParts[-1]
 
-        if not self.folderPrefix:
+        if not folderPrefix:
             return fileName
 
         folderName = urlParts[-2]

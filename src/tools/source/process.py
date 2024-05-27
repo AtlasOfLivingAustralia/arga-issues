@@ -7,4 +7,4 @@ if __name__ == '__main__':
     sources, overwrite, verbose, args = parser.parse_args()
     kwargs = parser.namespaceKwargs(args)
     for source in sources:
-        source.create(Step.CONVERSION, overwrite, verbose, **kwargs)
+        source.create(Step.PROCESSING, overwrite, verbose, **kwargs)

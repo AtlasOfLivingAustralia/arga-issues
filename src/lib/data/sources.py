@@ -73,6 +73,22 @@ class Location:
         
         with open(configPath) as fp:
             return json.load(fp)
+        
+    def _translateSubsection(self, config: dict, subsection: str, subvalue: str) -> dict:
+
+        def translate(obj: any) -> any:
+            if isinstance(obj, str):
+                return obj.replace("{SUBSECTION}", subsection).replace("{SUBSECTION:VALUE}", subvalue)
+            
+            if isinstance(obj, list):
+                return [translate(item) for item in obj]
+            
+            if isinstance(obj, dict):
+                return {key: translate(value) for key, value in obj.items()}
+            
+            return obj
+
+        return {key: translate(value) for key, value in config.items()}
 
     def loadDBs(self, database: str, subsection: str = "all") -> Database:
         config = self._loadConfig(database)
@@ -86,14 +102,25 @@ class Location:
         if dbType is None:
             raise Exception(f"Invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
         
-        subsections = config.pop("subsections", [])
-        if not subsections:
+        subsections: list = config.pop("subsections", [])
+
+        if not subsections: # No subsections in config
             return [dbType(self.locationName, database, "", config)]
+        
+        subsectionLookup = {}
+        for section in subsections:
+            parts = section.split(":")
+            if len(parts) == 1:
+                subsectionLookup[parts[0]] = ""
+            elif len(parts) == 2:
+                subsectionLookup[parts[0]] = parts[1]
+            else:
+                Logger.warning(f"Bad config subsection: {section}")
 
         if subsection == "all":
-            return [dbType(self.locationName, database, section, config) for section in subsections]
+            return [dbType(self.locationName, database, section, self._translateSubsection(config, subsection, value)) for subsection, value in subsectionLookup.items()]
         
-        if subsection not in subsections:
+        if subsection not in subsectionLookup:
             raise Exception(f"Invalid subsection: {subsection}")
         
-        return [dbType(self.locationName, database, subsection, config)]
+        return [dbType(self.locationName, database, subsection, self._translateSubsection(config, subsection, subsectionLookup[subsection]))]

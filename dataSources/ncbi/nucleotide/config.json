@@ -1,32 +1,45 @@
 {
-    "dbType": "location",
-    "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genbank/",
-    "subDirectoryDepth": 0,
-    "regexMatch": "gb[a-z]{3}\\d+\\.seq\\.gz",
-    "perFileProcessing": [
-        {
-            "path": "lib/tools/zipping.py",
-            "function": "extract",
-            "args": [
-                "{INPUT, 0, FILEPATH}",
-                "{PATH, PROCESSING}"
-            ],
-            "outputs": [
-                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM, .csv}"
-            ]
-        },
-        {
-            "path": "sourceProcessing/ncbiFlatfileParser.py",
-            "function": "process",
-            "args": [
-                "{INPUT, 0, FILEPATH}"
-            ],
-            "outputs": [
-                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM, .csv}"
-            ]
-        }
+    "retrieveType": "crawl",
+    "subsections": [
+        "bacteria:bct",
+        "constructed:con",
+        "environmental:env",
+        "expressedSeq:est",
+        "genomeSurvey:gss",
+        "highCDNA:htc",
+        "invertebrate:inv",
+        "mammalian:mam",
+        "otherVertebrate:vrt",
+        "patent:pat",
+        "phage:phg",
+        "plant:pln",
+        "primate:pri",
+        "rodent:rod",
+        "sequenceTagged:sts",
+        "synthetic:syn",
+        "transcriptome:tsa",
+        "viral:vrl"
     ],
-    "dwcProperties": {
-        "mapID": 1182330400
+    "download": {
+        "url": "https://ftp.ncbi.nlm.nih.gov/genbank/",
+        "regex": "gb{SUBSECTION:VALUE}\\d+\\.seq\\.gz",
+        "maxDepth": 0
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "sourceProcessing/ncbi.py",
+                "function": "parseNucleotide",
+                "args": [
+                    "{INDIR}",
+                    "{OUTPATH}"
+                ],
+                "output": "{SUBSECTION}.csv"
+            }
+        ]
+    },
+    "conversion": {
+        "mapID": 1182330400,
+        "chunkSize": 512
     }
 }

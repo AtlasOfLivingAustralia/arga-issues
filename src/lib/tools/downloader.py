@@ -5,7 +5,7 @@ from requests.exceptions import HTTPError
 from lib.tools.logger import Logger
 
 class Downloader:
-    def __init__(self, defaultChunksize: int = 1024*1024, username: str = "", password: str = "", barLength: int = 20):
+    def __init__(self, defaultChunksize: int = 1024*1024, username: str = "", password: str = "", barLength: int = 40):
         self.defaultChunksize = defaultChunksize
         self.auth = HTTPBasicAuth(username, password) if username else None
         self.barLength = barLength
@@ -15,7 +15,7 @@ class Downloader:
 
     def _renderProgress(self, completion: float) -> None:
         length = int(completion * self.barLength)
-        print(f"Downloading {self._loading[self._pos]} | [{length * '='}{(self.barLength - length) * '-'}]", end="\r")
+        print(f"Downloading ({self._loading[self._pos]}): [{length * '='}{(self.barLength - length) * '-'}]", end="\r")
         self._pos = (self._pos + 1) % 4
 
     def download(self, url: str, filePath: Path, customChunksize: int = -1, verbose: bool = False) -> bool:
@@ -33,13 +33,13 @@ class Downloader:
             chunksize = customChunksize if customChunksize > 0 else self.defaultChunksize
 
             with open(filePath, "wb") as fp:
-                for idx, chunk in enumerate(stream.iter_content(chunksize)):
-                    if fileSize > 0:
+                for idx, chunk in enumerate(stream.iter_content(chunksize), start=1):
+                    fp.write(chunk)
+
+                    if fileSize > 0: # File size known, can render completion %
                         self._renderProgress((idx * chunksize) / fileSize)
                     else:
-                        print(f"Downloading chunk: {idx}", end="\r")
-
-                    fp.write(chunk)
+                        print(f"Downloaded chunk: {idx}", end="\r")
 
         print()
         return True

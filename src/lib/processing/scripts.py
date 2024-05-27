@@ -85,7 +85,7 @@ class Script:
                 
             return arg
         
-        if not arg.startswith("{") and not arg.endswith("}"):
+        if not (arg.startswith("{") and arg.endswith("}")):
             return arg
         
         argValue = arg[1:-1]
