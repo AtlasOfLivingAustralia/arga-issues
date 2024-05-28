@@ -13,9 +13,9 @@ from lib.tools.crawler import Crawler
 from lib.tools.logger import Logger
 
 class Retrieve(Enum):
-    URL     = 0
-    CRAWL   = 1
-    SCRIPT  = 2
+    URL     = "url"
+    CRAWL   = "crawl"
+    SCRIPT  = "script"
 
 class Database:
 

@@ -3,41 +3,56 @@ import argparse
 from lib.data.sources import SourceManager
 from pathlib import Path
 import json
+from lib.data.database import Retrieve
 
-def _specificConfig() -> dict:
+def _urlConfig() -> dict:
     return {
-        "dbType": "specific",
-        "files": []
+        "retrieveType": "url",
+        "download": {
+            "files": [
+                {
+                    "url": "",
+                    "name": ""
+                }
+            ]
+        },
+        "conversion": {}
     }
 
-def _locationConfig() -> dict:
+def _crawlConfig() -> dict:
     return {
-        "dbType": "location",
-        "dataLocation": "",
-        "regexMatch": ""
+        "retrieveType": "crawl",
+        "download": {
+            "url": "",
+            "regex": ""
+        },
+        "conversion": {}
     }
 
 def _scriptConfig() -> dict:
     return {
-        "dbType": "script",
-        "script": {
+        "retrieveType": "script",
+        "download": {
             "path": "",
             "function": "",
             "args": [],
             "output": []
-        }
+        },
+        "conversion": {}
     }
 
 def _defaultConfig() -> dict:
     return {
-        "dbType": "",
+        "retrieveType": "",
+        "download": {},
+        "conversion": {}
     }
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate folders for a new data source")
     parser.add_argument("location", help="Location of the data source")
     parser.add_argument("database", help="Database name for location")
-    parser.add_argument("-t", "--type", choices=["specific", "location", "script"], help="Extra setup if db type is known")
+    parser.add_argument("-t", "--type", choices=list(Retrieve._value2member_map_), help="Extra setup if db type is known")
     args = parser.parse_args()
 
     sourceManager = SourceManager()
@@ -62,12 +77,13 @@ if __name__ == "__main__":
     dataFolder.mkdir()
 
     configs = {
-        "specific": _specificConfig,
-        "location": _locationConfig,
-        "script": _scriptConfig
+        Retrieve.URL: _urlConfig,
+        Retrieve.CRAWL: _crawlConfig,
+        Retrieve.SCRIPT: _scriptConfig,
     }
 
-    config = configs.get(args.type, _defaultConfig)
+    retriveType = Retrieve._value2member_map_.get(args.type, None)
+    config = configs.get(retriveType, _defaultConfig)
 
     configFile = databaseFolder / "config.json"
     with open(configFile, "w") as fp:
