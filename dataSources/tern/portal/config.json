@@ -1,16 +1,14 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/tern.py",
         "function": "build",
         "args": [
-            "{PATH, DOWNLOAD, tern.csv}"
+            "{OUTPATH}"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, tern.csv}"
-        ]
+        "output": "tern.csv"
     },
-    "dwcProperties": {
+    "conversion": {
         "mapID": 1651969444
     }
 }

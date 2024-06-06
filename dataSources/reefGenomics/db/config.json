@@ -1,15 +1,16 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "subsections": [
+        "project",
+        "organism"
+    ],
+    "download": {
         "path": "sourceProcessing/reefgenomics.py",
         "function": "build",
         "args": [
-            "{PATH, DOWNLOAD}",
-            ["project", "organism"]
+            "{OUTDIR}",
+            "{SUBSECTION}"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, project.csv}",
-            "{PATH, DOWNLOAD, organism.csv}"
-        ]
+        "output": "{SUBSECTION}.csv"
     }
 }

@@ -1,25 +1,27 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
-            "url": "https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/All_Data.gene_info.gz",
-            "downloadedFile": "All_data_gene_info.csv.gz",
-            "processing": [
-                {
-                    "path": "lib/tools/zipping.py",
-                    "function": "extract",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}",
-                        "{PATH, PROCESSING}"
-                    ],
-                    "outputs": [
-                        "{PATH, PROCESSING, All_data_gene_info.csv}"
-                    ]
-                }
-            ],
-            "fileProperties": {
-                "separator": "\t"
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/All_Data.gene_info.gz",
+                "name": "All_data_gene_info.csv.gz"
             }
-        }
-    ]
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "lib/tools/zipping.py",
+                "function": "extract",
+                "args": [
+                    "{INPATH}",
+                    "{OUTDIR}"
+                ],
+                "output": "All_data_gene_info.csv",
+                "properties": {
+                    "separator": "\t"
+                }
+            }
+        ]
+    }
 }

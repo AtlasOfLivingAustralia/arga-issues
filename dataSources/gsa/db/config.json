@@ -1,13 +1,11 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/gsa.py",
         "function": "build",
         "args": [
-            "{PATH, DOWNLOAD, gsa.csv}"
+            "{OUTPATH}"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, gsa.csv}"
-        ]
+        "output": "gsa.csv"
     }
 }

@@ -1,28 +1,26 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/vicmuseum.py",
         "function": "retrieve",
         "args": [
-            "species",
-            "{PATH, DOWNLOAD}",
-            50
+            "specimens",
+            "{OUTDIR}",
+            1000
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, species.csv}"
-        ]
+        "output": "specimens.csv"
     },
-    "finalProcessing": [
-        {
-            "path": "sourceProcessing/vicmuseum.py",
-            "function": "expandTaxa",
-            "args": [
-                "{INPUT, 0, FILEPATH}",
-                "{PATH, PROCESSING, species.csv}"
-            ],
-            "outputs": [
-                "{PATH, PROCESSING, species.csv}"
-            ]
-        }
-    ]
+    "processing": {
+        "final": [
+            {
+                "path": "sourceProcessing/vicmuseum.py",
+                "function": "expandTaxa",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "species.csv"
+            }
+        ]
+    }
 }

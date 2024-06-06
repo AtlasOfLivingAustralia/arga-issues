@@ -1,30 +1,32 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
-            "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Collection_codes.txt",
-            "downloadedFile": "Collection_codes.txt"
-        },
-        {
-            "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Institution_codes.txt",
-            "downloadedFile": "Institution_codes.txt"
-        },
-        {
-            "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Unique_institution_codes.txt",
-            "downloadedFile": "Unique_institution_codes.txt"
-        } 
-    ],
-    "finalProcessing": [
-        {
-            "path": "sourceProcessing/ncbi.py",
-            "function": "compileBiocollections",
-            "args": [
-                "{PATH, DOWNLOAD}",
-                "{PATH, PROCESSING, biocollections.csv}"
-            ],
-            "outputs": [
-                "{PATH, PROCESSING, biocollections.csv}"
-            ]
-        }
-    ]
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Collection_codes.txt",
+                "name": "Collection_codes.txt"
+            },
+            {
+                "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Institution_codes.txt",
+                "name": "Institution_codes.txt"
+            },
+            {
+                "url": "https://ftp.ncbi.nih.gov/pub/taxonomy/biocollections/Unique_institution_codes.txt",
+                "name": "Unique_institution_codes.txt"
+            } 
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "sourceProcessing/ncbi.py",
+                "function": "compileBiocollections",
+                "args": [
+                    "{INDIR}",
+                    "{OUTPATH}"
+                ],
+                "output": "biocollections.csv"
+            }
+        ]
+    }
 }
