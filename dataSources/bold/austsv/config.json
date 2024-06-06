@@ -1,16 +1,18 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
-            "url": "http://v4.boldsystems.org/index.php/API_Public/combined?geo=Australia&format=tsv",
-            "downloadedFile": "bold_data.tsv",
-            "fileProperties": {
-                "separator": "\t",
-                "encoding": "iso-8859-1"
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "http://v4.boldsystems.org/index.php/API_Public/combined?geo=Australia&format=tsv",
+                "name": "bold_data.tsv",
+                "properties": {
+                    "separator": "\t",
+                    "encoding": "iso-8859-1"
+                }
             }
-        }
-    ],
-    "dwcProperties": {
+        ]
+    },
+    "conversion": {
         "mapID": 78385490
     }
 }

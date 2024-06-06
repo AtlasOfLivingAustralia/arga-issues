@@ -1,34 +1,36 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
-            "url": "http://v4.boldsystems.org/index.php/API_Public/combined?geo=Australia&format=xml",
-            "downloadedFile": "bold_data.xml",
-            "processing": [
-                {
-                    "path": "tools/processing/xmlProcess.py",
-                    "function": "process",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}",
-                        "{PATH, PROCESSING, bold_xml.csv}"
-                    ],
-                    "kwargs": {
-                        "encoding": "iso-8859-1",
-                        "subfileRows": 1000000,
-                        "compressChild": [
-                            "tracefiles",
-                            "sequences",
-                            "specimen_imagery"
-                        ]
-                    },
-                    "outputs": [
-                        "{PATH, PROCESSING, bold_xml.csv}"
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "http://v4.boldsystems.org/index.php/API_Public/combined?geo=Australia&format=xml",
+                "name": "bold_data.xml"
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "tools/processing/xmlProcess.py",
+                "function": "process",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "kwargs": {
+                    "encoding": "iso-8859-1",
+                    "subfileRows": 1000000,
+                    "compressChild": [
+                        "tracefiles",
+                        "sequences",
+                        "specimen_imagery"
                     ]
-                }
-            ]
-        }
-    ],
-    "dwcProperties": {
+                },
+                "output": "bold_xml.csv"
+            }
+        ]
+    },
+    "conversion": {
         "mapID": 984983691
     }
 }

@@ -23,15 +23,13 @@ class RepeatExtractor:
     def extract(self, filePath: str) -> Path | None:
         return extract(filePath, self.outputDir, self.addSuffix, self.overwrite)
 
-def extract(filePath: Path, outputDir: str = "", addSuffix: str = "", overwrite: bool = False) -> Path | None:
+def extract(filePath: Path, outputDir: Path = None, addSuffix: str = "", overwrite: bool = False) -> Path | None:
     if not filePath.exists():
         Logger.warning(f"No file exists at path: {filePath}.")
         return None
     
-    if not outputDir:
+    if outputDir is None:
         outputDir = filePath.parent
-    else:
-        outputDir = Path(outputDir)
     
     while filePath.suffix in Extension._value2member_map_:
         outputFile = outputDir / Path(filePath.stem)

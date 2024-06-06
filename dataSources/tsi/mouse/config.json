@@ -1,12 +1,14 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
-            "url": "https://threatenedspecies.s3-ap-southeast-2.amazonaws.com/Mastacomys_fuscus/BTR_Metadata.csv",
-            "downloadedFile": "Mouse_Metadata.csv"
-        }
-    ],
-    "dwcProperties": {
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://threatenedspecies.s3-ap-southeast-2.amazonaws.com/Mastacomys_fuscus/BTR_Metadata.csv",
+                "downloadedFile": "Mouse_Metadata.csv"
+            }
+        ]
+    },
+    "conversion": {
         "augment": [
             {
                 "path": "sourceProcessing/tsi.py",

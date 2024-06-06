@@ -1,16 +1,14 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/csiro.py",
         "function": "getPortalData",
         "args": [
-            "{PATH, DOWNLOAD, portalData.csv}"
+            "{OUTPATH}"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, portalData.csv}"
-        ]
+        "output": "portalData.csv"
     },
-    "dwcProperties": {
+    "conversion": {
         "mapID": 16336602
     }
 }

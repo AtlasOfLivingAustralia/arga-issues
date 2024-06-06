@@ -1,38 +1,34 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
+    "retrieveType": "specific",
+    "download": {
+        "files": {
             "url": "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip",
-            "downloadedFile": "taxdump.zip",
-            "processing": [
-                {
-                    "path": "lib/tools/zipping.py",
-                    "function": "extract",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}",
-                        "{PATH, PROCESSING}"
-                    ],
-                    "outputs": [
-                        "{PATH, PROCESSING, taxdump}"
-                    ]
-                }
-            ]
+            "downloadedFile": "taxdump.zip"
         }
-    ],
-    "finalProcessing": [
-        {
-            "path": "sourceProcessing/ncbiTaxonomy.py",
-            "function": "parse",
-            "args": [
-                "{PATH, PROCESSING, taxdump}",
-                "{PATH, PREDWC, ncbiTaxonomy.csv}"
-            ],
-            "outputs": [
-                "{PATH, PREDWC, ncbiTaxonomy.csv}"
-            ]
-        }
-    ],
-    "dwcProperties": {
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "lib/tools/zipping.py",
+                "function": "extract",
+                "args": [
+                    "{INPATH}",
+                    "{OUTDIR}"
+                ],
+                "output": "taxdump"
+            },
+            {
+                "path": "sourceProcessing/ncbiTaxonomy.py",
+                "function": "parse",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "ncbiTaxonomy.csv"
+            }
+        ]
+    },
+    "conversion": {
         "mapID": 240630744
     }
 }

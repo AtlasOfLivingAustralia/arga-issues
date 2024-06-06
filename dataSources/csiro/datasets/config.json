@@ -1,14 +1,12 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/csiro.py",
         "function": "build",
         "args": [
             "datasets",
-            "{PATH, DOWNLOAD, dataset.csv}"
+            "{OUTPATH}"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, dataset.csv}"
-        ]
+        "output": "dataset.csv"
     }
 }

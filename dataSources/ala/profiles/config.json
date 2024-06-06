@@ -1,25 +1,20 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "subsections": [
+        "kamilaroi",
+        "noongar",
+        "southeastarnhemland",
+        "mangrovewatch",
+        "weeds-australia"
+    ],
+    "download": {
         "path": "sourceProcessing/ala.py",
         "function": "collect",
         "args": [
-            "{PATH, DOWNLOAD}",
-            [
-                "kamilaroi",
-                "noongar",
-                "southeastarnhemland",
-                "mangrovewatch",
-                "weeds-australia"
-            ],
-            "{PATH, ROOT, token.json}"
+            "{OUTDIR}",
+            "{SUBSECTION}",
+            "./token.json"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, kamilaroi.csv}",
-            "{PATH, DOWNLOAD, noongar.csv}",
-            "{PATH, DOWNLOAD, southeastarnhemland.csv}",
-            "{PATH, DOWNLOAD, mangrovewatch.csv}",
-            "{PATH, DOWNLOAD, weeds-australia.csv}"
-        ]
+        "output": "{SUBSECTION}.csv"
     }
 }

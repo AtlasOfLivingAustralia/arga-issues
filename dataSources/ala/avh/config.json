@@ -1,16 +1,14 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/ala.py",
         "function": "build",
         "args": [
-            "{PATH, DOWNLOAD, avh.csv}"
+            "{OUTPATH}"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, avh.csv}"
-        ]
+        "output": "avh.csv"
     },
-    "dwcProperties": {
+    "conversion": {
         "mapID": 404635334
     }
 }

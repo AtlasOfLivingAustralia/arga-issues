@@ -100,17 +100,17 @@ def compileAssemblyStats(inputFolder: Path, outputFilePath: Path) -> None:
     print()
     writer.oneFile()
 
-def parseNucleotide(filePath: Path, outputFilePath: Path, verbose: bool = True) -> None:
+def parseNucleotide(folderPath: Path, outputFilePath: Path, verbose: bool = True) -> None:
     extractor = RepeatExtractor(outputFilePath.parent)
     writer = BigFileWriter(outputFilePath, "seqChunks", "chunk")
 
-    for idx, file in enumerate(filePath.iterdir(), start=1):
+    for idx, file in enumerate(folderPath.iterdir(), start=1):
         if verbose:
             print(f"Extracting file {file.name}")
         else:
             print(f"Processing file: {idx}", end="\r")
     
-        extractedFile = extractor.extract(filePath)
+        extractedFile = extractor.extract(file)
 
         if extractedFile is None:
             print(f"Failed to extract file {file.name}, skipping")

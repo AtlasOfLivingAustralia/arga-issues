@@ -1,38 +1,41 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
-            "url": "https://ftp.ncbi.nlm.nih.gov/bioproject/bioproject.xml",    
-            "downloadedFile": "bioproject.xml",
-            "processing": [
-                {
-                    "path": "tools/processing/xmlProcess.py",
-                    "function": "process",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}",
-                        "{PATH, PROCESSING, bioproject.csv}"
-                    ],
-                    "kwargs": {
-                        "subfileRows": 150000,
-                        "compressChild": [
-                            "ProjectDescr",
-                            "RepliconSet",
-                            "ProjectLinks",
-                            "AuthorSet",
-                            "Grant",
-                            "Description",
-                            "Morphology",
-                            "Objectives",
-                            "ProjectDataTypeSet",
-                            "BioSampleSet",
-                            "IntendedDataTypeSet"
-                        ]
-                    },
-                    "outputs": [
-                        "{PATH, PROCESSING, bioproject.csv}"
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://ftp.ncbi.nlm.nih.gov/bioproject/bioproject.xml",    
+                "name": "bioproject.xml"
+                
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "tools/processing/xmlProcess.py",
+                "function": "process",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "kwargs": {
+                    "subfileRows": 150000,
+                    "compressChild": [
+                        "ProjectDescr",
+                        "RepliconSet",
+                        "ProjectLinks",
+                        "AuthorSet",
+                        "Grant",
+                        "Description",
+                        "Morphology",
+                        "Objectives",
+                        "ProjectDataTypeSet",
+                        "BioSampleSet",
+                        "IntendedDataTypeSet"
                     ]
-                }
-            ]
-        }
-    ]
+                },
+                "output": "bioproject.csv"
+            }
+        ]
+    }
 }

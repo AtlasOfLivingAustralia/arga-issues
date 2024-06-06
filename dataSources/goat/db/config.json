@@ -1,26 +1,24 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/goat.py",
         "function": "build",
         "args": [
-            "{PATH, DOWNLOAD, rawgoat.csv}"
+            "{OUTPATH}"
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, rawgoat.csv}"
-        ]
+        "output": "rawgoat.csv"
     },
-    "perFileProcessing": [
-        {
-            "path": "sourceProcessing/goat.py",
-            "function": "clean",
-            "args": [
-                "{INPUT, 0, FILEPATH}",
-                "{PATH, PROCESSING, cleanedgoat.csv}"
-            ],
-            "outputs": [
-                "{PATH, PROCESSING, cleanedgoat.csv}"
-            ]
-        }
-    ]
+    "processing": {
+        "perFile": [
+            {
+                "path": "sourceProcessing/goat.py",
+                "function": "clean",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "cleanedgoat.csv"
+            }
+        ]
+    }
 }

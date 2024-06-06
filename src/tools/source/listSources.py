@@ -1,5 +1,5 @@
 import argparse
-from lib.sourceManager import SourceManager
+from lib.data.sources import SourceManager
 
 if __name__ == "__main__":
     manager = SourceManager()

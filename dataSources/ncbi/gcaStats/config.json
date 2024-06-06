@@ -1,21 +1,23 @@
 {
-    "dbType": "location",
-    "dataLocation": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/",
-    "regexMatch": ".*assembly_stats\\.txt",
-    "finalProcessing": [
-        {
-            "path": "sourceProcessing/ncbi.py",
-            "function": "compileAssemblyStats",
-            "args": [
-                "{PATH, DOWNLOAD}",
-                "{PATH, PREDWC, gcaStats.csv}"
-            ],
-            "outputs": [
-                "{PATH, PREDWC, gcaStats.csv}"
-            ]
-        }
-    ],
-    "dwcProperties": {
+    "retrieveType": "crawl",
+    "download": {
+        "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/",
+        "regex": ".*assembly_stats\\.txt"
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "sourceProcessing/ncbi.py",
+                "function": "compileAssemblyStats",
+                "args": [
+                    "{INDIR}",
+                    "{OUTPATH}"
+                ],
+                "output": "gcaStats.csv"
+            }
+        ]
+    },
+    "conversion": {
         "mapID": 1145358378
     }
 }

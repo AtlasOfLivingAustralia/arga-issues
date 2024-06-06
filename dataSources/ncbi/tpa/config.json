@@ -1,58 +1,36 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
-            "url": "https://ftp.ncbi.nlm.nih.gov/tpa/release/con_tpa_cu.gbff.gz",
-            "downloadedFile": "con_tpa_cu.gbff.gz",
-            "processing": [
-                {
-                    "path": "lib/tools/zipping.py",
-                    "function": "extract",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}",
-                        "{PATH, PROCESSING}"
-                    ],
-                    "outputs": [
-                        "{PATH, PROCESSING, con_tpa_cu.gbff}"
-                    ]
-                },
-                {
-                    "path": "sourceProcessing/ncbi/flatfileParser.py",
-                    "function": "process",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}"
-                    ],
-                    "outputs": [
-                        "{PATH, PROCESSING, con_tpa_cu.csv}"
-                    ]
-                }
-            ]
-        },
-        {
-            "url": "https://ftp.ncbi.nlm.nih.gov/tpa/release/tpa_cu.gbff.gz",
-            "downloadedFile": "tpa_cu.gbff.gz",
-            "processing": [
-                {
-                    "path": "lib/tools/zipping.py",
-                    "function": "extract",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}"
-                    ],
-                    "outputs": [
-                        "{PATH, PROCESSING, tpa_cu.gbff}"
-                    ]
-                },
-                {
-                    "path": "sourceProcessing/ncbi/flatfileParser.py",
-                    "function": "process",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}"
-                    ],
-                    "outputs": [
-                        "{PATH, PROCESSING, tpa_cu.csv}"
-                    ]
-                }
-            ]
-        }
-    ]
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://ftp.ncbi.nlm.nih.gov/tpa/release/con_tpa_cu.gbff.gz",
+                "name": "con_tpa_cu.gbff.gz"
+            },
+            {
+                "url": "https://ftp.ncbi.nlm.nih.gov/tpa/release/tpa_cu.gbff.gz",
+                "name": "tpa_cu.gbff.gz"
+            }
+        ]
+    },
+    "processing": {
+        "perFile": [
+            {
+                "path": "lib/tools/zipping.py",
+                "function": "extract",
+                "args": [
+                    "{INPATH}",
+                    "{OUTDIR}"
+                ],
+                "output": "{INSTEM}"
+            },
+            {
+                "path": "sourceProcessing/ncbi/flatfileParser.py",
+                "function": "process",
+                "args": [
+                    "{INPATH}"
+                ],
+                "output": "{INSTEM}"
+            }
+        ]
+    }
 }

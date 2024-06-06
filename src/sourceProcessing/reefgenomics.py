@@ -1,32 +1,26 @@
 import requests
 from bs4 import BeautifulSoup
-import lib.commonFuncs as cmn
 from pathlib import Path
+import pandas as pd
 
-def build(folderPath: Path, outputFilenames: list[str]) -> None:
+def build(folderPath: Path, tableName: str) -> None:
     url = "http://reefgenomics.org/sitemap.html"
     rawHTML = requests.get(url)
     soup = BeautifulSoup(rawHTML.text, 'html.parser')
-    
-    writingFile = 0
-    useHeaders = []
-    output = []
-    for row in soup.find_all('tr'):
-        headers = [h.text for h in row.find_all('th')]
-        if headers:
-            if useHeaders: # If headers existed previously, write to file
-                cmn.dictListToCSV(output, useHeaders + ["link"], folderPath / f"{outputFilenames[writingFile]}.csv")
-                writingFile += 1
-                output.clear()
 
-            useHeaders = headers.copy()
+    for header in soup.find_all("h2"):
+        section = header.text.split()[1]
+        if section != tableName:
             continue
 
-        data = {}
-        for idx, value in enumerate(row.find_all('td')):
-            data[useHeaders[idx]] = value.text
-            if idx == 1:
-                data["link"] = value.find('a').get("href")
-        output.append(data)
+        table = header.find_next("table")
+        rows = table.find_all("tr")
+        headers = [header.text for header in rows.pop(0).find_all("th")]
+        rowData = []
 
-    cmn.dictListToCSV(output, useHeaders + ["link"], folderPath / f"{outputFilenames[writingFile]}.csv")
+        for row in rows:
+            entries = row.find_all("td")
+            link = entries[1].find("a").get("href")
+            rowData.append({header: value.text for header, value in zip(headers, entries)} | {"link": link})
+
+        pd.DataFrame.from_records(rowData).to_csv(folderPath / f"{tableName}.csv", index=False)

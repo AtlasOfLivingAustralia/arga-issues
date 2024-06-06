@@ -1,0 +1,28 @@
+{
+    "retrieveType": "url",
+    "subsections": [
+        "records",
+        "samples"
+    ],
+    "download": {
+        "files": [
+            {
+                "url": "https://s3.ap-southeast-2.amazonaws.com/wilderlab.publicdata/{SUBSECTION}3.csv",
+                "name": "{SUBSECTION}.csv"
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "sourceProcessing/wilderlab.py",
+                "function": "clean",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "cleaned{SUBSECTION}.csv"
+            }
+        ]
+    }
+}

@@ -1,15 +1,13 @@
 {
-    "dbType": "script",
-    "script": {
+    "retrieveType": "script",
+    "download": {
         "path": "sourceProcessing/vicmuseum.py",
         "function": "retrieve",
         "args": [
             "specimens",
-            "{PATH, DOWNLOAD}",
+            "{OUTDIR}",
             1000
         ],
-        "outputs": [
-            "{PATH, DOWNLOAD, specimens.csv}"
-        ]
+        "output": "specimens.csv"
     }
 }
