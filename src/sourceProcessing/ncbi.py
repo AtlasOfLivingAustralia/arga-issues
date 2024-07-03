@@ -15,7 +15,6 @@ from lib.tools.zipping import RepeatExtractor
 from lib.tools.progressBar import ProgressBar
 from lib.tools.logger import Logger
 from typing import Generator
-import json
 
 def splitLine(line: str, endingDivider: bool = True) -> list[str]:
     cleanLine = line.rstrip('\n').rstrip()
@@ -201,7 +200,7 @@ def enrichStats(summaryFile: File, outputPath: Path, apiKeyPath: Path = None):
                 
             progress.render((len(recordData) + len(failedAccessions)) / recordsPerSubsection)
 
-        print(f"Completed subsection {iteration}")
+        print(f"\nCompleted subsection {iteration}")
         writer.writeDF(pd.DataFrame.from_records(recordData))
 
     writer.oneFile(True)
