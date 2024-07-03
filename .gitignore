@@ -31,11 +31,11 @@ logs
 env
 
 # Data sources files
-datasources/*/*/data
-datasources/*/*/examples
-datasources/*/*/crawlerProgress
-datasources/*/*/*.json
-!datasources/*/*/config.json
+datasources/**/data
+datasources/**/examples
+datasources/**/crawlerProgress
+datasources/**/*.json
+!datasources/**/config.json
 
 # Data Files #
 *.tsv

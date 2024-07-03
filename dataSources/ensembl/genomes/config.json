@@ -1,0 +1,33 @@
+{
+    "retrieveType": "url",
+    "subsections": [
+        "plants:Plants",
+        "metazoa:Metazoa",
+        "protists:Protists",
+        "fungi:Fungi"
+    ],
+    "download": {
+        "files": [
+            {
+                "url": "http://ftp.ensemblgenomes.org/pub/{SUBSECTION}/current/species_metadata_Ensembl{SUBSECTION:VALUE}.json",
+                "name": "{SUBSECTION}.json",
+                "properties": {
+                    "sep": "\t"
+                }
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "sourceProcessing/ensembl",
+                "function": "flattenJson",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "{SUBSECTION}.csv"
+            }
+        ]
+    }
+}

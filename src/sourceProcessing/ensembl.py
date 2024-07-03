@@ -21,3 +21,21 @@ def speciesDownload(outputFilePath: Path) -> None:
     data = request.json()
     df = pd.DataFrame.from_records(data["species"])
     df.to_csv(outputFilePath, index=False)
+
+def flattenJson(filePath: Path, outputFilePath: Path) -> None:
+    with open(filePath) as fp:
+        data = json.load(fp)
+
+    records = []
+    for record in data:
+        organism = record.pop("organism")
+        record["organism_name"] = organism.pop("name")
+
+        assembly = record.pop("assembly")
+        assembly.pop("sequences")
+
+        release = record.pop("data_release")
+
+        records.append(organism | assembly | release | record)
+
+    pd.DataFrame.from_records(records).to_csv(outputFilePath, index=False)
