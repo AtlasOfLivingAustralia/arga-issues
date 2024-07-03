@@ -3,8 +3,8 @@
     "download": {
         "files": [
             {
-                "url": "https://ftp.ncbi.nih.gov/genomes/refseq/assembly_summary_refseq.txt",
-                "name": "assembly_summary_refseq.tsv",
+                "url": "https://ftp.ncbi.nih.gov/genomes/genbank/assembly_summary_genbank.txt",
+                "name": "assembly_summary_genbank.tsv",
                 "properties": {
                     "separator": "\t",
                     "firstrow": 1
@@ -12,9 +12,23 @@
             }
         ]
     },
+    "processing": {
+        "final": [
+            {
+                "path": "sourceProcessing/ncbi",
+                "function": "enrichStats",
+                "args": [
+                    "{INFILE}",
+                    "{OUTPATH}",
+                    "./apikey.txt"
+                ],
+                "output": "genbank.csv"
+            }
+        ]
+    },
     "conversion": {
         "mapID": 2003682060,
-        "customMapPath": "{PATH, ROOT, customColumns.json}",
+        "customMapPath": "./customColumns.json",
         "setNA": [
             "na"
         ],
