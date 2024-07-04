@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import pandas as pd
+from pathlib import Path
 
 def getColumnEmptyCount(df: pd.DataFrame, column: str) -> int:
     if column not in df.columns:
@@ -46,5 +46,9 @@ def applyExclusions(df: pd.DataFrame, exclusionMap: dict) -> pd.DataFrame:
     return df
 
 def removeSpaces(df: pd.DataFrame) -> pd.DataFrame:
-    df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["", ""], regex=True, inplace=True)
-    return df
+    return df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["", ""], regex=True)
+
+def saveToFile(records: list[dict], filePath: Path) -> None:
+    df = pd.DataFrame.from_records(records)
+    df = removeSpaces(df)
+    df.to_csv(filePath, index=False)

@@ -2,11 +2,10 @@ import requests
 from pathlib import Path
 import lib.commonFuncs as cmn
 import yaml
-import csv
 from yaml.scanner import ScannerError
 import json
-from lib.processing.scripts import ScriptWrapper
 from lib.tools.downloader import Downloader
+import pandas as pd
 
 def build(outputFilePath: Path, savedFilePath: Path) -> None:
     location = "https://42basepairs.com/api/v1/files/s3/genomeark/species/"
@@ -24,8 +23,7 @@ def build(outputFilePath: Path, savedFilePath: Path) -> None:
         with open(savedFilePath) as fp:
             speciesList = json.load(fp)
 
-    allData = []
-    columns = []
+    records = []
     downloader = Downloader()
     for species in speciesList:
         name = species.get("name", "")
@@ -50,12 +48,7 @@ def build(outputFilePath: Path, savedFilePath: Path) -> None:
             continue
 
         data = cmn.flatten(data)
-        allData.append(data)
-        columns = cmn.extendUnique(columns, data.keys())
+        records.append(data)
 
-    with open(outputFilePath, 'w', newline='') as fp:
-        writer = csv.DictWriter(fp, columns)
-        writer.writeheader()
-        
-        for row in allData:
-            writer.writerow(row)
+    df = pd.DataFrame.from_records(data)
+    df.to_csv(outputFilePath, index=False)

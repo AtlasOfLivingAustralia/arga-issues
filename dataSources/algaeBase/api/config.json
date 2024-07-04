@@ -1,12 +1,18 @@
 {
-    "retrieveType": "script",
+    "retrieveType": "api",
     "download": {
-        "path": "sourceProcessing/algaebase.py",
-        "function": "build",
-        "args": [
-            "{OUTPATH}",
-            "./apiKey.txt"
+        "url": "https://api.algaebase.org/v1.3/species?taxonomicstatus=C",
+        "apiKeyPath": "./apiKey.txt",
+        "apiKeyHeader": "abapikey",
+        "perCall": "count",
+        "offset": "offset",
+        "entriesPerCall": 1000,
+        "totalCallValues": [
+            "_pagination",
+            "_total_number_of_pages"
         ],
-        "output": "algaeBase.csv"
+        "recordValues": [
+            "result"
+        ]
     }
 }

@@ -15,6 +15,7 @@ from lib.tools.logger import Logger
 class Retrieve(Enum):
     URL     = "url"
     CRAWL   = "crawl"
+    API     = "api"
     SCRIPT  = "script"
 
 class Database:
@@ -181,6 +182,35 @@ class CrawlDB(Database):
 
         folderName = urlParts[-2]
         return f"{folderName}_{fileName}"
+
+class APIDB(Database):
+
+    retrieveType = Retrieve.API
+
+    def _prepareDownload(self, overwrite: bool, verbose: bool) -> None:
+        url = self.downloadConfig.pop("url", None)
+        apiKeyPath = self.downloadConfig.pop("apiKeyPath", None)
+        apiKeyHeader = self.downloadConfig.pop("apiKeyHeader", None)
+
+        headers = self.downloadConfig.pop("headers", {})
+
+        perCall = self.downloadConfig.pop("perCall", None)
+        offset = self.downloadConfig.pop("offset", None)
+        entriesPerCall = self.downloadConfig.pop("entriesPerCall", 1000)
+
+        totalCallValues = self.downloadConfig.pop("totalCallValues", [])
+        recordValues = self.downloadConfig.pop("recordValues", [])
+
+        if url is None:
+            raise Exception("No url provided for source") from AttributeError
+
+        if perCall is None:
+            raise Exception("No perCall tag provided") from AttributeError
+        
+        if offset is None:
+            raise Exception("No offset tag provided") from AttributeError
+
+        self.downloadManager.registerFromAPI(url, headers, entriesPerCall, perCall, offset, recordValues, totalCallValues)
 
 class ScriptDB(Database):
 
