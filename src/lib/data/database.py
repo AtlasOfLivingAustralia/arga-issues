@@ -93,7 +93,7 @@ class Database:
         self.processingManager.addFinalProcessing(finalProcessing)
     
     def _prepareConversion(self, overwrite: bool, verbose: bool) -> None:
-        for file in self.processingManager.getLatestNodes():
+        for file in self.processingManager.getLatestNodeFiles():
             self.conversionManager.addFile(file, self.conversionConfig, self.databaseDir)
 
     def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> None:

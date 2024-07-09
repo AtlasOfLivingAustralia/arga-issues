@@ -21,6 +21,16 @@ class _Node:
         self.script.run(overwrite, verbose)
         self.executed = True
 
+class _Root(_Node):
+    def __init__(self, file: File):
+        self.file = file
+
+    def getOutput(self) -> File:
+        return self.file
+    
+    def execute(self, *args) -> None:
+        return
+
 class ProcessingManager:
     def __init__(self, baseDir: Path, processingDir: Path):
         self.baseDir = baseDir
@@ -34,12 +44,12 @@ class ProcessingManager:
     
     def _addProcessing(self, node: _Node, processingSteps: list[dict]) -> _Node:
         for step in processingSteps:
-            subNode = self._createNode(step, node.parents)
+            subNode = self._createNode(step, [node])
             node = subNode
         return node
     
-    def getLatestNodes(self) -> list[_Node]:
-        return self.nodes
+    def getLatestNodeFiles(self) -> list[_Node]:
+        return [node.getOutput() for node in self.nodes]
 
     def process(self, overwrite: bool = False, verbose: bool = False) -> None:
         if not self.processingDir.exists():
@@ -49,7 +59,7 @@ class ProcessingManager:
             node.execute(overwrite, verbose)
 
     def registerFile(self, file: File, processingSteps: list[dict]) -> None:
-        node = _Node(file)
+        node = _Root(file)
         node = self._addProcessing(node, processingSteps)
         self.nodes.append(node)
 
