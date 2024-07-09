@@ -47,7 +47,7 @@ class Script:
         self.args = [self._parseArg(arg) for arg in self.args]
         self.kwargs = {key: self._parseArg(arg) for key, arg in self.kwargs.items()}
 
-    def run(self, overwrite: bool = False, verbose: bool = False, **runtimeKwargs: dict) -> any:
+    def run(self, overwrite: bool = False, verbose: bool = False) -> any:
         if isinstance(self.output, Path) and self.output.exists():
             if not overwrite:
                 Logger.info(f"Output {self.output} exist and not overwriting, skipping '{self.function}'")
