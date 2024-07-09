@@ -59,10 +59,10 @@ def flatten(filePath: Path, outputFilePath: Path) -> None:
 
     pd.DataFrame.from_records(records).to_csv(outputFilePath, index=False)
 
-def enrich(filePath: Path, outputFilePath: Path) -> None:
+def enrich(filePath: Path, subsection: str, outputFilePath: Path) -> None:
     df = pd.read_csv(filePath, sep="\t", dtype=object, index_col=False)
 
-    baseURL = "http://ftp.ensemblgenomes.org/pub/protists/current/mysql/"
+    baseURL = f"http://ftp.ensemblgenomes.org/pub/{subsection}/current/mysql/"
     outputFolder = Path(outputFilePath.parent / "enrichFiles")
     outputFolder.mkdir(exist_ok=True)
 
