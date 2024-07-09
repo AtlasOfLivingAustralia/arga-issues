@@ -15,8 +15,8 @@ def convert(filePath: Path, outputFilePath: Path) -> None:
 def download(url: str, outputDir: Path, overwrite: bool = False) -> Path:
     localFile = Path(outputDir / f"{url.rsplit('/', 1)[-1]}")
 
-    if localFile.exists() and overwrite:
-        localFile.unlink()
+    if not localFile.exists() or overwrite:
+        localFile.unlink(True)
 
         dl = Downloader()
         success = dl.download(url, localFile, verbose=True)
