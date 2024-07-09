@@ -30,6 +30,9 @@ class Downloader:
                 for idx, chunk in enumerate(stream.iter_content(chunksize), start=1):
                     fp.write(chunk)
 
+                    if not verbose:
+                        continue
+                    
                     if fileSize > 0: # File size known, can render completion %
                         self.progressBar.render((idx * chunksize) / fileSize)
                     else:

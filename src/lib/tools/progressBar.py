@@ -6,7 +6,7 @@ class ProgressBar:
         self._pos = 0
 
     def _getLength(self, completion: float) -> int:
-        return int(completion * self.barLength)
+        return min(int(completion * self.barLength), self.barLength)
     
     def _updatePos(self):
         self._pos = (self._pos + 1) % len(self._loading)

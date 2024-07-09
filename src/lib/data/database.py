@@ -86,8 +86,8 @@ class Database:
         finalProcessing: list[dict] = self.processingConfig.pop("final", [])
 
         for idx, file in enumerate(self.downloadManager.getFiles()):
-            processing = specificProcessing.get(idx, [])
-            self.processingManager.registerFile(file, processing)
+            processing = specificProcessing.get(str(idx), [])
+            self.processingManager.registerFile(file, list(processing))
 
         self.processingManager.addAllProcessing(perFileProcessing)
         self.processingManager.addFinalProcessing(finalProcessing)

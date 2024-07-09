@@ -90,7 +90,20 @@ class Script:
         if not (arg.startswith("{") and arg.endswith("}")):
             return arg
         
-        argValue = arg[1:-1]
+        argValue = arg[1:-1].split("_")
+        if len(argValue) == 1:
+            selection = 0
+        elif len(argValue) == 2:
+            if argValue[1].isdigit():
+                selection = int(argValue[1])
+            else:
+                Logger.warning(f"Invalid selection number: {argValue[1]}")
+                return arg
+        else:
+            Logger.warning(f"Cannot interpret input: {arg}")
+            return arg
+
+        argValue = argValue[0]
         if argValue not in Key._value2member_map_:
             Logger.warning(f"Unknown key code: {argValue}")
             return arg
@@ -119,24 +132,22 @@ class Script:
                 Logger.warning("No inputs to get directory from")
                 return None
             
-            return self.inputs[0].filePath.parent
+            return self.inputs[selection].filePath.parent
         
         if key in (Key.INPUT_FILE, Key.INPUT_PATH, Key.INPUT_STEM):
             if not self.inputs:
                 Logger.warning("No inputs to get path from")
                 return None
             
-            if len(self.inputs) > 1:
-                Logger.warning("Too many inputs to get path from")
-                return None
-            
+            file = self.inputs[selection]
             if key == Key.INPUT_FILE:
-                return self.inputs[0]
+                return file
 
+            path = file.filePath
             if key == Key.INPUT_PATH:
-                return self.inputs[0].filePath
+                return path
             
-            return self.inputs[0].filePath.stem
+            return path.stem
 
     def _parsePath(self, arg: str) -> Path | str:
         if arg.startswith("./"):
