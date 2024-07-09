@@ -86,14 +86,14 @@ class Database:
         finalProcessing: list[dict] = self.processingConfig.pop("final", [])
 
         for idx, file in enumerate(self.downloadManager.getFiles()):
-            processing = specificProcessing.get(idx, [])
-            self.processingManager.registerFile(file, processing)
+            processing = specificProcessing.get(str(idx), [])
+            self.processingManager.registerFile(file, list(processing))
 
         self.processingManager.addAllProcessing(perFileProcessing)
         self.processingManager.addFinalProcessing(finalProcessing)
     
     def _prepareConversion(self, overwrite: bool, verbose: bool) -> None:
-        for file in self.processingManager.getLatestNodes():
+        for file in self.processingManager.getLatestNodeFiles():
             self.conversionManager.addFile(file, self.conversionConfig, self.databaseDir)
 
     def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> None:

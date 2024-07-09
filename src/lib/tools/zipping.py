@@ -91,3 +91,6 @@ def compress(filePath: Path, outputDir: Path = None, zipName: str = None) -> Pat
             compressFolder(filePath, outputFile.stem, zipfp)
     
     return outputFile
+
+def canBeExtracted(filePath: Path) -> bool:
+    return filePath.suffix in Extension._value2member_map_
