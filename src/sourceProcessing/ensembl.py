@@ -24,8 +24,9 @@ def download(url: str, outputDir: Path, overwrite: bool = False) -> Path:
         if not success:
             return None
 
-    if zp.canBeExtracted(localFile) and overwrite:
-        return zp.extract(localFile)
+    if zp.canBeExtracted(localFile):
+        if not zp.extractsTo(localFile, outputDir).exists() or overwrite:
+            return zp.extract(localFile, overwrite=overwrite)
     
     return localFile
 
@@ -76,14 +77,14 @@ def enrich(filePath: Path, subsection: str, outputFilePath: Path) -> None:
         statsURL = tempBase + "genome_statistics.txt.gz"
 
         meta = download(metaURL, outputFolder)
-        metaDF = pd.read_csv(meta, header=None, sep="\t", index_col=0, names=["id", "column", "value"])
+        metaDF = pd.read_csv(meta, header=None, sep="\t", index_col=0, names=["id", "column", "value"], dtype=object)
         
         relevant = metaDF[metaDF["id"] == id]
         relevantData = dict(zip(relevant.column, relevant.value))
         record = {"name": row["#name"]} | {key.replace(".", "_"): value for key, value in relevantData.items()}
 
         stats = download(statsURL, outputFolder)
-        statsDF = pd.read_csv(stats, header=None, sep="\t", index_col=0, names=["column", "value", "id", "n", "timestamp"])
+        statsDF = pd.read_csv(stats, header=None, sep="\t", index_col=0, names=["column", "value", "id", "n", "timestamp"], dtype=object)
         relevant = statsDF[statsDF["id"] == id]
         relevantData = dict(zip(relevant.column, relevant.value))
         record |= relevantData
@@ -91,7 +92,8 @@ def enrich(filePath: Path, subsection: str, outputFilePath: Path) -> None:
         records.append(record)
 
     enrichDF = pd.DataFrame.from_records(records)
-    df = df.merge(enrichDF, how="outer", left_on="#name", right_on="name")
+    uniqueCols = enrichDF.columns.difference(df.columns)
+    df = df.merge(enrichDF[uniqueCols], how="outer", left_on="#name", right_on="name")
     df.to_csv(outputFilePath, index=False)
 
 def combine(metadataPath: Path, statsPath: Path, outputFilePath: Path) -> None:
