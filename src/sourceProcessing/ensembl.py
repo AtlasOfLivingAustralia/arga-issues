@@ -13,7 +13,7 @@ def convert(filePath: Path, outputFilePath: Path) -> None:
     df.to_csv(outputFilePath, index=False)
 
 def download(url: str, outputDir: Path, overwrite: bool = False) -> Path:
-    localFile = Path(outputDir / f"{url.rsplit('/', 1)[-1]}")
+    localFile = Path(outputDir / f"{'_'.join(url.rsplit('/', 2)[-2:])}")
 
     if not localFile.exists() or overwrite:
         localFile.unlink(True)
