@@ -2,6 +2,8 @@ import json
 import pandas as pd
 import requests
 from pathlib import Path
+from lib.tools.downloader import Downloader
+import lib.tools.zipping as zp
 
 def convert(filePath: Path, outputFilePath: Path) -> None:
     with open(filePath) as fp:
@@ -9,6 +11,24 @@ def convert(filePath: Path, outputFilePath: Path) -> None:
 
     df = pd.DataFrame.from_records(data)
     df.to_csv(outputFilePath, index=False)
+
+def download(url: str, outputDir: Path, overwrite: bool = False) -> Path:
+    localFile = Path(outputDir / f"{'_'.join(url.rsplit('/', 2)[-2:])}")
+
+    if not localFile.exists() or overwrite:
+        localFile.unlink(True)
+
+        dl = Downloader()
+        success = dl.download(url, localFile, verbose=True)
+
+        if not success:
+            return None
+
+    if zp.canBeExtracted(localFile):
+        if not zp.extractsTo(localFile, outputDir).exists() or overwrite:
+            return zp.extract(localFile, overwrite=overwrite)
+    
+    return localFile
 
 def speciesDownload(outputFilePath: Path) -> None:
     url = "https://rest.ensembl.org/info/species?"
@@ -21,3 +41,64 @@ def speciesDownload(outputFilePath: Path) -> None:
     data = request.json()
     df = pd.DataFrame.from_records(data["species"])
     df.to_csv(outputFilePath, index=False)
+
+def flatten(filePath: Path, outputFilePath: Path) -> None:
+    with open(filePath) as fp:
+        data = json.load(fp)
+
+    records = []
+    for record in data:
+        organism = record.pop("organism")
+        record["organism_name"] = organism.pop("name")
+
+        assembly = record.pop("assembly")
+        assembly.pop("sequences")
+
+        release = record.pop("data_release")
+
+        records.append(organism | assembly | release | record)
+
+    pd.DataFrame.from_records(records).to_csv(outputFilePath, index=False)
+
+def enrich(filePath: Path, subsection: str, outputFilePath: Path) -> None:
+    df = pd.read_csv(filePath, sep="\t", dtype=object, index_col=False)
+
+    baseURL = f"http://ftp.ensemblgenomes.org/pub/{subsection}/current/mysql/"
+    outputFolder = Path(outputFilePath.parent / "enrichFiles")
+    outputFolder.mkdir(exist_ok=True)
+
+    records = []
+    for _, row in df.iterrows():
+        db = row["core_db"]
+        id = row["species_id"]
+
+        tempBase = baseURL + db + "/"
+        metaURL = tempBase + "meta.txt.gz"
+        statsURL = tempBase + "genome_statistics.txt.gz"
+
+        meta = download(metaURL, outputFolder)
+        metaDF = pd.read_csv(meta, header=None, sep="\t", index_col=0, names=["id", "column", "value"], dtype=object)
+        
+        relevant = metaDF[metaDF["id"] == id]
+        relevantData = dict(zip(relevant.column, relevant.value))
+        record = {"name": row["#name"]} | {key.replace(".", "_"): value for key, value in relevantData.items()}
+
+        stats = download(statsURL, outputFolder)
+        statsDF = pd.read_csv(stats, header=None, sep="\t", index_col=0, names=["column", "value", "id", "n", "timestamp"], dtype=object)
+        relevant = statsDF[statsDF["id"] == id]
+        relevantData = dict(zip(relevant.column, relevant.value))
+        record |= relevantData
+
+        records.append(record)
+
+    enrichDF = pd.DataFrame.from_records(records)
+    uniqueCols = enrichDF.columns.difference(df.columns)
+    df = df.merge(enrichDF[uniqueCols], how="outer", left_on="#name", right_on="name")
+    df.to_csv(outputFilePath, index=False)
+
+def combine(metadataPath: Path, statsPath: Path, outputFilePath: Path) -> None:
+    metadata = pd.read_csv(metadataPath)
+    stats = pd.read_csv(statsPath)
+
+    uniqueColumns = stats.columns.difference(metadata.columns)
+    pd.merge(metadata, stats[uniqueColumns], how="outer", left_on="display_name", right_on="#name").to_csv(outputFilePath, index=False)

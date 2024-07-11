@@ -37,5 +37,6 @@ class Downloader:
                         self.progressBar.render((idx * chunksize) / fileSize)
                     else:
                         print(f"Downloaded chunk: {idx}", end="\r")
-
+                        
+        print()
         return True

@@ -1,0 +1,63 @@
+{
+    "retrieveType": "url",
+    "subsections": [
+        "plants:Plants",
+        "metazoa:Metazoa",
+        "protists:Protists",
+        "fungi:Fungi"
+    ],
+    "download": {
+        "files": [
+            {
+                "url": "http://ftp.ensemblgenomes.org/pub/{SUBSECTION}/current/species_metadata_Ensembl{SUBSECTION:VALUE}.json",
+                "name": "{SUBSECTION}.json"
+            },
+            {
+                "url": "http://ftp.ensemblgenomes.org/pub/{SUBSECTION}/current/species_Ensembl{SUBSECTION:VALUE}.txt",
+                "name": "{SUBSECTION}.tsv",
+                "properties": {
+                    "sep": "\t"
+                }
+            }
+        ]
+    },
+    "processing": {
+        "specific": {
+            "0": [
+                {
+                    "path": "sourceProcessing/ensembl",
+                    "function": "flatten",
+                    "args": [
+                        "{INPATH}",
+                        "{OUTPATH}"
+                    ],
+                    "output": "metadata.csv"
+                }
+            ],
+            "1": [
+                {
+                    "path": "sourceProcessing/ensembl",
+                    "function": "enrich",
+                    "args": [
+                        "{INPATH}",
+                        "{SUBSECTION}",
+                        "{OUTPATH}"
+                    ],
+                    "output": "enrichedStats.csv"
+                }
+            ]
+        },
+        "final": [
+            {
+                "path": "sourceProcessing/ensembl",
+                "function": "combine",
+                "args": [
+                    "{INPATH_0}",
+                    "{INPATH_1}",
+                    "{OUTPATH}"
+                ],
+                "output": "{SUBSECTION}.csv"
+            }
+        ]
+    }
+}

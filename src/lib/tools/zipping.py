@@ -23,7 +23,7 @@ class RepeatExtractor:
     def extract(self, filePath: str) -> Path | None:
         return extract(filePath, self.outputDir, self.addSuffix, self.overwrite)
 
-def extract(filePath: Path, outputDir: Path = None, addSuffix: str = "", overwrite: bool = False) -> Path | None:
+def extract(filePath: Path, outputDir: Path = None, addSuffix: str = "", overwrite: bool = False, verbose: bool = True) -> Path | None:
     if not filePath.exists():
         Logger.warning(f"No file exists at path: {filePath}.")
         return None
@@ -94,3 +94,10 @@ def compress(filePath: Path, outputDir: Path = None, zipName: str = None) -> Pat
 
 def canBeExtracted(filePath: Path) -> bool:
     return filePath.suffix in Extension._value2member_map_
+
+def extractsTo(filePath: Path, outputDir: Path = None) -> Path:
+    outputFile = outputDir / filePath.name if outputDir is not None else filePath
+    while outputFile.suffix in Extension._value2member_map_:
+        outputFile = outputFile.parent / outputFile.stem
+
+    return outputFile

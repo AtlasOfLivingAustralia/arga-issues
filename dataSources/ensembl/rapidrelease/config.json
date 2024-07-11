@@ -4,20 +4,20 @@
         "files": [
             {
                 "url": "https://ftp.ensembl.org/pub/rapid-release/species_metadata.json",
-                "downloadedFile": "species_metadata.json",
-                "processing": [
-                    {
-                        "path": "sourceProcessing/ensembl.py",
-                        "function": "convert",
-                        "args": [
-                            "{INPUT, 0, FILEPATH}",
-                            "{PATH, PROCESSING, metadata.csv}"
-                        ],
-                        "outputs": [
-                            "{PATH, PROCESSING, metadata.csv}"
-                        ]
-                    }
-                ]
+                "name": "species_metadata.json"
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "sourceProcessing/ensembl.py",
+                "function": "convert",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "metadata.csv"
             }
         ]
     }

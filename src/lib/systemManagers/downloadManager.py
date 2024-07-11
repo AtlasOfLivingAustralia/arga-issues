@@ -28,6 +28,7 @@ class _URLDownload(_Download):
 class _ScriptDownload(_Download):
     def __init__(self, baseDir: Path, downloadDir: Path, scriptInfo: dict):
         self.script = Script(baseDir, downloadDir, scriptInfo, [])
+        self.file = self.script.output
 
     def retrieve(self, overwrite: bool, verbose: bool) -> Path:
         self.script.run(overwrite, verbose)
