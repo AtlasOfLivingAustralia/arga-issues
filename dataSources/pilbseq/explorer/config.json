@@ -1,0 +1,14 @@
+{
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://pilbseq.dbca.wa.gov.au/data/table.tsv",
+                "name": "pilbseq.tsv",
+                "properties": {
+                    "sep": "\t"
+                }
+            }
+        ]
+    }
+}
