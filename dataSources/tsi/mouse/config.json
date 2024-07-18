@@ -4,7 +4,7 @@
         "files": [
             {
                 "url": "https://threatenedspecies.s3-ap-southeast-2.amazonaws.com/Mastacomys_fuscus/BTR_Metadata.csv",
-                "downloadedFile": "Mouse_Metadata.csv"
+                "name": "Mouse_Metadata.csv"
             }
         ]
     },

@@ -1,8 +1,8 @@
 import requests
 from urllib.parse import quote
 import pandas as pd
-import subprocess
 from pathlib import Path
+from lib.tools.downloader import Downloader
 
 def buildCall(size: int, query: str, tidy: bool) -> str:
     baseURL = "https://goat.genomehubs.org/api/v2/"
@@ -17,7 +17,8 @@ def build(outputFilePath: Path) -> None:
     status = output.get("status", {})
     hits = status.get("hits", 0)
 
-    subprocess.run(["curl.exe", "-X", "GET", buildCall(hits, query, True), "-H", "accept: text/csv", "-o", outputFilePath])
+    downloader = Downloader()
+    downloader.download(buildCall(hits, query, True), outputFilePath, headers={"accept": "text/csv"})
 
 def clean(filePath: Path, outputFilePath: Path) -> None:
     df = pd.read_csv(filePath)

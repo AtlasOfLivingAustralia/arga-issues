@@ -95,6 +95,9 @@ def dictListToCSV(dictList: list, columns: list, filePath: str) -> None:
             writer.writerow(d)
 
 def clearFolder(folderPath: Path, delete: bool = False) -> None:
+    if not folderPath.exists():
+        return
+    
     for item in folderPath.iterdir():
         if item.is_file():
             item.unlink()

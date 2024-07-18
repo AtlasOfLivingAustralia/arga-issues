@@ -5,7 +5,6 @@ import yaml
 import csv
 from yaml.scanner import ScannerError
 import json
-from lib.processing.scripts import ScriptWrapper
 from lib.tools.downloader import Downloader
 
 def build(outputFilePath: Path, savedFilePath: Path) -> None:
