@@ -12,11 +12,11 @@ class Downloader:
 
         self.progressBar = ProgressBar(50, "Downloading")
 
-    def download(self, url: str, filePath: Path, customChunksize: int = -1, verbose: bool = False) -> bool:
+    def download(self, url: str, filePath: Path, customChunksize: int = -1, verbose: bool = False, headers: dict = {}) -> bool:
         if verbose:
             Logger.info(f"Downloading from {url} to file {filePath}")
 
-        with requests.get(url, stream=True, auth=self.auth) as stream:
+        with requests.get(url, stream=True, auth=self.auth, headers=headers) as stream:
             try:
                 stream.raise_for_status()
             except HTTPError:
