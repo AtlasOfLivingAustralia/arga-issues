@@ -30,7 +30,7 @@
                 "kwargs": {
                     "subfileRows": 100000
                 },
-                "output": "{taxonomy.csv}"
+                "output": "taxonomy.csv"
             }
         ]
     },
