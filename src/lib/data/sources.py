@@ -118,7 +118,7 @@ class Location:
                 Logger.warning(f"Bad config subsection: {section}")
 
         if subsection == "all":
-            return [dbType(self.locationName, database, section, self._translateSubsection(config, subsection, value)) for subsection, value in subsectionLookup.items()]
+            return [dbType(self.locationName, database, subsection, self._translateSubsection(config, subsection, value)) for subsection, value in subsectionLookup.items()]
         
         if subsection not in subsectionLookup:
             raise Exception(f"Invalid subsection: {subsection}")
