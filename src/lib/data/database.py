@@ -24,6 +24,7 @@ class Database:
     def __init__(self, location: str, database: str, subsection: str, config: dict):
         self.location = location
         self.database = database
+        self.subsection = subsection
 
         # Auth
         self.authFile: str = config.pop("auth", "")
@@ -39,7 +40,7 @@ class Database:
         # Relative folders
         self.locationDir = cfg.Folders.dataSources / location
         self.databaseDir = self.locationDir / database
-        self.subsectionDir = self.databaseDir / subsection # If no subsection, does nothing
+        self.subsectionDir = self.databaseDir / self.subsection # If no subsection, does nothing
         self.dataDir = self.subsectionDir / "data"
         self.downloadDir = self.dataDir / "download"
         self.processingDir = self.dataDir / "processing"
@@ -55,7 +56,7 @@ class Database:
         self._reportLeftovers(config)
 
     def __str__(self):
-        return f"{self.location}-{self.database}"
+        return f"{self.location}-{self.database}{'-' + self.subsection if self.subsection else ''}"
 
     def __repr__(self):
         return str(self)
@@ -142,7 +143,7 @@ class CrawlDB(Database):
         saveFile = self.downloadConfig.pop("saveFile", "crawl.txt")
         saveFilePath: Path = self.subsectionDir / saveFile
 
-        if not overwrite and saveFilePath.exists():
+        if saveFilePath.exists() and not overwrite:
             Logger.info("Local file found, skipping crawling")
             with open(saveFilePath) as fp:
                 urls = fp.read().splitlines()

@@ -39,7 +39,7 @@ class ProcessingManager:
 
     def _createNode(self, step: dict, parents: list[_Node]) -> _Node:
         inputs = [node.getOutput() for node in parents]
-        script = Script(self.baseDir, self.processingDir, step, inputs)
+        script = Script(self.baseDir, self.processingDir, dict(step), inputs)
         return _Node(script, parents)
     
     def _addProcessing(self, node: _Node, processingSteps: list[dict]) -> _Node:
@@ -48,7 +48,7 @@ class ProcessingManager:
             node = subNode
         return node
     
-    def getLatestNodeFiles(self) -> list[_Node]:
+    def getLatestNodeFiles(self) -> list[File]:
         return [node.getOutput() for node in self.nodes]
 
     def process(self, overwrite: bool = False, verbose: bool = False) -> None:

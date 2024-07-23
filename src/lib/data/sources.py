@@ -95,12 +95,12 @@ class Location:
 
         retrieveType = config.pop("retrieveType", None)
         if retrieveType is None:
-            raise Exception("No retrieve type specified for database")
+            raise Exception(f"No retrieve type specified for database {database}")
         
         dbType = self.dbMapping.get(retrieveType, None)
 
         if dbType is None:
-            raise Exception(f"Invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
+            raise Exception(f"Database {database} has invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
         
         subsections: list = config.pop("subsections", [])
 
@@ -118,7 +118,7 @@ class Location:
                 Logger.warning(f"Bad config subsection: {section}")
 
         if subsection == "all":
-            return [dbType(self.locationName, database, section, self._translateSubsection(config, subsection, value)) for subsection, value in subsectionLookup.items()]
+            return [dbType(self.locationName, database, subsection, self._translateSubsection(config, subsection, value)) for subsection, value in subsectionLookup.items()]
         
         if subsection not in subsectionLookup:
             raise Exception(f"Invalid subsection: {subsection}")

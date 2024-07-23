@@ -1,10 +1,12 @@
 {
-    "retrieveType": "specific",
+    "retrieveType": "url",
     "download": {
-        "files": {
-            "url": "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip",
-            "downloadedFile": "taxdump.zip"
-        }
+        "files": [
+            {
+                "url": "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip",
+                "name": "taxdump.zip"
+            }
+        ]
     },
     "processing": {
         "final": [
