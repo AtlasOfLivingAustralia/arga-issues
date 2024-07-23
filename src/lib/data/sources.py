@@ -95,12 +95,12 @@ class Location:
 
         retrieveType = config.pop("retrieveType", None)
         if retrieveType is None:
-            raise Exception("No retrieve type specified for database")
+            raise Exception(f"No retrieve type specified for database {database}")
         
         dbType = self.dbMapping.get(retrieveType, None)
 
         if dbType is None:
-            raise Exception(f"Invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
+            raise Exception(f"Database {database} has invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
         
         subsections: list = config.pop("subsections", [])
 

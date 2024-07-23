@@ -1,39 +1,40 @@
 {
-    "dbType": "specific",
-    "files": [
-        {
-            "url": "https://ftp.ebi.ac.uk/pub/databases/ena/taxonomy/taxonomy.xml.gz",
-            "downloadedFile": "taxonomy.xml.gz",
-            "processing": [
-                {
-                    "path": "lib/tools/zipping.py",
-                    "function": "extract",
-                    "args": [
-                        "{INPUT, 0, FILEPATH}",
-                        "{PATH, PROCESSING}"
-                    ],
-                    "outputs": [
-                        "{PATH, PROCESSING, taxonomy.xml}"
-                    ]
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://ftp.ebi.ac.uk/pub/databases/ena/taxonomy/taxonomy.xml.gz",
+                "name": "taxonomy.xml.gz"
+            }
+            
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "lib/tools/zipping.py",
+                "function": "extract",
+                "args": [
+                    "{INPATH}",
+                    "{OUTDIR}"
+                ],
+                "output": "taxonomy.xml"
+            },
+            {
+                "path": "tools/processing/xmlProcess.py",
+                "function": "process",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "kwargs": {
+                    "subfileRows": 100000
                 },
-                {
-                    "path": "tools/processing/xmlProcess.py",
-                    "function": "process",
-                    "args": [
-                        "{INPUT, 0}",
-                        "{PATH, PROCESSING, taxonomy.csv}"
-                    ],
-                    "kwargs": {
-                        "subfileRows": 100000
-                    },
-                    "outputs": [
-                        "{PATH, PROCESSING, taxonomy.csv}"
-                    ]
-                }
-            ]
-        }
-    ],
-    "dwcProperties": {
+                "output": "{taxonomy.csv}"
+            }
+        ]
+    },
+    "conversion": {
         "mapID": 1058330275
     }
 }

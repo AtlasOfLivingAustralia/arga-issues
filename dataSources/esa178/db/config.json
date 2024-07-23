@@ -1,0 +1,27 @@
+{
+    "retrieveType": "url",
+    "subsections": [
+        "bird:Bird",
+        "mammal:Mam"
+    ],
+    "download": {
+        "files": [
+            {
+                "url": "https://www.esapubs.org/archive/ecol/E095/178/{SUBSECTION:VALUE}FuncDat.txt",
+                "name": "{SUBSECTION}Data.tsv",
+                "properties": {
+                    "separator": "\t",
+                    "encoding": "cp1252"
+                }
+            },
+            {
+                "url": "https://www.esapubs.org/archive/ecol/E095/178/{SUBSECTION:VALUE}FuncDatSources.txt",
+                "name": "{SUBSECTION}Sources.tsv",
+                "properties": {
+                    "separator": "\t",
+                    "encoding": "cp1252"
+                }
+            }
+        ]
+    }
+}

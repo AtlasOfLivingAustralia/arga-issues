@@ -1,25 +1,27 @@
 {
-    "dbType": "location",
-    "dataLocation": "https://ftp.ebi.ac.uk/pub/databases/eva/rs_releases/release_4/by_species/",
-    "subDirectoryDepth": -1,
-    "regexMatch": ".*\\.txt\\.gz",
-    "perFileProcessing": [
-        {
-            "path": "lib/tools/zipfiles.py",
-            "function": "extract",
-            "args": [
-                "{INPUT, 0, FILEPATH}",
-                "{PATH, PROCESSING}"
-            ],
-            "outputs": [
-                "{INPUTPATH, PROCESSING, 0, FILEPATH_STEM}"
-            ]
-        }
-    ],
-    "fileProperties": {
-        "separator": "\t"
+    "retrieveType": "crawl",
+    "download": {
+        "url": "https://ftp.ebi.ac.uk/pub/databases/eva/rs_releases/release_4/by_species/",
+        "regex": ".*\\.txt\\.gz",
+        "depth": -1
     },
-    "dwcProperties": {
+    "processing": {
+        "perFile": [
+            {
+                "path": "lib/tools/zipfiles.py",
+                "function": "extract",
+                "args": [
+                    "{INPATH}",
+                    "{OUTDIR}"
+                ],
+                "output": "{INSTEM}",
+                "properties": {
+                    "sep": "\t"
+                }
+            }
+        ]
+    },
+    "conversion": {
         "mapID": 1058330275
     }
 }

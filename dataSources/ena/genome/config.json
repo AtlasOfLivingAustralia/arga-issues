@@ -4,27 +4,29 @@
         "files": [
             {
                 "url": "https://ftp.ebi.ac.uk/pub/databases/ena/genome_collections/gc.xml",
-                "downloadedFile": "genomeCollections.xml",
-                "processing": [
-                    {
-                        "path": "tools/processing/xmlProcess.py",
-                        "function": "process",
-                        "args": [
-                            "{INPATH}",
-                            "{OUTPATH}"
-                        ],
-                        "kwargs": {
-                            "subfileRows": 150000,
-                            "compressChild": [
-                                "CHROMOSOMES",
-                                "ASSEMBLY_LINKS",
-                                "ASSEMBLY_ATTRIBUTES",
-                                "ASSEMBLY"
-                            ]
-                        },
-                        "output": "genomeCollections.csv"
-                    }
-                ]
+                "name": "genomeCollections.xml"
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "tools/processing/xmlProcess.py",
+                "function": "process",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "kwargs": {
+                    "subfileRows": 150000,
+                    "compressChild": [
+                        "CHROMOSOMES",
+                        "ASSEMBLY_LINKS",
+                        "ASSEMBLY_ATTRIBUTES",
+                        "ASSEMBLY"
+                    ]
+                },
+                "output": "genomeCollections.csv"
             }
         ]
     },
