@@ -1,0 +1,12 @@
+{
+    "retrieveType": "script",
+    "download": {
+        "path": "sourceProcessing/ensembl.py",
+        "function": "collectVGP",
+        "args": [
+            "{OUTPATH}"
+        ],
+        "output": "vgp.csv"
+    },
+    "conversion": {}
+}
