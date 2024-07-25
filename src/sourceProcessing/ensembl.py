@@ -4,6 +4,7 @@ import requests
 from pathlib import Path
 from lib.tools.downloader import Downloader
 import lib.tools.zipping as zp
+from bs4 import BeautifulSoup
 
 def convert(filePath: Path, outputFilePath: Path) -> None:
     with open(filePath) as fp:
@@ -102,3 +103,55 @@ def combine(metadataPath: Path, statsPath: Path, outputFilePath: Path) -> None:
 
     uniqueColumns = stats.columns.difference(metadata.columns)
     pd.merge(metadata, stats[uniqueColumns], how="outer", left_on="display_name", right_on="#name").to_csv(outputFilePath, index=False)
+
+def collectVGP(outputFilePath: Path):
+    def cleanText(text: str) -> str:
+        return text.strip(" \n")
+    
+    url = "https://projects.ensembl.org/vgp/"
+
+    pageData = requests.get(url)
+    soup = BeautifulSoup(pageData.text, "html.parser")
+
+    table = soup.find("table")
+    tableHeader = table.find("thead")
+    columns = [cleanText(header.text) for header in tableHeader.find_all("th")]
+
+    tableBody = table.find("tbody")
+    rowData = []
+    for row in tableBody.find_all("tr"):
+        data = {}
+        for header, element in zip(columns, row.find_all("td")):
+            if header == "Image":
+                continue
+
+            if header in ("Species", "Accession"):
+                data[header] = cleanText(element.text)
+            elif header in ("Annotation", "Proteins", "Transcripts", "Softmasked genome"):
+                for link in element.find_all("a"):
+                    data[f"{header.replace(' ', '_')}_{cleanText(link.text.lower())}"] = link["href"]
+            elif header in ("Repeat library", "Other data"):
+                for link in element.find_all("a"):
+                    data[cleanText(link.text.lower())] = link["href"]
+            elif header == "View in browser":
+                link = element.find("a")
+                data |= collectStats(link["href"])
+            else:
+                print(f"Unknown header: {header}")
+
+        rowData.append(data)
+
+    pd.DataFrame.from_records(rowData).to_csv(outputFilePath, index=False)
+
+def collectStats(url: str) -> dict:
+    pageData = requests.get(url)
+    soup = BeautifulSoup(pageData.text, "html.parser")
+
+    data = {}
+    for table in soup.find_all("table"):
+        body = table.find("tbody")
+        for row in body.find_all("tr"):
+            key, value = row.find_all("td")
+            data[key.find("b").text.replace(" ", "_")] = value.text.replace(",", "") if value.text.replace(",", "").isdigit() else value.text
+
+    return data
