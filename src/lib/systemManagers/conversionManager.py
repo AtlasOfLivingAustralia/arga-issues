@@ -35,10 +35,10 @@ class ConversionManager:
 
         self.mapManager = MapManager(mapDir)
 
-    def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> Path:
+    def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> bool:
         if self.output.filePath.exists() and not overwrite:
             Logger.info(f"{self.output.filePath} already exists, exiting...")
-            return
+            return True
         
         # Get columns and create mappings
         Logger.info("Getting column mappings")
@@ -47,7 +47,7 @@ class ConversionManager:
         maps = self.mapManager.loadMaps(self.mapID, self.customMapID, None, forceRetrieve)
         if not maps:
             Logger.error("Unable to retrieve any maps")
-            raise Exception("No mapping")
+            return False
 
         remapper = Remapper(maps, self.location, self.preserveDwC, self.prefixUnmapped)
         translationTable = remapper.buildTable(columns, self.skipRemap)
@@ -57,7 +57,7 @@ class ConversionManager:
                 for event, firstCol, matchingCols in translationTable.getNonUnique():
                     for col in matchingCols:
                         Logger.info(f"Found mapping for column '{col}' that matches initial mapping '{firstCol}' under event '{event.value}'")
-                return
+                return False
             
             translationTable.forceUnique()
         
@@ -94,11 +94,11 @@ class ConversionManager:
         with open(self.output.filePath / self.recordsFile, "w") as fp:
             fp.write(str(totalRows))
 
-        if not zip:
-            return self.output.filePath
+        if zip:
+            Logger.info(f"Zipping {self.output.filePath}")
+            zp.compress(self.output.filePath)
         
-        Logger.info(f"Zipping {self.output.filePath}")
-        return zp.compress(self.output.filePath)
+        return True
 
     def applyAugments(self, df: pd.DataFrame) -> pd.DataFrame:
         for augment in self.augments:

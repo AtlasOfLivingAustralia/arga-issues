@@ -36,7 +36,8 @@ class SourceManager:
         location = self.locations.get(location, None)
 
         if location is None:
-            raise Exception(f"Invalid location: {location}")
+            Logger.error(f"Invalid location: {location}")
+            return []
         
         return location.loadDBs(database, subsection)
         
@@ -63,13 +64,15 @@ class Location:
     def getDatabases(self) -> list[str]:
         return self.databases
     
-    def _loadConfig(self, database: str) -> dict:
+    def _loadConfig(self, database: str) -> dict | None:
         if database not in self.databases:
-            raise Exception(f"Invalid database '{database}' for location '{self.locationName}'")
+            Logger.error(f"Invalid database '{database}' for location '{self.locationName}'")
+            return None
         
         configPath = self.locationPath / database / self.configFile
         if not configPath.exists():
-            raise Exception(f"No config file found for database '{database}'")
+            Logger.error(f"No config file found for database '{database}'")
+            return None
         
         with open(configPath) as fp:
             return json.load(fp)
@@ -90,22 +93,26 @@ class Location:
 
         return {key: translate(value) for key, value in config.items()}
 
-    def loadDBs(self, database: str, subsection: str = "all") -> Database:
+    def loadDBs(self, database: str, subsection: str = "all") -> list[Database]:
         config = self._loadConfig(database)
 
         retrieveType = config.pop("retrieveType", None)
         if retrieveType is None:
-            raise Exception(f"No retrieve type specified for database {database}")
+            Logger.error(f"No retrieve type specified for database {database}")
         
         dbType = self.dbMapping.get(retrieveType, None)
 
         if dbType is None:
-            raise Exception(f"Database {database} has invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
-        
+            Logger.error(f"Database {database} has invalid retrieve type: {retrieveType}. Should be one of: {', '.join(self.dbMapping.keys())}")
+            return []
+
         subsections: list = config.pop("subsections", [])
 
         if not subsections: # No subsections in config
-            return [dbType(self.locationName, database, "", config)]
+            try:
+                return [dbType(self.locationName, database, "", config)]
+            except AttributeError:
+                return []
         
         subsectionLookup = {}
         for section in subsections:
@@ -118,9 +125,20 @@ class Location:
                 Logger.warning(f"Bad config subsection: {section}")
 
         if subsection == "all":
-            return [dbType(self.locationName, database, subsection, self._translateSubsection(config, subsection, value)) for subsection, value in subsectionLookup.items()]
+            retVal = []
+            for subKey, value in subsectionLookup.items():
+                try:
+                    retVal.append(dbType(self.locationName, database, subKey, self._translateSubsection(config, subKey, value)))
+                except AttributeError:
+                    continue
+                
+            return retVal
         
         if subsection not in subsectionLookup:
-            raise Exception(f"Invalid subsection: {subsection}")
+            Logger.error(f"Invalid subsection: {subsection}")
+            return []
         
-        return [dbType(self.locationName, database, subsection, self._translateSubsection(config, subsection, subsectionLookup[subsection]))]
+        try:
+            return [dbType(self.locationName, database, subsection, self._translateSubsection(config, subsection, subsectionLookup[subsection]))]
+        except AttributeError:
+            return []

@@ -6,7 +6,7 @@ from lib.tools.logger import Logger
 from lib.tools.downloader import Downloader
 
 class _Download:
-    def retrieve(self, overwrite: bool) -> Path:
+    def retrieve(self, overwrite: bool) -> bool:
         raise NotImplementedError
 
 class _URLDownload(_Download):
@@ -30,8 +30,8 @@ class _ScriptDownload(_Download):
         self.script = Script(baseDir, downloadDir, scriptInfo, [])
         self.file = self.script.output
 
-    def retrieve(self, overwrite: bool, verbose: bool) -> Path:
-        self.script.run(overwrite, verbose)
+    def retrieve(self, overwrite: bool, verbose: bool) -> bool:
+        return self.script.run(overwrite, verbose)
 
 class DownloadManager:
     def __init__(self, baseDir: Path, downloadDir: Path, authFile: str):
@@ -59,12 +59,15 @@ class DownloadManager:
     def getLatestFile(self) -> File:
         return self.files[-1].file
 
-    def download(self, overwrite: bool = False, verbose: bool = False) -> None:
+    def download(self, overwrite: bool = False, verbose: bool = False) -> bool:
         if not self.downloadDir.exists():
             self.downloadDir.mkdir(parents=True)
 
+        successes = []
         for download in self.downloads:
-            download.retrieve(overwrite, verbose)
+            successes.append(download.retrieve(overwrite, verbose))
+
+        return all(successes)
 
     def registerFromURL(self, url: str, fileName: str, fileProperties: dict = {}) -> None:
         download = _URLDownload(url, self.downloadDir / fileName, fileProperties, self.username, self.password)

@@ -97,7 +97,7 @@ class Database:
         for file in self.processingManager.getLatestNodeFiles():
             self.conversionManager.addFile(file, self.conversionConfig, self.databaseDir)
 
-    def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> None:
+    def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> bool:
         callbacks = {
             Step.DOWNLOAD: self._prepareDownload,
             Step.PROCESSING: self._prepareProcessing,
@@ -108,29 +108,35 @@ class Database:
             raise Exception(f"Uknown step to prepare: {step}")
 
         for stepType, callback in callbacks.items():
-            callback(overwrite if step == stepType else False, verbose)
+            try:
+                callback(overwrite if step == stepType else False, verbose)
+            except AttributeError:
+                Logger.error(f"Error preparing step: {step.name}")
+                return False
+            
             if step == stepType:
-                return
+                return True
 
-    def _execute(self, step: Step, overwrite: bool, verbose: bool, **kwargs: dict) -> None:
+    def _execute(self, step: Step, overwrite: bool, verbose: bool, **kwargs: dict) -> bool:
         if step == Step.DOWNLOAD:
-            self.downloadManager.download(overwrite, verbose, **kwargs)
-            return
+            return self.downloadManager.download(overwrite, verbose, **kwargs)
         
         if step == Step.PROCESSING:
-            self.processingManager.process(overwrite, verbose, **kwargs)
-            return
+            return self.processingManager.process(overwrite, verbose, **kwargs)
         
         if step == Step.CONVERSION:
-            self.conversionManager.convert(overwrite, verbose, **kwargs)
-            return
-        
-        raise Exception(f"Unknown step to execute: {step}")
+            return self.conversionManager.convert(overwrite, verbose, **kwargs)
+
+        Logger.error(f"Unknown step to execute: {step}")
+        return False
     
     def create(self, step: Step, overwrite: tuple[bool, bool], verbose: bool, **kwargs: dict) -> None:
         prepare, reprocess = overwrite
 
-        self._prepare(step, prepare, verbose)
+        success = self._prepare(step, prepare, verbose)
+        if not success:
+            return
+        
         self._execute(step, reprocess, verbose, **kwargs)
 
 class CrawlDB(Database):

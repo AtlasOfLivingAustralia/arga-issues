@@ -47,15 +47,19 @@ class Script:
         self.args = [self._parseArg(arg) for arg in self.args]
         self.kwargs = {key: self._parseArg(arg) for key, arg in self.kwargs.items()}
 
-    def run(self, overwrite: bool = False, verbose: bool = False) -> any:
+    def run(self, overwrite: bool = False, verbose: bool = False) -> bool:
         if isinstance(self.output, Path) and self.output.exists():
             if not overwrite:
                 Logger.info(f"Output {self.output} exist and not overwriting, skipping '{self.function}'")
-                return
+                return True
             
             self.output.delete()
 
-        processFunction = pFuncs.importFunction(self.path, self.function)
+        try:
+            processFunction = pFuncs.importFunction(self.path, self.function)
+        except:
+            Logger.error(f"Error importing function '{self.function}' from path '{self.path}'")
+            return False
 
         if verbose:
             msg = f"Running {self.path} function '{self.function}'"
@@ -67,14 +71,18 @@ class Script:
                 msg += f" with kwargs {self.kwargs}"
             Logger.info(msg)
 
-        output = processFunction(*self.args, **self.kwargs)
+        try:
+            processFunction(*self.args, **self.kwargs)
+        except:
+            Logger.error("Error running external script")
+            return False
 
         if not self.output.exists():
             Logger.warning(f"Output {self.output} was not created")
-        else:
-            Logger.info(f"Created file {self.output}")
-            
-        return output
+            return False
+
+        Logger.info(f"Created file {self.output}")
+        return True
 
     def _parseArg(self, arg: any, excludeKeys: list[Key] = []) -> Path | str:
         if not isinstance(arg, str):

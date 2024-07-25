@@ -11,15 +11,20 @@ class _Node:
     def getOutput(self) -> File:
         return self.script.output
 
-    def execute(self, overwrite: bool, verbose: bool) -> None:
+    def execute(self, overwrite: bool, verbose: bool) -> bool:
         if self.executed:
-            return
+            return True
         
+        parentSuccesses = []
         for parent in self.parents:
-            parent.execute(overwrite, verbose)
+            parentSuccesses.append(parent.execute(overwrite, verbose))
         
-        self.script.run(overwrite, verbose)
-        self.executed = True
+        if not all(parentSuccesses):
+            return False
+        
+        success = self.script.run(overwrite, verbose)
+        self.executed = success
+        return success
 
 class _Root(_Node):
     def __init__(self, file: File):
@@ -51,12 +56,15 @@ class ProcessingManager:
     def getLatestNodeFiles(self) -> list[File]:
         return [node.getOutput() for node in self.nodes]
 
-    def process(self, overwrite: bool = False, verbose: bool = False) -> None:
+    def process(self, overwrite: bool = False, verbose: bool = False) -> bool:
         if not self.processingDir.exists():
             self.processingDir.mkdir()
 
+        successes = []
         for node in self.nodes:
-            node.execute(overwrite, verbose)
+            successes.append(node.execute(overwrite, verbose))
+            
+        return all(successes)
 
     def registerFile(self, file: File, processingSteps: list[dict]) -> None:
         node = _Root(file)
