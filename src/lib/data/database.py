@@ -110,8 +110,8 @@ class Database:
         for stepType, callback in callbacks.items():
             try:
                 callback(overwrite if step == stepType else False, verbose)
-            except AttributeError:
-                Logger.error(f"Error preparing step: {step.name}")
+            except AttributeError as e:
+                Logger.error(f"Error preparing step: {step.name} - {e}")
                 return False
             
             if step == stepType:

@@ -73,8 +73,8 @@ class Script:
 
         try:
             processFunction(*self.args, **self.kwargs)
-        except:
-            Logger.error("Error running external script")
+        except Exception as e:
+            Logger.error(f"Error running external script: {e.with_traceback()}")
             return False
 
         if not self.output.exists():

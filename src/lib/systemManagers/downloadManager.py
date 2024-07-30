@@ -27,7 +27,7 @@ class _URLDownload(_Download):
 
 class _ScriptDownload(_Download):
     def __init__(self, baseDir: Path, downloadDir: Path, scriptInfo: dict):
-        self.script = Script(baseDir, downloadDir, scriptInfo, [])
+        self.script = Script(baseDir, downloadDir, scriptInfo, [])        
         self.file = self.script.output
 
     def retrieve(self, overwrite: bool, verbose: bool) -> bool:
@@ -69,10 +69,17 @@ class DownloadManager:
 
         return all(successes)
 
-    def registerFromURL(self, url: str, fileName: str, fileProperties: dict = {}) -> None:
+    def registerFromURL(self, url: str, fileName: str, fileProperties: dict = {}) -> bool:
         download = _URLDownload(url, self.downloadDir / fileName, fileProperties, self.username, self.password)
         self.downloads.append(download)
+        return True
 
-    def registerFromScript(self, scriptInfo: dict) -> None:
-        download = _ScriptDownload(self.baseDir, self.downloadDir, scriptInfo)
+    def registerFromScript(self, scriptInfo: dict) -> bool:
+        try:
+            download = _ScriptDownload(self.baseDir, self.downloadDir, scriptInfo)
+        except AttributeError as e:
+            Logger.error(f"Invalid download script configuration: {e}")
+            return False
+        
         self.downloads.append(download)
+        return True

@@ -1,6 +1,7 @@
 from pathlib import Path
 from lib.processing.stages import File
 from lib.processing.scripts import Script
+from lib.tools.logger import Logger
 
 class _Node:
     def __init__(self, script: Script, parents: list['_Node']):
@@ -42,9 +43,14 @@ class ProcessingManager:
         self.processingDir = processingDir
         self.nodes: list[_Node] = []
 
-    def _createNode(self, step: dict, parents: list[_Node]) -> _Node:
+    def _createNode(self, step: dict, parents: list[_Node]) -> _Node | None:
         inputs = [node.getOutput() for node in parents]
-        script = Script(self.baseDir, self.processingDir, dict(step), inputs)
+        try:
+            script = Script(self.baseDir, self.processingDir, dict(step), inputs)
+        except AttributeError as e:
+            Logger.error(f"Invalid processing script configuration: {e}")
+            return None
+        
         return _Node(script, parents)
     
     def _addProcessing(self, node: _Node, processingSteps: list[dict]) -> _Node:
@@ -63,22 +69,22 @@ class ProcessingManager:
         successes = []
         for node in self.nodes:
             successes.append(node.execute(overwrite, verbose))
-            
+
         return all(successes)
 
-    def registerFile(self, file: File, processingSteps: list[dict]) -> None:
+    def registerFile(self, file: File, processingSteps: list[dict]) -> bool:
         node = _Root(file)
         node = self._addProcessing(node, processingSteps)
         self.nodes.append(node)
 
-    def addAllProcessing(self, processingSteps: list[dict]):
+    def addAllProcessing(self, processingSteps: list[dict]) -> bool:
         if not processingSteps:
             return
         
         for idx, node in enumerate(self.nodes):
             self.nodes[idx] = self._addProcessing(node, processingSteps)
 
-    def addFinalProcessing(self, processingSteps: list[dict]):
+    def addFinalProcessing(self, processingSteps: list[dict]) -> bool:
         if not processingSteps:
             return
         
