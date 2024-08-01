@@ -63,6 +63,10 @@ class ProcessingManager:
         return [node.getOutput() for node in self.nodes]
 
     def process(self, overwrite: bool = False, verbose: bool = False) -> bool:
+        if all(isinstance(node, _Root) for node in self.nodes): # All root nodes, no processing required
+            Logger.info("No processing required for any nodes")
+            return True
+
         if not self.processingDir.exists():
             self.processingDir.mkdir()
 
