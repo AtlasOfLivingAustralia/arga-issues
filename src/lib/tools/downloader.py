@@ -14,7 +14,7 @@ class Downloader:
 
     def download(self, url: str, filePath: Path, customChunksize: int = -1, verbose: bool = False, headers: dict = {}) -> bool:
         if verbose:
-            Logger.info(f"Downloading from {url} to file {filePath}")
+            Logger.info(f"Downloading from {url} to file {filePath.absolute()}")
 
         with requests.get(url, stream=True, auth=self.auth, headers=headers) as stream:
             try:
@@ -37,6 +37,7 @@ class Downloader:
                         self.progressBar.render((idx * chunksize) / fileSize)
                     else:
                         print(f"Downloaded chunk: {idx}", end="\r")
-                        
-        print()
+
+        if verbose:                
+            print()
         return True
