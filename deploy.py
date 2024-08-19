@@ -41,5 +41,7 @@ if __name__ == "__main__":
     print("Virtual environment has been set up!\n")
     print("To enter virtual environment run:\n\t- Windows: env/Scipts/activate\n\t- MacOS/Linux: source env/bin/activate\n")
     print("To install required modules run:\n\tpip install -r reqs.txt\n")
-    print("Call `deactivate` to leave the virtual environment")
+    print("Call `deactivate` to leave the virtual environment\n")
+    print("NOTE: If running scripts is disabled on windows, you can run the following command in the terminal:\n\tSet-ExecutionPolicy Unrestricted -Scope CurrentUser\n")
+    print("PLEASE DO SO AT OWN RISK. You alternatively replace 'CurrentUser' with 'Process' to only allow script execution in VSCode")
     print("-" * 40)
