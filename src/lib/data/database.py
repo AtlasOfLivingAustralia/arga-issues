@@ -97,7 +97,7 @@ class Database:
         for file in self.processingManager.getLatestNodeFiles():
             self.conversionManager.addFile(file, self.conversionConfig, self.databaseDir)
 
-    def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> None:
+    def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> bool:
         callbacks = {
             Step.DOWNLOAD: self._prepareDownload,
             Step.PROCESSING: self._prepareProcessing,
@@ -108,30 +108,46 @@ class Database:
             raise Exception(f"Uknown step to prepare: {step}")
 
         for stepType, callback in callbacks.items():
-            callback(overwrite if step == stepType else False, verbose)
+            Logger.info(f"Preparing {self} step '{stepType.name}' with flags: overwrite={overwrite} | verbose={verbose}")
+            try:
+                callback(overwrite if step == stepType else False, verbose)
+            except AttributeError as e:
+                Logger.error(f"Error preparing step: {stepType.name} - {e}")
+                return False
+            
             if step == stepType:
-                return
+                break
+            
+        return True
 
-    def _execute(self, step: Step, overwrite: bool, verbose: bool, **kwargs: dict) -> None:
+    def _execute(self, step: Step, overwrite: bool, verbose: bool, **kwargs: dict) -> bool:
+        Logger.info(f"Executing {self} step '{step.name}' with flags: overwrite={overwrite} | verbose={verbose}")
         if step == Step.DOWNLOAD:
-            self.downloadManager.download(overwrite, verbose, **kwargs)
-            return
+            return self.downloadManager.download(overwrite, verbose, **kwargs)
         
         if step == Step.PROCESSING:
-            self.processingManager.process(overwrite, verbose, **kwargs)
-            return
+            return self.processingManager.process(overwrite, verbose, **kwargs)
         
         if step == Step.CONVERSION:
-            self.conversionManager.convert(overwrite, verbose, **kwargs)
-            return
-        
-        raise Exception(f"Unknown step to execute: {step}")
+            return self.conversionManager.convert(overwrite, verbose, **kwargs)
+
+        Logger.error(f"Unknown step to execute: {step}")
+        return False
     
     def create(self, step: Step, overwrite: tuple[bool, bool], verbose: bool, **kwargs: dict) -> None:
         prepare, reprocess = overwrite
 
-        self._prepare(step, prepare, verbose)
-        self._execute(step, reprocess, verbose, **kwargs)
+        try:
+            success = self._prepare(step, prepare, verbose)
+            if not success:
+                return
+        except KeyboardInterrupt:
+            Logger.info(f"Process ended early when attempting to prepare step '{step.name}' for {self}")
+
+        try:
+            self._execute(step, reprocess, verbose, **kwargs)
+        except KeyboardInterrupt:
+            Logger.info(f"Process ended early when attempting to execute step '{step.name}' for {self}")
 
 class CrawlDB(Database):
 
