@@ -16,6 +16,12 @@ class Downloader:
         if verbose:
             Logger.info(f"Downloading from {url} to file {filePath.absolute()}")
 
+        try:
+            requests.head(url)
+        except requests.exceptions.InvalidSchema as e:
+            Logger.error(f"Schema error: {e}")
+            return False
+
         with requests.get(url, stream=True, auth=self.auth, headers=headers) as stream:
             try:
                 stream.raise_for_status()
@@ -40,4 +46,5 @@ class Downloader:
 
         if verbose:                
             print()
+
         return True

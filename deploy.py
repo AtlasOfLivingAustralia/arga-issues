@@ -7,6 +7,7 @@ if __name__ == "__main__":
     envPath = rootDir / "env"
     srcPath = rootDir / "src"
     reqsPath = rootDir / "reqs.txt"
+    logsPath = rootDir / "logs.txt"
 
     pythonVersion = f"{sys.version_info.major}.{sys.version_info.minor}"
 
@@ -36,6 +37,9 @@ if __name__ == "__main__":
     else:
         print("ERROR: No site-packages path found")
         exit()
+
+    print("Creating Logs folder")
+    logsPath.mkdir(parents=True, exist_ok=True)
     
     print("-" * 40)
     print("Virtual environment has been set up!\n")
