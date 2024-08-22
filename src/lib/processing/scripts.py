@@ -3,6 +3,7 @@ from lib.processing.stages import File
 from lib.tools.logger import Logger
 import lib.processing.processingFuncs as pFuncs
 from enum import Enum
+import traceback
 
 class Key(Enum):
     INPUT_FILE  = "INFILE"
@@ -73,8 +74,9 @@ class Script:
 
         try:
             processFunction(*self.args, **self.kwargs)
-        except Exception as e:
-            Logger.error(f"Error running external script: {e}")
+        except:
+            Logger.error(f"Error running external script")
+            traceback.print_exc()
             return False
 
         if not self.output.exists():
