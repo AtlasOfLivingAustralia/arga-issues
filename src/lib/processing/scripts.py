@@ -74,9 +74,11 @@ class Script:
 
         try:
             processFunction(*self.args, **self.kwargs)
+        except KeyboardInterrupt:
+            Logger.info("Cancelled external script")
+            return False
         except:
-            Logger.error(f"Error running external script")
-            traceback.print_exc()
+            Logger.error(f"Error running external script:\n{traceback.format_exc()}")
             return False
 
         if not self.output.exists():
