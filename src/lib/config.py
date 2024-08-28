@@ -1,26 +1,29 @@
 from pathlib import Path
+import toml
+from enum import Enum
 
-class Meta(type):
-    def __new__(cls, name, bases, attrs):
+class ConfigType(Enum):
+    FILES = "files"
+    FOLDERS = "folders"
+        
+class Config:
+    def __init__(self, configItems: ConfigType):
         rootDir = Path(__file__).parents[2]
-        for k, v in attrs.items():
-            if k.startswith("__"):
-                continue
+        with open(rootDir / "config.toml") as fp:
+            data = toml.load(fp)
 
-            if v.startswith("./"):
-                path = rootDir / Path(v)
-            else:
-                path = Path(v)
+        items: dict | None = data.get(configItems.value, None)
+        if items is None:
+            raise AttributeError from Exception(f"Invalid config item: {configItems.value}")
+        
+        for k, v in items.items():
+            path = rootDir / Path(v) if v.startswith("./") else Path(v)
+            setattr(self, k, path)
 
-            attrs[k] = path
+class Files(Config):
+    def __init__(self):
+        super().__init__(ConfigType.FILES)
 
-        return super().__new__(cls, name, bases, attrs)
-
-# Edit these classes, "./"" indicates root directory for project
-class Files(metaclass=Meta):
-    pass
-
-class Folders(metaclass=Meta):
-    src: Path = "./src" # Source folder for all python code
-    dataSources: Path = "./dataSources" # Location of all source related files
-    logs: Path = "./logs" # Location of all logging files
+class Folders(Config):
+    def __init__(self):
+        super().__init__(ConfigType.FOLDERS)
