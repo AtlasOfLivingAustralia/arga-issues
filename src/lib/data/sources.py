@@ -71,7 +71,7 @@ class Location:
         
         configPath = self.locationPath / database / self.configFile
         if not configPath.exists():
-            Logger.error(f"No config file found for database '{database}'")
+            Logger.error(f"No config file found for database '{self.locationName}-{database}'")
             return None
         
         with open(configPath) as fp:
@@ -95,6 +95,8 @@ class Location:
 
     def loadDBs(self, database: str, subsection: str = "all") -> list[Database]:
         config = self._loadConfig(database)
+        if config is None:
+            return []
 
         retrieveType = config.pop("retrieveType", None)
         if retrieveType is None:
