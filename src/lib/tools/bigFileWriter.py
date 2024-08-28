@@ -119,10 +119,11 @@ class BigFileWriter:
             except OverflowError:
                 maxInt = int(maxInt/10)
 
-    def populateFromFolder(self, folderPath: Path) -> None:
+    def populateFromFolder(self, folderPath: Path, logIndividually: bool = False) -> None:
         if not folderPath.exists():
             return
         
+        fileCount = 0
         for filePath in folderPath.iterdir():
             if not filePath.suffix in Format._value2member_map_.keys():
                 continue
@@ -133,7 +134,12 @@ class BigFileWriter:
             self.writtenFiles.append(subFile)
             cmn.extendUnique(self.globalColumns, columns)
 
-            Logger.info(f"Added file: {subFile.filePath}")
+            if logIndividually:
+                Logger.info(f"Added file: {subFile.filePath}")
+
+            fileCount += 1
+
+        Logger.info(f"Added {fileCount} files to written files list")
 
     def writeCSV(self, cols: list[str], rows: list[list[str]]) -> None:
         df = pd.DataFrame(columns=cols, data=rows)
