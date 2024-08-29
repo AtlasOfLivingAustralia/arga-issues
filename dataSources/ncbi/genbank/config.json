@@ -15,7 +15,7 @@
     "processing": {
         "final": [
             {
-                "path": "../sharedProcessing.py",
+                "path": "sourceProcessing/ncbi",
                 "function": "enrichStats",
                 "args": [
                     "{INFILE}",

@@ -1,14 +1,12 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "sourceProcessing/tern.py",
+        "path": "sourceProcessing/csiro.py",
         "function": "build",
         "args": [
+            "datasets",
             "{OUTPATH}"
         ],
-        "output": "tern.csv"
-    },
-    "conversion": {
-        "mapID": 1651969444
+        "output": "dataset.csv"
     }
 }

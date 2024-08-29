@@ -28,8 +28,8 @@
     "processing": {
         "final": [
             {
-                "path": "./processing.py",
-                "function": "parse",
+                "path": "sourceProcessing/ncbi.py",
+                "function": "parseNucleotide",
                 "args": [
                     "{INDIR}",
                     "{OUTPATH}"

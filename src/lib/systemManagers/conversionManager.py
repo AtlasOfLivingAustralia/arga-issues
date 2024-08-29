@@ -2,17 +2,16 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import lib.commonFuncs as cmn
+import lib.processing.processingFuncs as pFuncs
 import lib.tools.zipping as zp
 from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.mapping import Remapper, Event, MapManager
 from lib.processing.stages import File, StackedFile
-from lib.processing.scripts import Script
 from lib.tools.logger import Logger
 import gc
 
 class ConversionManager:
-    def __init__(self, baseDir: Path, converionDir: Path, location: str):
-        self.baseDir = baseDir
+    def __init__(self, converionDir: Path, location: str):
         self.conversionDir = converionDir
         self.location = location
 
@@ -32,7 +31,7 @@ class ConversionManager:
         self.skipRemap = properties.pop("skipRemap", [])
         self.preserveDwC = properties.pop("preserveDwC", False)
         self.prefixUnmapped = properties.pop("prefixUnmapped", True)
-        self.augments = [Script(self.baseDir, self.conversionDir, augProperties, []) for augProperties in properties.pop("augment", [])]
+        self.augments = [Augment(augProperties) for augProperties in properties.pop("augment", [])]
 
         self.mapManager = MapManager(mapDir)
 
@@ -103,7 +102,7 @@ class ConversionManager:
 
     def applyAugments(self, df: pd.DataFrame) -> pd.DataFrame:
         for augment in self.augments:
-            df = augment.run(args=[df])
+            df = augment.process(df)
         return df
     
 class ColumnFiller:
@@ -130,3 +129,22 @@ class ColumnFiller:
                         df[(mapToEvent, mapToColumn)].fillna(df[(event, columnName)], inplace=True)
 
         return df
+
+class Augment:
+    def __init__(self, augmentProperties: list[dict]):
+        self.augmentProperties = augmentProperties.copy()
+
+        self.path = self.augmentProperties.pop("path", None)
+        self.function = self.augmentProperties.pop("function", None)
+        self.args = self.augmentProperties.pop("args", [])
+        self.kwargs = self.augmentProperties.pop("kwargs", {})
+
+        if self.path is None:
+            raise Exception("No script path specified") from AttributeError
+        
+        if self.function is None:
+            raise Exception("No script function specified") from AttributeError
+
+    def process(self, df: pd.DataFrame) -> pd.DataFrame:
+        processFunction = pFuncs.importFunction(self.path, self.function)
+        return processFunction(df, *self.args, **self.kwargs)

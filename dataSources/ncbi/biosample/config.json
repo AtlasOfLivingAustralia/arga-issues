@@ -59,8 +59,8 @@
         "mapID": 109194600,
         "augment": [
             {
-                "path": "./augment.py",
-                "function": "augment"
+                "path": "sourceProcessing/ncbi.py",
+                "function": "augmentBiosample"
             }
         ]
     }

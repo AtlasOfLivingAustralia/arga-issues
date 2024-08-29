@@ -1,7 +1,7 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "./processing.py",
+        "path": "sourceProcessing/i5k.py",
         "function": "retrieve",
         "args": [
             "{OUTPATH}"

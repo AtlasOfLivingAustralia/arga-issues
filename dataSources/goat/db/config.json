@@ -1,7 +1,7 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "./processing.py",
+        "path": "sourceProcessing/goat.py",
         "function": "build",
         "args": [
             "{OUTPATH}"
@@ -11,7 +11,7 @@
     "processing": {
         "perFile": [
             {
-                "path": "./processing.py",
+                "path": "sourceProcessing/goat.py",
                 "function": "clean",
                 "args": [
                     "{INPATH}",

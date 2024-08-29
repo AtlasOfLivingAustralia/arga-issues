@@ -49,7 +49,7 @@ class Database:
         # System Managers
         self.downloadManager = DownloadManager(self.databaseDir, self.downloadDir, self.authFile)
         self.processingManager = ProcessingManager(self.databaseDir, self.processingDir)
-        self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, location)
+        self.conversionManager = ConversionManager(self.convertedDir, location)
         self.timeManager = TimeManager(self.databaseDir)
 
         # Report extra config options

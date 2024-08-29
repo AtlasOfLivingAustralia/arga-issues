@@ -1,7 +1,7 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "./processing.py",
+        "path": "sourceProcessing/bold.py",
         "function": "retrieve",
         "output": "datapackage.tar.gz"
     },
@@ -16,7 +16,7 @@
                 "output": "datapackage"
             },
             {
-                "path": "./processing.py",
+                "path": "sourceProcessing/bold.py",
                 "function": "cleanUp",
                 "args": [
                     "{INPATH}"

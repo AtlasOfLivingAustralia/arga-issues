@@ -11,7 +11,7 @@
     "processing": {
         "final": [
             {
-                "path": "./processing.py",
+                "path": "sourceProcessing/ensembl.py",
                 "function": "convert",
                 "args": [
                     "{INPATH}",

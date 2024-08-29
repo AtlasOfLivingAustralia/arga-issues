@@ -1,7 +1,7 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "./processing.py",
+        "path": "sourceProcessing/algaebase.py",
         "function": "build",
         "args": [
             "{OUTPATH}",

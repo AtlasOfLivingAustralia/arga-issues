@@ -6,6 +6,13 @@ from lib.tools.downloader import Downloader
 import lib.tools.zipping as zp
 from bs4 import BeautifulSoup
 
+def convert(filePath: Path, outputFilePath: Path) -> None:
+    with open(filePath) as fp:
+        data = json.load(fp)
+
+    df = pd.DataFrame.from_records(data)
+    df.to_csv(outputFilePath, index=False)
+
 def download(url: str, outputDir: Path, overwrite: bool = False) -> Path:
     localFile = Path(outputDir / f"{'_'.join(url.rsplit('/', 2)[-2:])}")
 

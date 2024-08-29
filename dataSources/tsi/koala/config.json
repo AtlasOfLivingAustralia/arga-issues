@@ -12,8 +12,8 @@
         "mapID": 975794491,
         "augment": [
             {
-                "path": "./augment.py",
-                "function": "augment"
+                "path": "sourceProcessing/tsi.py",
+                "function": "koalaAugment"
             }
         ]
     }

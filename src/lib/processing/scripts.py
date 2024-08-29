@@ -1,7 +1,7 @@
 from pathlib import Path
 from lib.processing.stages import File
 from lib.tools.logger import Logger
-import importlib.util
+import lib.processing.processingFuncs as pFuncs
 from enum import Enum
 import traceback
 
@@ -40,10 +40,6 @@ class Script:
             Logger.debug(f"Unknown step parameter: {parameter}")
 
         # Parsing
-        self.path = self._parseArg(self.path)
-        if not isinstance(self.path, Path): # If not path after parsing due to relative import, convert to path
-            self.path = Path(self.path)
-
         self.output = self._parseArg(self.output, [Key.OUTPUT_DIR, Key.OUTPUT_PATH])
         if isinstance(self.output, str):
             self.output = self.outputDir / self.output
@@ -52,7 +48,7 @@ class Script:
         self.args = [self._parseArg(arg) for arg in self.args]
         self.kwargs = {key: self._parseArg(arg) for key, arg in self.kwargs.items()}
 
-    def run(self, overwrite: bool = False, verbose: bool = False, args: list = [], kwargs: dict = {}) -> bool:
+    def run(self, overwrite: bool = False, verbose: bool = False) -> bool:
         if isinstance(self.output, Path) and self.output.exists():
             if not overwrite:
                 Logger.info(f"Output {self.output} exist and not overwriting, skipping '{self.function}'")
@@ -61,26 +57,23 @@ class Script:
             self.output.delete()
 
         try:
-            processFunction = self._importFunction(self.path, self.function)
+            processFunction = pFuncs.importFunction(self.path, self.function)
         except:
             Logger.error(f"Error importing function '{self.function}' from path '{self.path}'")
             return False
 
-        args = self.args + args
-        kwargs = self.kwargs | kwargs
-
         if verbose:
             msg = f"Running {self.path} function '{self.function}'"
             if self.args:
-                msg += f" with args {args}"
+                msg += f" with args {self.args}"
             if self.kwargs:
                 if self.args:
                     msg += " and"
-                msg += f" with kwargs {kwargs}"
+                msg += f" with kwargs {self.kwargs}"
             Logger.info(msg)
 
         try:
-            processFunction(*args, **kwargs)
+            processFunction(*self.args, **self.kwargs)
         except KeyboardInterrupt:
             Logger.info("Cancelled external script")
             return False
@@ -94,12 +87,6 @@ class Script:
 
         Logger.info(f"Created file {self.output}")
         return True
-    
-    def _importFunction(self, modulePath: Path, functionName: str) -> callable:
-        spec = importlib.util.spec_from_file_location(modulePath.name, modulePath)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return getattr(module, functionName)
 
     def _parseArg(self, arg: any, excludeKeys: list[Key] = []) -> Path | str:
         if not isinstance(arg, str):
