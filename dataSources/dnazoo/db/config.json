@@ -1,7 +1,7 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "sourceProcessing/dnazoo.py",
+        "path": "./processing.py",
         "function": "build",
         "args": [
             "{OUTPATH}"
