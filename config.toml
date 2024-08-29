@@ -2,6 +2,6 @@
 
 [folders]
 src = "./src" # Source folder for all python code
-datasources = "./dataSources" # Location of all source related files
+dataSources = "./dataSources" # Location of all source related files
 mapping = "./mapping" # Location for map files
 logs = "./logs" # Location of all logging files
