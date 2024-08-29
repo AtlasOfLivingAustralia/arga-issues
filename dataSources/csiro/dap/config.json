@@ -1,7 +1,7 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "sourceProcessing/csiro.py",
+        "path": "./processing.py",
         "function": "getPortalData",
         "args": [
             "{OUTPATH}"

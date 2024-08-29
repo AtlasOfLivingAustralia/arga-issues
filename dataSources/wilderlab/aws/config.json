@@ -15,7 +15,7 @@
     "processing": {
         "final": [
             {
-                "path": "sourceProcessing/wilderlab.py",
+                "path": "./processing.py",
                 "function": "clean",
                 "args": [
                     "{INPATH}",

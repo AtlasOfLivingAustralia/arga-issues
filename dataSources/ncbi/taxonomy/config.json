@@ -20,7 +20,7 @@
                 "output": "taxdump"
             },
             {
-                "path": "sourceProcessing/ncbiTaxonomy.py",
+                "path": "./processing.py",
                 "function": "parse",
                 "args": [
                     "{INPATH}",
