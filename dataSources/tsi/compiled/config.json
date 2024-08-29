@@ -1,7 +1,7 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "sourceProcessing/tsi.py",
+        "path": "./processing.py",
         "function": "manualCollect",
         "args": [
             "1LfrFMdXRn6oq4SfmcSYVOW3E8p83-y0mBFsQ5iKT36E",

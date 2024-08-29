@@ -11,8 +11,8 @@
     "conversion": {
         "augment": [
             {
-                "path": "sourceProcessing/tsi.py",
-                "function": "mouseAugment"
+                "path": "./augment.py",
+                "function": "augment"
             }
         ]
     }

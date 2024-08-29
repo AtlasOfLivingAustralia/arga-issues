@@ -1,7 +1,7 @@
 {
     "retrieveType": "script",
     "download": {
-        "path": "sourceProcessing/vicmuseum.py",
+        "path": "../processing.py",
         "function": "retrieve",
         "args": [
             "specimens",
@@ -13,7 +13,7 @@
     "processing": {
         "final": [
             {
-                "path": "sourceProcessing/vicmuseum.py",
+                "path": "../processing.py",
                 "function": "expandTaxa",
                 "args": [
                     "{INPATH}",

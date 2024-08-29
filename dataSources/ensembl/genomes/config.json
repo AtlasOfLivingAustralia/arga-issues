@@ -25,7 +25,7 @@
         "specific": {
             "0": [
                 {
-                    "path": "sourceProcessing/ensembl",
+                    "path": "./processing.py",
                     "function": "flatten",
                     "args": [
                         "{INPATH}",
@@ -36,7 +36,7 @@
             ],
             "1": [
                 {
-                    "path": "sourceProcessing/ensembl",
+                    "path": "./processing.py",
                     "function": "enrich",
                     "args": [
                         "{INPATH}",
@@ -49,7 +49,7 @@
         },
         "final": [
             {
-                "path": "sourceProcessing/ensembl",
+                "path": "./processing.py",
                 "function": "combine",
                 "args": [
                     "{INPATH_0}",
