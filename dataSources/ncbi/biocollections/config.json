@@ -19,8 +19,8 @@
     "processing": {
         "final": [
             {
-                "path": "sourceProcessing/ncbi.py",
-                "function": "compileBiocollections",
+                "path": "./processing.py",
+                "function": "compile",
                 "args": [
                     "{INDIR}",
                     "{OUTPATH}"

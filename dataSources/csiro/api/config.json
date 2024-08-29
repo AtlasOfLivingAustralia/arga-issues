@@ -1,10 +1,14 @@
 {
     "retrieveType": "script",
+    "subsections": [
+        "datasets",
+        "genomes"
+    ],
     "download": {
-        "path": "sourceProcessing/csiro.py",
+        "path": "./processing.py",
         "function": "build",
         "args": [
-            "genomes",
+            "{SUBSECTION}",
             "{OUTPATH}"
         ],
         "output": "genomes.csv"

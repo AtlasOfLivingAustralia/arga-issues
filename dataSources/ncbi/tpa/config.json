@@ -24,8 +24,8 @@
                 "output": "{INSTEM}"
             },
             {
-                "path": "sourceProcessing/ncbi/flatfileParser.py",
-                "function": "process",
+                "path": "../flatFileParser.py",
+                "function": "parseFlatfile",
                 "args": [
                     "{INPATH}"
                 ],
