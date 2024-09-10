@@ -1,0 +1,33 @@
+{
+    "retrieveType": "url",
+    "download": {
+        "files": [
+            {
+                "url": "https://biodiversity.org.au/nsl/services/export/taxonCsv",
+                "name": "apc.csv"
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "./processing.py",
+                "function": "denormalize",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "demormalized.csv"
+            },
+            {
+                "path": "./processing.py",
+                "function": "cleanup",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "all-taxa.csv"
+            }
+        ]
+    }
+}
