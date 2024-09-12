@@ -34,8 +34,8 @@ class _Root(_Node):
     def getOutput(self) -> File:
         return self.file
     
-    def execute(self, *args) -> None:
-        return
+    def execute(self, *args) -> bool:
+        return True
 
 class ProcessingManager:
     def __init__(self, baseDir: Path, processingDir: Path):

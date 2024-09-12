@@ -35,7 +35,7 @@ def denormalize(filePath: Path, outputFilePath: Path) -> None:
 
 def cleanup(filePath: Path, outputFilePath: Path) -> None:
     df = pd.read_csv(filePath)
-    df.replace(
+    df = df.replace(
         {
             "[unranked]": "unranked",
             "[n/a]": "unranked",
