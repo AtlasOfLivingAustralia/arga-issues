@@ -1,0 +1,34 @@
+{
+    "retrieveType": "script",
+    "download": {
+        "path": "./processing.py",
+        "function": "retrieve",
+        "args": [
+            "{OUTPATH}"
+        ],
+        "output": "rawAFD.csv"
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "./processing.py",
+                "function": "cleanup",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "cleanedAFD.csv"
+            },
+            {
+                "path": "./processing.py",
+                "function": "addParents",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "afd.csv"
+            }
+        ]
+    },
+    "conversion": {}
+}
