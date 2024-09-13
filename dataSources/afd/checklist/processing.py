@@ -4,7 +4,6 @@ from pathlib import Path
 import pandas as pd
 from io import BytesIO
 from lib.tools.bigFileWriter import BigFileWriter
-import numpy as np
 
 class EntryData:
     def __init__(self, rawData: dict):
@@ -71,7 +70,7 @@ def findChildren(taxonKey: str) -> list[EntryData]:
     return [EntryData(child) for child in children]
 
 def cleanup(filePath: Path, outputFilePath: Path) -> None:
-    df = pd.read_csv(filePath, low_memory=False)
+    df = pd.read_csv(filePath, dtype=object)
 
     df = df.drop([
         "CAVS_CODE",
@@ -110,7 +109,9 @@ def cleanup(filePath: Path, outputFilePath: Path) -> None:
     df["nomenclatural_code"] = "ICZN"
     df["created_at"] = ""
 
-    df["canonical_genus"] = df.apply(lambda row: f"{row['genus']} ({row['subgenus']})" if row["subgenus"] not in ("", "NaN", "nan") else row["genus"], axis=1)
+    df = df.fillna("")
+    df["year"] = df["year"].apply(lambda x: x.split(".")[0])
+    df["canonical_genus"] = df.apply(lambda row: f"{row['genus']} ({row['subgenus']})" if row["subgenus"] else row["genus"], axis=1)
     df["canonical_name"] = df.apply(lambda row: f"{row['canonical_genus']} {row['species']}" if row["taxon_rank"] == "Species" else f"{row['canonical_genus']} {row['species']} {row['subspecies']}" if row["taxon_rank"] == "subspecies" else row["names_various"], axis=1)
     df["authorship"] = df.apply(lambda row: f"{row['author']}, {row['year']}" if row["author"] not in ("", "NaN", "nan") else "", axis=1)
     df["scientific_name_authorship"] = df.apply(lambda row: f"({row['authorship']})" if row['orig_combination'] == 'N' and row["authorship"] not in ("", "NaN", "nan") else row["authorship"], axis=1)
@@ -118,7 +119,7 @@ def cleanup(filePath: Path, outputFilePath: Path) -> None:
     df.to_csv(outputFilePath, index=False)
 
 def addParents(filePath: Path, outputFilePath: Path) -> None:
-    df = pd.read_csv(filePath, low_memory=False)
+    df = pd.read_csv(filePath, dtype=object)
     parentDF = df[df["taxonomic_status"] == "Valid Name"]
 
     remap = {
@@ -143,4 +144,4 @@ def addParents(filePath: Path, outputFilePath: Path) -> None:
 
     df = df.merge(parentDF, "left", left_on="taxon_id", right_on="accepted_usage_taxon_id")
     df = df[df["taxonomic_status"].isin(("Valid Name", "Synonym"))]
-    df.to_csv(outputFilePath, index=False, float_format="%.0f")
+    df.to_csv(outputFilePath, index=False)
