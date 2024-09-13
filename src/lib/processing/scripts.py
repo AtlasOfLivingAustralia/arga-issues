@@ -53,17 +53,18 @@ class Script:
         self.kwargs = {key: self._parseArg(arg) for key, arg in self.kwargs.items()}
 
     def run(self, overwrite: bool = False, verbose: bool = False, args: list = [], kwargs: dict = {}) -> bool:
-        if isinstance(self.output, Path) and self.output.exists():
+        if isinstance(self.output, File) and self.output.exists():
             if not overwrite:
                 Logger.info(f"Output {self.output} exist and not overwriting, skipping '{self.function}'")
                 return True
             
-            self.output.delete()
+            self.output.backUp(True)
 
         try:
             processFunction = self._importFunction(self.path, self.function)
         except:
             Logger.error(f"Error importing function '{self.function}' from path '{self.path}'")
+            self.output.restoreBackUp()
             return False
 
         args = self.args + args
@@ -83,16 +84,20 @@ class Script:
             processFunction(*args, **kwargs)
         except KeyboardInterrupt:
             Logger.info("Cancelled external script")
+            self.output.restoreBackUp()
             return False
         except:
             Logger.error(f"Error running external script:\n{traceback.format_exc()}")
+            self.output.restoreBackUp()
             return False
 
         if not self.output.exists():
             Logger.warning(f"Output {self.output} was not created")
+            self.output.restoreBackUp()
             return False
 
         Logger.info(f"Created file {self.output}")
+        self.output.deleteBackup()
         return True
     
     def _importFunction(self, modulePath: Path, functionName: str) -> callable:
