@@ -86,6 +86,10 @@ class Script:
             Logger.info("Cancelled external script")
             self.output.restoreBackUp()
             return False
+        except PermissionError:
+            Logger.info("External script does not have permission to modify file, potentially open")
+            self.output.restoreBackUp()
+            return False
         except:
             Logger.error(f"Error running external script:\n{traceback.format_exc()}")
             self.output.restoreBackUp()
