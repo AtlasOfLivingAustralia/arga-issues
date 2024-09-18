@@ -27,6 +27,15 @@
                     "{OUTPATH}"
                 ],
                 "output": "afd.csv"
+            },
+            {
+                "path": "./processing.py",
+                "function": "enrich",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "enrichedAFD.csv"
             }
         ]
     },

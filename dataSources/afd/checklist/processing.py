@@ -4,6 +4,8 @@ from pathlib import Path
 import pandas as pd
 from io import BytesIO
 from lib.tools.bigFileWriter import BigFileWriter
+from bs4 import BeautifulSoup
+from lib.tools.progressBar import AdvancedProgressBar
 
 class EntryData:
     def __init__(self, rawData: dict):
@@ -42,7 +44,7 @@ def downloadChildCSVs(entryData: list[EntryData], writer: BigFileWriter, parentR
         higherTaxonomy = parentRanks + [entry.rank]
         if content is not None:
             df = buildDF(content)
-            df["higher_taxonomy"] = ";".join(higherTaxonomy)
+            # df["higher_taxonomy"] = ";".join(higherTaxonomy)
             writer.writeDF(df)
             print(f"Wrote file #{len(writer.writtenFiles)}", end="\r")
             continue
@@ -110,7 +112,7 @@ def cleanup(filePath: Path, outputFilePath: Path) -> None:
     
     datasetID = "ARGA:TL:0001000"
     df["dataset_id"] = datasetID
-    df["entity_id"] = f"{datasetID};" + df["scientific_name"]
+    df["entity_id"] = f"{datasetID};" + df["scientific_name"] + ";" + df["taxonomic_status"]
     df["nomenclatural_code"] = "ICZN"
     df["created_at"] = ""
     df["qualification"] = ""
@@ -174,3 +176,68 @@ def addParents(filePath: Path, outputFilePath: Path) -> None:
     df = df[df["taxonomic_status"].isin(("Valid Name", "Synonym"))]
 
     df.to_csv(outputFilePath, index=False)
+
+def enrich(filePath: Path, outputFilePath: Path) -> None:
+    df = pd.read_csv(filePath, dtype=object)
+    session = requests.Session()
+
+    for rank in ("Species", "Genus"):
+        subDF = df[df["taxon_rank"] == rank]
+
+        enrichmentPath = outputFilePath.parent / f"{rank}.csv"
+        writer = BigFileWriter(enrichmentPath, "taxonIDs")
+        writer.populateFromFolder(writer.subfileDir)
+        
+        uniqueSeries = subDF["taxon_id"].unique()
+        bar = AdvancedProgressBar(len(uniqueSeries), 50, f"{rank} Progress")
+
+        for idx, taxonID in enumerate(uniqueSeries, start=1):
+            bar.render(idx)
+
+            if writer.subfileExists(taxonID):
+                continue
+
+            response = session.get(f"https://biodiversity.org.au/afd/taxa/{taxonID}/complete")
+
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            distribution = soup.find("div", {"id": "afdDistribution"})
+            print(taxonID)
+            if distribution is not None:
+                distributionData = {dist.text.lower().replace(" ", "_"): ", ".join([item.strip() for item in dist.find_next("p").text.replace("\t", " ").split(",")]) for dist in distribution.find_all("h4")}
+            else:
+                distributionData = {}
+
+            descriptors = soup.find("div", {"id": "afdEcologicalDescriptors"})
+            if descriptors is not None:
+                descriptorData = [item for item in [desc.text.replace("\t", " ").strip() for desc in descriptors.find_all("p")] if item]
+            else:
+                descriptorData = []
+
+            records = []
+            synonyms = soup.find("div", {"id": "afdSynonyms"})
+            if synonyms is None:
+                continue
+
+            for synonmn in synonyms.find_all("li"):
+                synonymTitle = synonmn.find_next("div")
+                synonymData = synonymTitle.find_next("div")
+
+                if synonymData.parent != synonymTitle.parent: # No type data if next div is at a lower level
+                    continue
+
+                data = {}
+                for typeData in synonymData.find_all("div"):
+                    data[typeData.find("h5").text.lower().replace(" ", "_")[:-1]] = synonymData.find("span").text
+
+                record = {"taxon_id": taxonID, rank.lower(): synonymTitle.find("strong").text.split()[-1]} | data
+                records.append(record | distributionData | {"descriptors": descriptorData})
+
+            recordDF = pd.DataFrame.from_records(records)
+            writer.writeDF(recordDF, taxonID)
+
+        writer.oneFile(False)
+        enrichmentDF = pd.read_csv(enrichmentPath)
+        df = df.merge(enrichmentDF, "left", ["taxon_id", rank.lower()])
+
+    df.to_csv(outputFilePath)
