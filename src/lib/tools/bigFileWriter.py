@@ -24,6 +24,7 @@ class Subfile:
         return super().__new__(subclass)
 
     def __init__(self, location: Path, fileName: str, format: Format) -> 'Subfile':
+        self.fileName = fileName
         self.filePath = location / f"{fileName}{Format(format).value}"
         self.size = self.filePath.stat().st_size if self.filePath.exists() else 0
 
@@ -101,11 +102,11 @@ class PARQUETSubfile(Subfile):
         return pf.names
 
 class BigFileWriter:
-    def __init__(self, outputFile: Path, subDirName: str = "chunks", sectionPrefix: str = "chunk", subfileType: Format = Format.PARQUET) -> 'BigFileWriter':
+    def __init__(self, outputFile: Path, subDirName: str = "chunks", subsectionPrefix: str = "chunk", subfileType: Format = Format.PARQUET) -> 'BigFileWriter':
         self.outputFile = outputFile
         self.outputFileType = Format(outputFile.suffix)
         self.subfileDir = outputFile.parent / subDirName
-        self.sectionPrefix = sectionPrefix
+        self.sectionPrefix = subsectionPrefix
         self.subfileType = subfileType
 
         self.writtenFiles: list[Subfile] = []
@@ -132,7 +133,7 @@ class BigFileWriter:
             columns = subFile.getColumns()
 
             self.writtenFiles.append(subFile)
-            cmn.extendUnique(self.globalColumns, columns)
+            self.globalColumns = cmn.extendUnique(self.globalColumns, columns)
 
             if logIndividually:
                 Logger.info(f"Added file: {subFile.filePath}")
@@ -141,18 +142,28 @@ class BigFileWriter:
 
         Logger.info(f"Added {fileCount} files to written files list")
 
-    def writeCSV(self, cols: list[str], rows: list[list[str]]) -> None:
-        df = pd.DataFrame(columns=cols, data=rows)
-        self.writeDF(df)
+    def getSubfileCount(self) -> int:
+        return len(self.writtenFiles)
 
-    def writeDF(self, df: pd.DataFrame, format: Format = None) -> None:
+    def writeDF(self, df: pd.DataFrame, customName: str = "", format: Format = None) -> None:
         if not self.subfileDir.exists():
             self.subfileDir.mkdir(parents=True)
 
         if format is None:
             format = self.subfileType
 
-        subfile = Subfile(self.subfileDir, f"{self.sectionPrefix}_{len(self.writtenFiles)}", format)
+        if customName:
+            fileName = customName
+            suffix = 0
+
+            while fileName in [subfile.fileName for subfile in self.writtenFiles]:
+                fileName = f"{customName}_{suffix}"
+                suffix += 1
+
+        else:
+            fileName = f"{self.sectionPrefix}_{len(self.writtenFiles)}"
+
+        subfile = Subfile(self.subfileDir, fileName, format)
         subfile.write(df)
 
         self.writtenFiles.append(subfile)
