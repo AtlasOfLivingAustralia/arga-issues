@@ -32,21 +32,24 @@ def retrieve(outputFilePath: Path):
     end = response.rfind("]", start, response.rfind("var checklist;")) + 1
 
     kingdomData = [EntryData(kingdom) for kingdom in json.loads(response[start:end])]
-    downloadChildCSVs(kingdomData, writer)
+    downloadChildCSVs(kingdomData, writer, [])
 
     writer.oneFile(False)
 
-def downloadChildCSVs(entryData: list[EntryData], writer: BigFileWriter) -> None:
+def downloadChildCSVs(entryData: list[EntryData], writer: BigFileWriter, parentRanks: list[str]) -> None:
     for entry in entryData:
         content = getCSVData(entry.key)
+        higherTaxonomy = parentRanks + [entry.rank]
         if content is not None:
-            writer.writeDF(buildDF(content))
+            df = buildDF(content)
+            df["higher_taxonomy"] = ";".join(higherTaxonomy)
+            writer.writeDF(df)
             print(f"Wrote file #{len(writer.writtenFiles)}", end="\r")
             continue
 
         # Content was too large to download
         children = entry.children if entry.children else findChildren(entry.key)
-        downloadChildCSVs(children, writer)
+        downloadChildCSVs(children, writer, higherTaxonomy)
 
 def getCSVData(taxonKey: str) -> str | None:
     url = f"https://biodiversity.org.au/afd/taxa/{taxonKey}/names/csv/{taxonKey}.csv"
@@ -102,12 +105,37 @@ def cleanup(filePath: Path, outputFilePath: Path) -> None:
     })
 
     df = df.rename(columns={column: column.lower() for column in df.columns})
-
+    df = df.rename(columns={"qualification": "notes"})
+    df = df[df["scientific_name"] != "Unplaced Synonym(s)"]
+    
     datasetID = "ARGA:TL:0001000"
     df["dataset_id"] = datasetID
     df["entity_id"] = f"{datasetID};" + df["scientific_name"]
     df["nomenclatural_code"] = "ICZN"
     df["created_at"] = ""
+    df["qualification"] = ""
+
+    inquirenda = df[df["taxon_rank"] == "Species Inquirenda"]
+    df = df.drop(inquirenda.index)
+    inqValidName = inquirenda[inquirenda["taxonomic_status"] == "Valid Name"]
+    inquirenda = inquirenda.drop(inqValidName.index)
+    inquirenda["taxon_rank"] = "Species"
+    inquirenda["taxonomic_status"] = "Valid Name"
+    inquirenda["qualification"] = "species inquirendum"
+    inquirenda = inquirenda.drop("family", axis=1)
+    inquirenda = inquirenda.merge(inqValidName[["taxon_id", "family"]], "left", "taxon_id")
+
+    incertae = df[df["taxon_rank"] == "Incertae Sedis"]
+    df = df.drop(incertae.index)
+    incValidName = incertae[incertae["taxonomic_status"] == "Valid Name"]
+    incertae = incertae.drop(incValidName.index)
+    incertae["taxon_rank"] = "Family"
+    incertae["taxonomic_status"] = "Valid Name"
+    incertae["qualification"] = "incertae sedis"
+    incertae = incertae.drop("family", axis=1)
+    incertae = incertae.merge(incValidName[["taxon_id", "family"]], "left", "taxon_id")
+
+    df = pd.concat([df, inquirenda, incertae], axis=0)
 
     df = df.fillna("")
     df["year"] = df["year"].apply(lambda x: x.split(".")[0])
@@ -144,4 +172,5 @@ def addParents(filePath: Path, outputFilePath: Path) -> None:
 
     df = df.merge(parentDF, "left", left_on="taxon_id", right_on="accepted_usage_taxon_id")
     df = df[df["taxonomic_status"].isin(("Valid Name", "Synonym"))]
+
     df.to_csv(outputFilePath, index=False)
