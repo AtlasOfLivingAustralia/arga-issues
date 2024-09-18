@@ -30,7 +30,7 @@ class AdvancedProgressBar(ProgressBar):
         
         length = self._getLength(atTask / self._taskCount)
         output = f"> {self.processName}{' ' if extraInfo else ''}{extraInfo} ({self._loading[self._pos]}): [{length * '='}{(self.barLength - length) * '-'}]"
-        print(output)
+        print(output, end="\r")
         self._updatePos()
 
         if atTask == self._taskCount:
