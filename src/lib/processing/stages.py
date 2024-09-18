@@ -19,11 +19,40 @@ class File:
         self.firstRow = fileProperties.pop("firstrow", 0)
         self.encoding = fileProperties.pop("encoding", "utf-8")
 
+        self._backupPath = None
+
     def __repr__(self) -> str:
         return str(self.filePath)
     
     def exists(self) -> bool:
         return self.filePath.exists()
+    
+    def backUp(self, overwrite: bool = False) -> None:
+        newPath = self.filePath.parent / f"{self.filePath.stem}_backup{self.filePath.suffix}"
+        if newPath.exists():
+            if not overwrite:
+                Logger.info("Unable to create new backup as it already exists")
+                return
+        
+            newPath.unlink()
+        
+        self._backupPath = self.filePath.rename(newPath)
+
+    def restoreBackUp(self) -> None:
+        if self._backupPath is None:
+            Logger.warning("Unable to restore backup as no previous backup made")
+            return
+        
+        self.delete()
+        self._backupPath.rename(self.filePath)
+        self._backupPath = None
+    
+    def deleteBackup(self) -> None:
+        if self._backupPath is None:
+            return
+        
+        self._backupPath.unlink()
+        self._backupPath = None
     
     def delete(self) -> None:
         self.filePath.unlink(True)
