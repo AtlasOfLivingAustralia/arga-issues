@@ -144,6 +144,9 @@ class BigFileWriter:
 
     def getSubfileCount(self) -> int:
         return len(self.writtenFiles)
+    
+    def subfileExists(self, name: str) -> bool:
+        return name in [subfile.fileName for subfile in self.writtenFiles]
 
     def writeDF(self, df: pd.DataFrame, customName: str = "", format: Format = None) -> None:
         if not self.subfileDir.exists():
@@ -156,7 +159,7 @@ class BigFileWriter:
             fileName = customName
             suffix = 0
 
-            while fileName in [subfile.fileName for subfile in self.writtenFiles]:
+            while self.subfileExists(fileName):
                 fileName = f"{customName}_{suffix}"
                 suffix += 1
 
