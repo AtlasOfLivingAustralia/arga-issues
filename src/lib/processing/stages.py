@@ -40,7 +40,6 @@ class File:
 
     def restoreBackUp(self) -> None:
         if self._backupPath is None:
-            Logger.warning("Unable to restore backup as no previous backup made")
             return
         
         self.delete()

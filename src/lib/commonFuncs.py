@@ -65,9 +65,8 @@ def getColumns(filePath: str, separator: str = ',', headerRow: int = 0) -> str:
             if idx == headerRow:
                 return row
 
-def extendUnique(lst: list, values: list) -> None:
-    lst.extend([item for item in values if item not in lst])
-    return lst
+def extendUnique(lst: list, values: list) -> list[any]:
+    return lst + [value for value in values if value not in lst]
 
 def addUniqueEntry(dictionary: dict, key: any, value: any, duplicateLimit: int = 0) -> None:
     if key not in dictionary:
