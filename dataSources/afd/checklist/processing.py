@@ -202,17 +202,24 @@ def enrich(filePath: Path, outputFilePath: Path) -> None:
             soup = BeautifulSoup(response.text, "html.parser")
 
             distribution = soup.find("div", {"id": "afdDistribution"})
-            print(taxonID)
+            distributionData = {}
             if distribution is not None:
-                distributionData = {dist.text.lower().replace(" ", "_"): ", ".join([item.strip() for item in dist.find_next("p").text.replace("\t", " ").split(",")]) for dist in distribution.find_all("h4")}
-            else:
-                distributionData = {}
+                for heading in distribution.find_all("h4"):
+                    key = heading.text.lower().replace(" ", "_")
+                    value = heading.find_next("p")
+                    if value is None:
+                        continue
+                    
+                    text = ", ".join(item.strip() for item in value.text.replace("\t", " ").split(","))
+                    distributionData[key] = text
 
             descriptors = soup.find("div", {"id": "afdEcologicalDescriptors"})
+            descriptorData = []
             if descriptors is not None:
-                descriptorData = [item for item in [desc.text.replace("\t", " ").strip() for desc in descriptors.find_all("p")] if item]
-            else:
-                descriptorData = []
+                for desc in descriptors.find_all("p"):
+                    text = desc.text.replace("\t", " ").strip()
+                    if text:
+                        descriptorData.append(text)
 
             records = []
             synonyms = soup.find("div", {"id": "afdSynonyms"})
