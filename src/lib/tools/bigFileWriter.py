@@ -120,8 +120,10 @@ class BigFileWriter:
             except OverflowError:
                 maxInt = int(maxInt/10)
 
-    def populateFromFolder(self, folderPath: Path, logIndividually: bool = False) -> None:
-        if not folderPath.exists():
+    def populateFromFolder(self, folderPath: Path = None, logIndividually: bool = False) -> None:
+        if folderPath is None:
+            folderPath = self.subfileDir
+        elif not folderPath.exists():
             return
         
         fileCount = 0
