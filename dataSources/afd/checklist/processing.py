@@ -3,9 +3,11 @@ import json
 from pathlib import Path
 import pandas as pd
 from io import BytesIO
-from lib.tools.bigFileWriter import BigFileWriter
+from lib.tools.bigFileWriter import BigFileWriter, Format
 from bs4 import BeautifulSoup
-from lib.tools.progressBar import AdvancedProgressBar
+from lib.tools.progressBar import SteppableProgressBar
+import re
+import traceback
 
 class EntryData:
     def __init__(self, rawData: dict):
@@ -185,66 +187,105 @@ def enrich(filePath: Path, outputFilePath: Path) -> None:
         subDF = df[df["taxon_rank"] == rank]
 
         enrichmentPath = outputFilePath.parent / f"{rank}.csv"
-        writer = BigFileWriter(enrichmentPath, "taxonIDs")
+        if enrichmentPath.exists():
+            continue
+
+        writer = BigFileWriter(enrichmentPath, rank, subfileType=Format.CSV)
         writer.populateFromFolder(writer.subfileDir)
-        
+        subfileNames = [file.fileName for file in writer.writtenFiles]
+
         uniqueSeries = subDF["taxon_id"].unique()
-        bar = AdvancedProgressBar(len(uniqueSeries), 50, f"{rank} Progress")
-
-        for idx, taxonID in enumerate(uniqueSeries, start=1):
-            bar.render(idx)
-
-            if writer.subfileExists(taxonID):
-                continue
+        uniqueSeries = [item for item in uniqueSeries if item not in subfileNames]
+        
+        bar = SteppableProgressBar(50, len(uniqueSeries), f"{rank} Progress")
+        for taxonID in uniqueSeries:
+            bar.update()
 
             response = session.get(f"https://biodiversity.org.au/afd/taxa/{taxonID}/complete")
-
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            distribution = soup.find("div", {"id": "afdDistribution"})
-            distributionData = {}
-            if distribution is not None:
-                for heading in distribution.find_all("h4"):
-                    key = heading.text.lower().replace(" ", "_")
-                    value = heading.find_next("p")
-                    if value is None:
-                        continue
-                    
-                    text = ", ".join(item.strip() for item in value.text.replace("\t", " ").split(","))
-                    distributionData[key] = text
-
-            descriptors = soup.find("div", {"id": "afdEcologicalDescriptors"})
-            descriptorData = []
-            if descriptors is not None:
-                for desc in descriptors.find_all("p"):
-                    text = desc.text.replace("\t", " ").strip()
-                    if text:
-                        descriptorData.append(text)
-
-            records = []
-            synonyms = soup.find("div", {"id": "afdSynonyms"})
-            if synonyms is None:
-                continue
-
-            for synonmn in synonyms.find_all("li"):
-                synonymTitle = synonmn.find_next("div")
-                synonymData = synonymTitle.find_next("div")
-
-                if synonymData.parent != synonymTitle.parent: # No type data if next div is at a lower level
-                    continue
-
-                data = {}
-                for typeData in synonymData.find_all("div"):
-                    data[typeData.find("h5").text.lower().replace(" ", "_")[:-1]] = synonymData.find("span").text
-
-                record = {"taxon_id": taxonID, rank.lower(): synonymTitle.find("strong").text.split()[-1]} | data
-                records.append(record | distributionData | {"descriptors": descriptorData})
-
+            try:
+                records = _parseContent(response.text, taxonID, rank.lower())
+            except:
+                print(taxonID)
+                print(traceback.format_exc())
+                return
+            
             recordDF = pd.DataFrame.from_records(records)
             writer.writeDF(recordDF, taxonID)
 
         writer.oneFile(False)
-        enrichmentDF = pd.read_csv(enrichmentPath)
+        enrichmentDF = pd.read_csv(enrichmentPath, dtype=object)
         df = df.merge(enrichmentDF, "left", ["taxon_id", rank.lower()])
 
-    df.to_csv(outputFilePath)
+    # df.to_csv(outputFilePath)
+
+def _parseContent(content: str, taxonID: str, rank: str) -> list[dict]:
+    soup = BeautifulSoup(content, "html.parser")
+
+    distribution = soup.find("div", {"id": "afdDistribution"})
+    distributionData = {}
+    if distribution is not None:
+        for heading in distribution.find_all("h4"):
+            key = heading.text.lower().replace(" ", "_")
+
+            if key in ("australian_region", "afrotropical_region"):
+                regionData = {}
+                countries = heading.find_next("ul")
+                if countries is None:
+                    continue
+                
+                for countryDotPoints in countries.findChildren("li"):
+                    countryName = countryDotPoints.find_next("strong").text
+                    stateData = {}
+
+                    stateDotPoints = countryDotPoints.findChild("ul")
+                    if stateDotPoints is not None:
+                        for item in stateDotPoints.find_all("li"):
+                            itemData = item.text.replace("\n", " ").split(":")
+                            if len(itemData) == 1:
+                                stateData[itemData[0].strip()] = ""
+                            else:
+                                itemKey, itemValue = itemData
+                                stateData[itemKey.strip()] = ", ".join(i.strip() for i in itemValue.split(","))
+
+                    regionData[countryName] = stateData
+
+                distributionData[key] = regionData
+
+            else:
+                value = heading.find_next("p")
+                if value is None:
+                    continue
+
+                text = value.text.replace("\t", " ").replace("\n", " ").strip()
+                text = re.sub(" +", " ", text)
+                distributionData[key] = text
+
+    descriptors = soup.find("div", {"id": "afdEcologicalDescriptors"})
+    descriptorList = []
+    if descriptors is not None:
+        for desc in descriptors.find_all("p"):
+            text = desc.text.replace("\t", " ").strip()
+            if text:
+                descriptorList.append(text)
+    descriptorData = {"descriptors": "|".join(descriptorList)}
+
+    records = []
+    synonyms = soup.find("div", {"id": "afdSynonyms"})
+    if synonyms is None:
+        return [{"taxon_id": taxonID} | distributionData | descriptorData]
+
+    for synonmn in synonyms.find_all("li"):
+        synonymTitle = synonmn.find_next("div")
+        synonymData = synonymTitle.find_next("div")
+
+        if synonymData.parent != synonymTitle.parent: # No type data if next div is at a lower level
+            continue
+
+        data = {}
+        for typeData in synonymData.find_all("div"):
+            data[typeData.find("h5").text.lower().replace(" ", "_")[:-1]] = synonymData.find("span").text
+
+        record = {"taxon_id": taxonID, rank: synonymTitle.find("strong").text.split()[-1]} | data
+        records.append(record | distributionData | descriptorData)
+
+    return records
