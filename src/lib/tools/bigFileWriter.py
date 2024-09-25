@@ -45,7 +45,7 @@ class Subfile:
         return pd.read_csv(self.filePath, **kwargs)
     
     def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
-        return self.read(chunkSize=chunkSize, **kwargs)
+        return self.read(chunksize=chunkSize, **kwargs)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
         if newFileFormat == self.fileFormat:
@@ -147,8 +147,8 @@ class BigFileWriter:
     def getSubfileCount(self) -> int:
         return len(self.writtenFiles)
     
-    def subfileExists(self, name: str) -> bool:
-        return name in [subfile.fileName for subfile in self.writtenFiles]
+    def getSubfileNames(self) -> list[str]:
+        return [subfile.fileName for subfile in self.writtenFiles]
 
     def writeDF(self, df: pd.DataFrame, customName: str = "", format: Format = None) -> None:
         if not self.subfileDir.exists():
