@@ -201,15 +201,14 @@ class BigFileWriter:
         delim = "\t" if self.outputFileType == Format.TSV else ","
         chunkSize = 1024
 
+        # Create empty file with columns
+        pd.DataFrame(columns=self.globalColumns).to_csv(self.outputFile, mode="a", sep=delim, index=False)
+
         fileCount = len(self.writtenFiles)
         for idx, file in enumerate(self.writtenFiles):
             print(f"At file: {idx+1} / {fileCount}", end='\r')
 
-            for subIdx, chunk in enumerate(file.readChunks(chunkSize)):
-                if idx == subIdx == 0:
-                    chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False)
-                    continue
-
+            for chunk in file.readChunks(chunkSize):
                 chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False, header=False)
 
             if removeOld:
