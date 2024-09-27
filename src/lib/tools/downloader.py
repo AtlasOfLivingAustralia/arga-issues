@@ -40,7 +40,7 @@ class Downloader:
                         continue
                     
                     if fileSize > 0: # File size known, can render completion %
-                        self.progressBar.render((idx * chunksize) / fileSize)
+                        self.progressBar.update((idx * chunksize) / fileSize)
                     else:
                         print(f"Downloaded chunk: {idx}", end="\r")
 
