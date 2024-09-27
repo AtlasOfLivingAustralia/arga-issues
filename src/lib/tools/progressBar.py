@@ -1,42 +1,63 @@
 class ProgressBar:
-    def __init__(self, barLength: int, processName: str = "Progress"):
+    def __init__(self, barLength: int, processName: str = "Progress", decimalPlaces: float = 2):
         self.barLength = barLength
         self.processName = processName
+        self.decimalPlaces = decimalPlaces
+
         self._loading = "-\\|/"
         self._pos = 0
 
-    def _getLength(self, completion: float) -> int:
-        return min(int(completion * self.barLength), self.barLength)
-    
-    def _updatePos(self):
+    def _getLoadStage(self) -> str:
         self._pos = (self._pos + 1) % len(self._loading)
+        return self._loading[self._pos]
+    
+    def _getBar(self, completion: int) -> str:
+        # completion = atTask / self.taskCount
+        length = min(int(self.barLength * completion), self.barLength)
+        percentage = f"{completion*100:.02f}%"
+        percentageLength = len(percentage)
+        percentagePos = (self.barLength - percentageLength + 1) // 2
+        secondHalfStart = percentageLength + percentagePos
+        return f"[{min(length, percentagePos) * '='}{max(percentagePos - length, 0) * '-'}{percentage}{max(length - secondHalfStart, 0) * '='}{((self.barLength - secondHalfStart) - max(length - secondHalfStart, 0)) * '-'}]"
 
-    def render(self, completion: float) -> None:
-        length = self._getLength(completion)
-        print(f"> {self.processName} ({self._loading[self._pos]}): [{length * '='}{(self.barLength - length) * '-'}]", end="\r")
-        self._updatePos()
+    def update(self, completion: float, extraInfo: str = "") -> int:
+        output = f"> {self.processName}{' - ' if extraInfo else ''}{extraInfo} ({self._getLoadStage()}): {self._getBar(completion)}"
+        print(output, end="\r")
+        return len(output)
 
-class AdvancedProgressBar(ProgressBar):
-    def __init__(self, taskCount: int, barLength: int, processName: str = "Progress", newlineOnComplete: bool = True):
-        self._taskCount = taskCount
+class UpdatableProgressBar(ProgressBar):
+    def __init__(self, barLength: int, taskCount: int, processName: str = "Progress", newlineOnComplete: bool = True, decimalPlaces: int = 2):
+        self.taskCount = taskCount
+        self.newlineOnComplete = newlineOnComplete
+
         self._completed = False
-        self._newlineOnComplete = newlineOnComplete
+    
+        super().__init__(barLength, processName, decimalPlaces)
 
-        super().__init__(barLength, processName)
-
-    def render(self, atTask: int, extraInfo: str = "") -> int:
+    def update(self, atTask: int, extraInfo: str = "") -> int:
         if self._completed:
             return
         
-        length = self._getLength(atTask / self._taskCount)
-        output = f"> {self.processName}{' ' if extraInfo else ''}{extraInfo} ({self._loading[self._pos]}): [{length * '='}{(self.barLength - length) * '-'}]"
-        print(output, end="\r")
-        self._updatePos()
+        outputLen = super().update(atTask / self.taskCount, extraInfo)
 
-        if atTask == self._taskCount:
+        if atTask == self.taskCount:
             self._completed = True
 
-            if self._newlineOnComplete:
+            if self.newlineOnComplete:
                 print()
 
-        return len(output)
+        return outputLen
+
+class SteppableProgressBar(UpdatableProgressBar):
+    def __init__(self, barLength: int, taskCount: int, processName: str = "Progress", newlineOnComplete: bool = True, decimalPlaces: int = 2, initialRender: bool = False):
+        super().__init__(barLength, taskCount, processName, newlineOnComplete, decimalPlaces)
+
+        if initialRender:
+            self._atTask = -1
+            self.update()
+        else:
+            self._atTask = 0
+
+    def update(self, extraInfo: str = "") -> int:
+        self._atTask += 1
+        return super().update(self._atTask, extraInfo)

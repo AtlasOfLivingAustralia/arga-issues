@@ -76,7 +76,7 @@ def enrichStats(summaryFile: File, outputPath: Path, apiKeyPath: Path = None):
             else: # Record
                 recordData.append(value)
                 
-            progress.render((len(recordData) + len(failedAccessions)) / recordsPerSubsection)
+            progress.update((len(recordData) + len(failedAccessions)) / recordsPerSubsection)
 
         print(f"\nCompleted subsection {iteration}")
         writer.writeDF(pd.DataFrame.from_records(recordData))

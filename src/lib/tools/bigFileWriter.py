@@ -8,6 +8,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from lib.tools.logger import Logger
 from typing import Iterator
+from lib.tools.progressBar import SteppableProgressBar
 
 class Format(Enum):
     CSV = ".csv"
@@ -45,7 +46,7 @@ class Subfile:
         return pd.read_csv(self.filePath, **kwargs)
     
     def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
-        return self.read(chunkSize=chunkSize, **kwargs)
+        return self.read(chunksize=chunkSize, **kwargs)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
         if newFileFormat == self.fileFormat:
@@ -120,8 +121,10 @@ class BigFileWriter:
             except OverflowError:
                 maxInt = int(maxInt/10)
 
-    def populateFromFolder(self, folderPath: Path, logIndividually: bool = False) -> None:
-        if not folderPath.exists():
+    def populateFromFolder(self, folderPath: Path = None, logIndividually: bool = False) -> None:
+        if folderPath is None:
+            folderPath = self.subfileDir
+        elif not folderPath.exists():
             return
         
         fileCount = 0
@@ -145,8 +148,8 @@ class BigFileWriter:
     def getSubfileCount(self) -> int:
         return len(self.writtenFiles)
     
-    def subfileExists(self, name: str) -> bool:
-        return name in [subfile.fileName for subfile in self.writtenFiles]
+    def getSubfileNames(self) -> list[str]:
+        return [subfile.fileName for subfile in self.writtenFiles]
 
     def writeDF(self, df: pd.DataFrame, customName: str = "", format: Format = None) -> None:
         if not self.subfileDir.exists():
@@ -199,15 +202,14 @@ class BigFileWriter:
         delim = "\t" if self.outputFileType == Format.TSV else ","
         chunkSize = 1024
 
-        fileCount = len(self.writtenFiles)
-        for idx, file in enumerate(self.writtenFiles):
-            print(f"At file: {idx+1} / {fileCount}", end='\r')
+        # Create empty file with columns
+        pd.DataFrame(columns=self.globalColumns).to_csv(self.outputFile, mode="a", sep=delim, index=False)
 
-            for subIdx, chunk in enumerate(file.readChunks(chunkSize)):
-                if idx == subIdx == 0:
-                    chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False)
-                    continue
+        progress = SteppableProgressBar(50, len(self.writtenFiles), "Writing")
+        for file in self.writtenFiles:
+            progress.update()
 
+            for chunk in file.readChunks(chunkSize):
                 chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False, header=False)
 
             if removeOld:
@@ -216,7 +218,10 @@ class BigFileWriter:
     def _oneParquet(self, removeOld: bool = True):
         schema = pa.schema([(column, pa.string()) for column in self.globalColumns])
         with pq.ParquetWriter(self.outputFile, schema=schema) as writer:
+            progress = SteppableProgressBar(50, len(self.writtenFiles), "Writing")
             for file in self.writtenFiles:
+                progress.update()
+                
                 writer.write_table(pq.read_table(str(file)))
 
                 if removeOld:
