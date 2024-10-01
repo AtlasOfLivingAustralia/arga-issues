@@ -70,8 +70,11 @@ class Subfile:
         self.filePath.unlink()
 
     def getColumns(self) -> list[str]:
-        df = self.read(nrows=1)
-        return df.columns
+        try:
+            df = self.read(nrows=1)
+            return list(df.columns)
+        except pd.errors.EmptyDataError:
+            return []
 
 class TSVSubfile(Subfile):
 
@@ -134,6 +137,9 @@ class BigFileWriter:
 
             subFile = Subfile.fromFilePath(filePath)
             columns = subFile.getColumns()
+            if not columns:
+                filePath.unlink()
+                continue
 
             self.writtenFiles.append(subFile)
             self.globalColumns = cmn.extendUnique(self.globalColumns, columns)
@@ -162,7 +168,7 @@ class BigFileWriter:
             fileName = customName
             suffix = 0
 
-            while self.subfileExists(fileName):
+            while fileName in self.getSubfileNames():
                 fileName = f"{customName}_{suffix}"
                 suffix += 1
 
