@@ -42,10 +42,13 @@ class Subfile:
     def write(self, df: pd.DataFrame) -> None:
         df.to_csv(self.filePath, index=False)
     
-    def read(self, **kwargs) -> pd.DataFrame:
-        return pd.read_csv(self.filePath, **kwargs)
+    def read(self, **kwargs) -> pd.DataFrame | None:
+        try:
+            return pd.read_csv(self.filePath, **kwargs)
+        except pd.errors.EmptyDataError:
+            return None
     
-    def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
+    def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame] | None:
         return self.read(chunksize=chunkSize, **kwargs)
 
     def rename(self, newFilePath: Path, newFileFormat: Format) -> None:
@@ -70,11 +73,10 @@ class Subfile:
         self.filePath.unlink()
 
     def getColumns(self) -> list[str]:
-        try:
-            df = self.read(nrows=1)
-            return list(df.columns)
-        except pd.errors.EmptyDataError:
+        df = self.read(nrows=1)
+        if df is None:
             return []
+        return list(df.columns)
 
 class TSVSubfile(Subfile):
 
@@ -83,8 +85,8 @@ class TSVSubfile(Subfile):
     def write(self, df: pd.DataFrame) -> None:
         df.to_csv(self.filePath, sep="\t", index=False)
 
-    def read(self, **kwargs) -> pd.DataFrame:
-        return pd.read_csv(self.filePath, sep="\t", **kwargs)
+    def read(self, **kwargs) -> pd.DataFrame | None:
+        return super().read(sep="\t", **kwargs)
     
 class PARQUETSubfile(Subfile):
 
@@ -93,9 +95,12 @@ class PARQUETSubfile(Subfile):
     def write(self, df: pd.DataFrame) -> None:
         df.to_parquet(self.filePath, "pyarrow", index=False)
 
-    def read(self, **kwargs) -> pd.DataFrame:
+    def read(self, **kwargs) -> pd.DataFrame | None:
         # return pd.read_parquet(self.filePath, "pyarrow", **kwargs)
-        return pq.read_table(self.filePath, **kwargs).to_pandas()
+        try:
+            return pq.read_table(self.filePath, **kwargs).to_pandas()
+        except pd.errors.EmptyDataError:
+            return None
     
     def readChunks(self, chunkSize: int, **kwargs) -> Iterator[pd.DataFrame]:
         parquetFile = pq.ParquetFile(self.filePath)
@@ -215,8 +220,10 @@ class BigFileWriter:
         for file in self.writtenFiles:
             progress.update()
 
-            for chunk in file.readChunks(chunkSize):
-                chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False, header=False)
+            chunkIterator = file.readChunks(chunkSize)
+            if chunkIterator is not None:
+                for chunk in chunkIterator:
+                    chunk.to_csv(self.outputFile, mode="a", sep=delim, index=False, header=False)
 
             if removeOld:
                 file.remove()
