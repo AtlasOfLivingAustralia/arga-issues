@@ -18,7 +18,7 @@ class Retrieve(Enum):
     CRAWL   = "crawl"
     SCRIPT  = "script"
 
-class Database:
+class BasicDB:
 
     retrieveType = Retrieve.URL
 
@@ -160,6 +160,7 @@ class Database:
         except KeyboardInterrupt:
             Logger.info(f"Process ended early when attempting to execute step '{step.name}' for {self}")
 
+class CrawlDB(BasicDB):
     def package(self) -> None:
         renamedFilePath = self.metadataManager.metadataPath.rename(self.conversionManager.output.filePath / self.metadataManager.metadataPath.name)
         outputPath = zp.compress(self.conversionManager.output.filePath, self.dataDir)
@@ -216,7 +217,7 @@ class CrawlDB(Database):
         folderName = urlParts[-2]
         return f"{folderName}_{fileName}"
 
-class ScriptDB(Database):
+class ScriptDB(BasicDB):
 
     retrieveType = Retrieve.SCRIPT
 
