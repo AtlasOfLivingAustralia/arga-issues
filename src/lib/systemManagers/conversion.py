@@ -13,9 +13,11 @@ from datetime import datetime
 
 class ConversionManager:
     def __init__(self, baseDir: Path, converionDir: Path, location: str, database: str, subsection: str):
+    def __init__(self, baseDir: Path, converionDir: Path, location: str, datasetID: str):
         self.baseDir = baseDir
         self.conversionDir = converionDir
         self.location = location
+        self.datasetID = datasetID
 
         self.output = StackedFile(self.conversionDir / (f"{location}-{database}" + (f"-{subsection}" if subsection else "")))
 
@@ -91,6 +93,7 @@ class ConversionManager:
 
             df = self.fillNA.apply(df)
             df = self.applyAugments(df)
+            df["datasetID"] = self.datasetID
 
             for eventColumn in df.columns.levels[0]:
                 writers[eventColumn].writeDF(df[eventColumn])
