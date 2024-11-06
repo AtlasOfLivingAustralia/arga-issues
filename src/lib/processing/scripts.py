@@ -1,5 +1,5 @@
 from pathlib import Path
-from lib.processing.stages import File
+from lib.processing.stages import File, Folder
 from lib.tools.logger import Logger
 import importlib.util
 from enum import Enum
@@ -50,7 +50,11 @@ class Script:
         self.output = self._parseArg(self.output, [Key.OUTPUT_DIR, Key.OUTPUT_PATH])
         if isinstance(self.output, str):
             self.output = self.outputDir / self.output
-        self.output: File = File(self.output, self.outputProperties)
+
+        if not self.output.suffix:
+            self.output = Folder(self.output)
+        else:
+            self.output: File = File(self.output, self.outputProperties)
 
         self.args = [self._parseArg(arg) for arg in self.args]
         self.kwargs = {key: self._parseArg(arg) for key, arg in self.kwargs.items()}
