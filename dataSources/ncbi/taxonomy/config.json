@@ -11,7 +11,7 @@
     "processing": {
         "final": [
             {
-                "path": "lib/tools/zipping.py",
+                "path": ".../tools/zipping.py",
                 "function": "extract",
                 "args": [
                     "{INPATH}",
