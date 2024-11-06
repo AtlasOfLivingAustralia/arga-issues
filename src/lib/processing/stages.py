@@ -65,13 +65,30 @@ class File:
     def getColumns(self) -> list[str]:
         return cmn.getColumns(self.filePath, self.separator, self.firstRow)
 
-class StackedFile(File):
+class Folder(File):
     def __init__(self, filePath: Path):
         super().__init__(filePath, {})
 
     def delete(self) -> None:
         cmn.clearFolder(self.filePath, True)
-        
+
+    def deleteBackup(self) -> None:
+        if self._backupPath is None:
+            return
+
+        cmn.clearFolder(self._backupPath, True)
+        self._backupPath = None
+
+    def loadDataFrame(self, *args, **kwargs: dict) -> TypeError:
+        raise TypeError
+    
+    def loadDataFrameIterator(self, *args, **kwargs) -> TypeError:
+        return TypeError
+    
+    def getColumns(self) -> TypeError:
+        return TypeError
+
+class StackedFile(Folder):
     def _getFiles(self) -> list[Path]:
         return [file for file in self.filePath.iterdir() if file.suffix == ".csv"]
 
@@ -86,3 +103,6 @@ class StackedFile(File):
                 yield pd.concat([next(chunk) for chunk in sections.values()], axis=1, keys=sections.keys())
             except StopIteration:
                 return
+
+    def getColumns(self) -> dict[str, list[str]]:
+        return {file.stem: cmn.getColumns(file) for file in self._getFiles()}

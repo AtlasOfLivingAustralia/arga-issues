@@ -4,6 +4,7 @@ from lib.tools.logger import Logger
 import importlib.util
 from enum import Enum
 import traceback
+import lib.config as cfg
 
 class Key(Enum):
     INPUT_FILE  = "INFILE"
@@ -15,6 +16,8 @@ class Key(Enum):
     OUTPUT_PATH = "OUTPATH"
 
 class Script:
+    _libDir = cfg.Folders.src / "lib"
+
     def __init__(self, baseDir: Path, outputDir: Path, scriptInfo: dict, inputs: list[File]):
         self.baseDir = baseDir
         self.outputDir = outputDir
@@ -64,6 +67,7 @@ class Script:
             processFunction = self._importFunction(self.path, self.function)
         except:
             Logger.error(f"Error importing function '{self.function}' from path '{self.path}'")
+            Logger.error(traceback.format_exc())
             self.output.restoreBackUp()
             return False
 
@@ -197,4 +201,8 @@ class Script:
 
             return workingDir / newStructure
         
+        if arg.startswith(".../"):
+            return self._libDir / arg[4:]
+
+        Logger.warning(f"Unable to parse suspected path: {arg}")
         return arg

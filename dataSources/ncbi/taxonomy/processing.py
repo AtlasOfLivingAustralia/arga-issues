@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
 from enum import Enum
-from lib.tools.logger import logger
+from lib.tools.logger import Logger
 
 class DumpFiles(Enum):
     NODES = "nodes.dmp"
@@ -145,7 +145,7 @@ def splitLine(line: str) -> list[str]:
 
 def parse(dumpFolder: Path, outputFile: Path) -> None:
     # Build taxon tree
-    logger.info("Building taxonomy tree from nodes")
+    Logger.info("Building taxonomy tree from nodes")
     tree = TaxonTree()
 
     with open(dumpFolder / DumpFiles.NODES.value) as fp:
@@ -157,7 +157,7 @@ def parse(dumpFolder: Path, outputFile: Path) -> None:
             line = fp.readline()
 
     # Adding names to nodes
-    logger.info("Adding names to nodes")
+    Logger.info("Adding names to nodes")
     with open(dumpFolder / DumpFiles.NAMES.value) as fp:
         line = fp.readline()
         while "|" in line:
@@ -168,6 +168,6 @@ def parse(dumpFolder: Path, outputFile: Path) -> None:
 
             line = fp.readline()
 
-    logger.info("Comiling tree to dataframe and writing to file")
+    Logger.info("Comiling tree to dataframe and writing to file")
     df = tree.toDataframe()
     df.to_csv(outputFile)
