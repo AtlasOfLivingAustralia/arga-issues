@@ -2,6 +2,8 @@ from pathlib import Path
 from lib.processing.stages import File
 from lib.processing.scripts import Script
 from lib.tools.logger import Logger
+import time
+from datetime import datetime
 
 class _Node:
     def __init__(self, script: Script, parents: list['_Node']):
@@ -11,6 +13,9 @@ class _Node:
 
     def getOutput(self) -> File:
         return self.script.output
+    
+    def getFunction(self) -> str:
+        return self.script.function
 
     def execute(self, overwrite: bool, verbose: bool) -> bool:
         if self.executed:
@@ -62,19 +67,35 @@ class ProcessingManager:
     def getLatestNodeFiles(self) -> list[File]:
         return [node.getOutput() for node in self.nodes]
 
-    def process(self, overwrite: bool = False, verbose: bool = False) -> bool:
+    def process(self, overwrite: bool = False, verbose: bool = False) -> tuple[bool, dict]:
         if all(isinstance(node, _Root) for node in self.nodes): # All root nodes, no processing required
             Logger.info("No processing required for any nodes")
-            return True
+            return True, {}
 
         if not self.processingDir.exists():
             self.processingDir.mkdir()
 
-        successes = []
-        for node in self.nodes:
-            successes.append(node.execute(overwrite, verbose))
+        metadata = {"steps": []}
+        allSucceeded = True
+        startTime = time.perf_counter()
 
-        return all(successes)
+        for node in self.nodes:
+            processingStart = time.perf_counter()
+            success = node.execute(overwrite, verbose)
+
+            metadata["steps"].append({
+                "function": node.getFunction(),
+                "output": node.getOutput().filePath.name,
+                "success": success,
+                "duration": time.perf_counter() - processingStart,
+                "timestamp": datetime.now().isoformat()
+            })
+
+            allSucceeded = allSucceeded and success
+
+        metadata["totalTime"] = time.perf_counter() - startTime
+
+        return allSucceeded, metadata
 
     def registerFile(self, file: File, processingSteps: list[dict]) -> bool:
         node = _Root(file)

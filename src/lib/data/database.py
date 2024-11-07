@@ -2,10 +2,10 @@ import lib.config as cfg
 from enum import Enum
 from pathlib import Path
 
-from lib.systemManagers.timeManager import TimeManager
-from lib.systemManagers.downloadManager import DownloadManager
-from lib.systemManagers.processingManager import ProcessingManager
-from lib.systemManagers.conversionManager import ConversionManager
+from lib.systemManagers.downloading import DownloadManager
+from lib.systemManagers.processing import ProcessingManager
+from lib.systemManagers.conversion import ConversionManager
+from lib.systemManagers.metadata import MetadataManager
 
 from lib.processing.stages import Step
 
@@ -50,7 +50,7 @@ class Database:
         self.downloadManager = DownloadManager(self.databaseDir, self.downloadDir, self.authFile)
         self.processingManager = ProcessingManager(self.databaseDir, self.processingDir)
         self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, location)
-        self.timeManager = TimeManager(self.databaseDir)
+        self.metadataManager = MetadataManager(self.subsectionDir)
 
         # Report extra config options
         self._reportLeftovers(config)
@@ -123,13 +123,19 @@ class Database:
     def _execute(self, step: Step, overwrite: bool, verbose: bool, **kwargs: dict) -> bool:
         Logger.info(f"Executing {self} step '{step.name}' with flags: overwrite={overwrite} | verbose={verbose}")
         if step == Step.DOWNLOAD:
-            return self.downloadManager.download(overwrite, verbose, **kwargs)
+            success, metadata = self.downloadManager.download(overwrite, verbose, **kwargs)
+            self.metadataManager.update(step, metadata)
+            return success
         
         if step == Step.PROCESSING:
-            return self.processingManager.process(overwrite, verbose, **kwargs)
+            success, metadata = self.processingManager.process(overwrite, verbose, **kwargs)
+            self.metadataManager.update(step, metadata)
+            return success
         
         if step == Step.CONVERSION:
-            return self.conversionManager.convert(overwrite, verbose, **kwargs)
+            success, metadata = self.conversionManager.convert(overwrite, verbose, **kwargs)
+            self.metadataManager.update(step, metadata)
+            return success
 
         Logger.error(f"Unknown step to execute: {step}")
         return False

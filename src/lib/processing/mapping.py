@@ -134,12 +134,14 @@ class TranslationTable:
     def __init__(self):
         self._translationTable: dict[str, list[MappedColumn]] = {}
         self._uniqueEntries: dict[MappedColumn, list[str]] = {}
+        self._unmappedColumns: list[str]
 
         self._eventsUsed = set()
 
     def clear(self) -> None:
         self._translationTable.clear()
         self._uniqueEntries.clear()
+        self._unmappedColumns.clear()
 
     def addTranslation(self, column: str, columnMapping: MappedColumn) -> None:
         if column not in self._translationTable:
@@ -148,9 +150,11 @@ class TranslationTable:
         self._translationTable[column].append(columnMapping)
         self._eventsUsed.add(columnMapping.event)
 
+        if columnMapping.event == Event.UNMAPPED:
+            self._unmappedColumns.append(columnMapping.colName)
+
         if columnMapping not in self._uniqueEntries:
-            self._uniqueEntries[columnMapping] = [column]
-            return
+            self._uniqueEntries[columnMapping] = []
         
         self._uniqueEntries[columnMapping].append(column)
 
@@ -159,6 +163,9 @@ class TranslationTable:
 
     def getEventCategories(self) -> list[Event]:
         return list(self._eventsUsed)
+    
+    def getUnmapped(self) -> list[str]:
+        return self._unmappedColumns
 
     def hasColumn(self, column: str) -> bool:
         return column in self._translationTable
@@ -184,10 +191,12 @@ class Remapper:
     def buildTable(self, columns: list[str], skipRemap: list[str] = []) -> TranslationTable:
         table = TranslationTable()
 
+        def buildUnmapped(column: str) -> MappedColumn:
+            return MappedColumn(Event.UNMAPPED, f"{self.prefix}_{column}" if self.prefixUnmapped else column)
+
         for column in columns:
             if column in skipRemap:
-                mapping = MappedColumn(Event.UNMAPPED, f"{self.location}_{column}" if self.prefixUnmapped else column)
-                table.addTranslation(mapping)
+                table.addTranslation(column, buildUnmapped(column))
                 continue
  
             # Apply mapping
@@ -200,13 +209,12 @@ class Remapper:
 
                 # If column matches an output column name
                 if map.existsInMap(column) and self.preserveDwCMatch:
-                    value = MappedColumn(Event.PRESERVED, f"{self.prefixs}_{column}")
+                    value = MappedColumn(Event.PRESERVED, f"{self.prefix}_{column}")
                     table.addTranslation(column, value)
 
             # If no mapped value has been found yet
             if not table.hasColumn(column):
-                value = MappedColumn(Event.UNMAPPED, f"{self.prefix}_{column}" if self.prefixUnmapped else column)
-                table.addTranslation(column, value)
+                table.addTranslation(column, buildUnmapped(column))
 
         return table
 
