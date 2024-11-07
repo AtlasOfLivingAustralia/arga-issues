@@ -3,7 +3,7 @@ import lib.commonFuncs as cmn
 from lib.processing.stages import File
 from lib.processing.scripts import Script
 from lib.tools.logger import Logger
-from lib.tools.downloader import Downloader
+import lib.tools.downloading as dl
 
 class _Download:
     def retrieve(self, overwrite: bool) -> bool:
@@ -13,8 +13,7 @@ class _URLDownload(_Download):
     def __init__(self, url: str, filePath: Path, properties: dict, username: str, password: str):
         self.url = url
         self.file = File(filePath, properties)
-        self.username = username
-        self.password = password
+        self.auth = dl.buildAuth(username, password) if username else None
 
     def retrieve(self, overwrite: bool, verbose: bool) -> bool:
         if not overwrite and self.file.exists():
@@ -22,8 +21,7 @@ class _URLDownload(_Download):
             return self.file.filePath
         
         self.file.filePath.unlink(True)
-        downloader = Downloader(username=self.username, password=self.password)
-        return downloader.download(self.url, self.file.filePath, verbose=True)
+        return dl.download(self.url, self.file.filePath, verbose=True, auth=self.auth)
 
 class _ScriptDownload(_Download):
     def __init__(self, baseDir: Path, downloadDir: Path, scriptInfo: dict):
