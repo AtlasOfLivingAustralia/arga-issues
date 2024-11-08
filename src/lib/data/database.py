@@ -161,11 +161,10 @@ class Database:
             Logger.info(f"Process ended early when attempting to execute step '{step.name}' for {self}")
 
     def package(self) -> None:
-        packageFolderPath = self.conversionManager.output.filePath
-        metadataFilePath = self.metadataManager.metadataPath
-        renamedFilePath = metadataFilePath.rename(packageFolderPath / metadataFilePath.name)
-        zp.compress(packageFolderPath)
-        renamedFilePath.rename(metadataFilePath)
+        renamedFilePath = self.metadataManager.metadataPath.rename(self.conversionManager.output.filePath / self.metadataManager.metadataPath.name)
+        outputPath = zp.compress(self.conversionManager.output.filePath, self.dataDir)
+        renamedFilePath.rename(self.metadataManager.metadataPath)
+        Logger.info(f"Successfully zipped converted data source file to {outputPath}")
 
 class CrawlDB(Database):
 
