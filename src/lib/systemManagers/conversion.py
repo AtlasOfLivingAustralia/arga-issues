@@ -12,16 +12,16 @@ import time
 from datetime import datetime
 
 class ConversionManager:
-    def __init__(self, baseDir: Path, converionDir: Path, location: str):
+    def __init__(self, baseDir: Path, converionDir: Path, location: str, database: str, subsection: str):
         self.baseDir = baseDir
         self.conversionDir = converionDir
         self.location = location
+        self.output = StackedFile(self.conversionDir / f"{location}-{database}" + f"-{subsection}" if subsection else "") 
 
-        self.recordsFile = "records.txt"
+        self.fileLoaded = False
 
-    def addFile(self, file: File, properties: dict, mapDir: Path) -> None:
+    def loadFile(self, file: File, properties: dict, mapDir: Path) -> None:
         self.file = file
-        self.output = StackedFile(self.conversionDir / f"{file.filePath.stem}-converted")
 
         self.mapID = properties.pop("mapID", -1)
         self.customMapID = properties.pop("customMapID", -1)
@@ -36,8 +36,13 @@ class ConversionManager:
         self.augments = [Script(self.baseDir, self.conversionDir, augProperties, []) for augProperties in properties.pop("augment", [])]
 
         self.mapManager = MapManager(mapDir)
+        self.fileLoaded = True
 
     def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = False, forceRetrieve: bool = False) -> tuple[bool, dict]:
+        if not self.fileLoaded:
+            Logger.error("No file loaded for conversion, exiting...")
+            return False, {}
+
         if self.output.filePath.exists() and not overwrite:
             Logger.info(f"{self.output.filePath} already exists, exiting...")
             return True, {}

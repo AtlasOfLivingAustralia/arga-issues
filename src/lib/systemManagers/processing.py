@@ -17,20 +17,33 @@ class _Node:
     def getFunction(self) -> str:
         return self.script.function
 
-    def execute(self, overwrite: bool, verbose: bool) -> bool:
+    def execute(self, overwrite: bool, verbose: bool) -> tuple[bool, list[dict]]:
+        metadata = []
+
         if self.executed:
-            return True
+            return True, metadata
         
-        parentSuccesses = []
+        parentSuccess = True
         for parent in self.parents:
-            parentSuccesses.append(parent.execute(overwrite, verbose))
+            success, metadata = parent.execute(overwrite, verbose)
+            parentSuccess = parentSuccess and success
         
-        if not all(parentSuccesses):
-            return False
+        if not parentSuccess:
+            return False, metadata
         
+        stattTime = time.perf_counter()
         success = self.script.run(overwrite, verbose)
+
+        metadata.append({
+            "function": self.getFunction(),
+            "output": self.getOutput().filePath.name,
+            "success": success,
+            "duration": time.perf_counter() - stattTime,
+            "timestamp": datetime.now().isoformat()
+        })
+
         self.executed = success
-        return success
+        return success, metadata
 
 class _Root(_Node):
     def __init__(self, file: File):
@@ -39,8 +52,8 @@ class _Root(_Node):
     def getOutput(self) -> File:
         return self.file
     
-    def execute(self, *args) -> bool:
-        return True
+    def execute(self, *args) -> tuple[bool, list]:
+        return True, []
 
 class ProcessingManager:
     def __init__(self, baseDir: Path, processingDir: Path):
@@ -77,20 +90,12 @@ class ProcessingManager:
 
         metadata = {"steps": []}
         allSucceeded = True
+
         startTime = time.perf_counter()
-
         for node in self.nodes:
-            processingStart = time.perf_counter()
-            success = node.execute(overwrite, verbose)
+            success, stepMetadata = node.execute(overwrite, verbose)
 
-            metadata["steps"].append({
-                "function": node.getFunction(),
-                "output": node.getOutput().filePath.name,
-                "success": success,
-                "duration": time.perf_counter() - processingStart,
-                "timestamp": datetime.now().isoformat()
-            })
-
+            metadata["steps"].extend(stepMetadata)
             allSucceeded = allSucceeded and success
 
         metadata["totalTime"] = time.perf_counter() - startTime
