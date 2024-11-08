@@ -97,7 +97,7 @@ class ConversionManager:
             writer.oneFile()
 
         metadata = {
-            "output": self.output,
+            "output": self.output.filePath.name,
             "success": True,
             "duration": time.perf_counter() - startTime,
             "timestamp": datetime.now().isoformat(),

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from lib.processing.stages import Step
+from lib.tools.logger import Logger
 
 class MetadataManager:
     _stepKeys = {
@@ -9,8 +10,8 @@ class MetadataManager:
         Step.CONVERSION: "converting"
     }
 
-    def __init__(self, metadataDir: Path):
-        self.metadataPath = metadataDir / "metadata.json"
+    def __init__(self, databaseDir: Path):
+        self.metadataPath = databaseDir / "metadata.json"
         self._load()
         
     def _load(self) -> None:
@@ -27,7 +28,11 @@ class MetadataManager:
 
     def update(self, step: Step, metadata: dict) -> None:
         if not metadata:
+            Logger.info("No metadata to update")
             return
         
-        self.data[self._stepKeys[step]] = metadata
+        key = self._stepKeys[step]
+        self.data[key] = metadata
         self._save()
+
+        Logger.info(f"Updated {key} metadata and saved to file")

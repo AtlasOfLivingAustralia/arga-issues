@@ -134,7 +134,7 @@ class TranslationTable:
     def __init__(self):
         self._translationTable: dict[str, list[MappedColumn]] = {}
         self._uniqueEntries: dict[MappedColumn, list[str]] = {}
-        self._unmappedColumns: list[str]
+        self._unmappedColumns: list[str] = []
 
         self._eventsUsed = set()
 
