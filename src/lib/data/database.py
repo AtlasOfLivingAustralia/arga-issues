@@ -11,6 +11,7 @@ from lib.processing.stages import Step
 
 from lib.tools.crawler import Crawler
 from lib.tools.logger import Logger
+import lib.tools.zipping as zp
 
 class Retrieve(Enum):
     URL     = "url"
@@ -49,7 +50,7 @@ class Database:
         # System Managers
         self.downloadManager = DownloadManager(self.databaseDir, self.downloadDir, self.authFile)
         self.processingManager = ProcessingManager(self.databaseDir, self.processingDir)
-        self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, location)
+        self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, location, database, subsection)
         self.metadataManager = MetadataManager(self.subsectionDir)
 
         # Report extra config options
@@ -94,8 +95,12 @@ class Database:
         self.processingManager.addFinalProcessing(finalProcessing)
     
     def _prepareConversion(self, overwrite: bool, verbose: bool) -> None:
-        for file in self.processingManager.getLatestNodeFiles():
-            self.conversionManager.addFile(file, self.conversionConfig, self.databaseDir)
+        filesToConvert = self.processingManager.getLatestNodeFiles()
+        if len(filesToConvert) != 1:
+            Logger.error(f"Unable to prepare conversion, there should be 1 but there is {len(filesToConvert)}")
+            return
+
+        self.conversionManager.loadFile(filesToConvert[0], self.conversionConfig, self.databaseDir)
 
     def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> bool:
         callbacks = {
@@ -154,6 +159,13 @@ class Database:
             self._execute(step, reprocess, verbose, **kwargs)
         except KeyboardInterrupt:
             Logger.info(f"Process ended early when attempting to execute step '{step.name}' for {self}")
+
+    def package(self) -> None:
+        packageFolderPath = self.conversionManager.output.filePath
+        metadataFilePath = self.metadataManager.metadataPath
+        renamedFilePath = metadataFilePath.rename(packageFolderPath / metadataFilePath.name)
+        zp.compress(packageFolderPath)
+        renamedFilePath.rename(metadataFilePath)
 
 class CrawlDB(Database):
 

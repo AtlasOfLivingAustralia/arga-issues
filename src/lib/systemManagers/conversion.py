@@ -16,7 +16,8 @@ class ConversionManager:
         self.baseDir = baseDir
         self.conversionDir = converionDir
         self.location = location
-        self.output = StackedFile(self.conversionDir / f"{location}-{database}" + f"-{subsection}" if subsection else "") 
+
+        self.output = StackedFile(self.conversionDir / (f"{location}-{database}" + (f"-{subsection}" if subsection else "")))
 
         self.fileLoaded = False
 
