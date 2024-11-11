@@ -2,6 +2,8 @@ from pathlib import Path
 from lib.processing.stages import File
 from lib.processing.scripts import Script
 from lib.tools.logger import Logger
+import time
+from datetime import datetime
 
 class _Node:
     def __init__(self, script: Script, parents: list['_Node']):
@@ -11,21 +13,37 @@ class _Node:
 
     def getOutput(self) -> File:
         return self.script.output
+    
+    def getFunction(self) -> str:
+        return self.script.function
 
-    def execute(self, overwrite: bool, verbose: bool) -> bool:
+    def execute(self, overwrite: bool, verbose: bool) -> tuple[bool, list[dict]]:
+        metadata = []
+
         if self.executed:
-            return True
+            return True, metadata
         
-        parentSuccesses = []
+        parentSuccess = True
         for parent in self.parents:
-            parentSuccesses.append(parent.execute(overwrite, verbose))
+            success, metadata = parent.execute(overwrite, verbose)
+            parentSuccess = parentSuccess and success
         
-        if not all(parentSuccesses):
-            return False
+        if not parentSuccess:
+            return False, metadata
         
+        stattTime = time.perf_counter()
         success = self.script.run(overwrite, verbose)
+
+        metadata.append({
+            "function": self.getFunction(),
+            "output": self.getOutput().filePath.name,
+            "success": success,
+            "duration": time.perf_counter() - stattTime,
+            "timestamp": datetime.now().isoformat()
+        })
+
         self.executed = success
-        return success
+        return success, metadata
 
 class _Root(_Node):
     def __init__(self, file: File):
@@ -34,8 +52,8 @@ class _Root(_Node):
     def getOutput(self) -> File:
         return self.file
     
-    def execute(self, *args) -> bool:
-        return True
+    def execute(self, *args) -> tuple[bool, list]:
+        return True, []
 
 class ProcessingManager:
     def __init__(self, baseDir: Path, processingDir: Path):
@@ -62,19 +80,27 @@ class ProcessingManager:
     def getLatestNodeFiles(self) -> list[File]:
         return [node.getOutput() for node in self.nodes]
 
-    def process(self, overwrite: bool = False, verbose: bool = False) -> bool:
+    def process(self, overwrite: bool = False, verbose: bool = False) -> tuple[bool, dict]:
         if all(isinstance(node, _Root) for node in self.nodes): # All root nodes, no processing required
             Logger.info("No processing required for any nodes")
-            return True
+            return True, {}
 
         if not self.processingDir.exists():
             self.processingDir.mkdir()
 
-        successes = []
-        for node in self.nodes:
-            successes.append(node.execute(overwrite, verbose))
+        metadata = {"steps": []}
+        allSucceeded = True
 
-        return all(successes)
+        startTime = time.perf_counter()
+        for node in self.nodes:
+            success, stepMetadata = node.execute(overwrite, verbose)
+
+            metadata["steps"].extend(stepMetadata)
+            allSucceeded = allSucceeded and success
+
+        metadata["totalTime"] = time.perf_counter() - startTime
+
+        return allSucceeded, metadata
 
     def registerFile(self, file: File, processingSteps: list[dict]) -> bool:
         node = _Root(file)

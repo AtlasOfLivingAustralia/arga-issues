@@ -168,6 +168,6 @@ def parse(dumpFolder: Path, outputFile: Path) -> None:
 
             line = fp.readline()
 
-    Logger.info("Comiling tree to dataframe and writing to file")
+    Logger.info("Compiling tree to dataframe and writing to file")
     df = tree.toDataframe()
     df.to_csv(outputFile)

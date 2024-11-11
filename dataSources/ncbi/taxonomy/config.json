@@ -31,6 +31,7 @@
         ]
     },
     "conversion": {
-        "mapID": 240630744
+        "mapID": 240630744,
+        "chunkSize": 65536
     }
 }

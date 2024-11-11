@@ -2,25 +2,27 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import lib.commonFuncs as cmn
-import lib.tools.zipping as zp
 from lib.tools.bigFileWriter import BigFileWriter
 from lib.processing.mapping import Remapper, Event, MapManager
 from lib.processing.stages import File, StackedFile
 from lib.processing.scripts import Script
 from lib.tools.logger import Logger
 import gc
+import time
+from datetime import datetime
 
 class ConversionManager:
-    def __init__(self, baseDir: Path, converionDir: Path, location: str):
+    def __init__(self, baseDir: Path, converionDir: Path, location: str, database: str, subsection: str):
         self.baseDir = baseDir
         self.conversionDir = converionDir
         self.location = location
 
-        self.recordsFile = "records.txt"
+        self.output = StackedFile(self.conversionDir / (f"{location}-{database}" + (f"-{subsection}" if subsection else "")))
 
-    def addFile(self, file: File, properties: dict, mapDir: Path) -> None:
+        self.fileLoaded = False
+
+    def loadFile(self, file: File, properties: dict, mapDir: Path) -> None:
         self.file = file
-        self.output = StackedFile(self.conversionDir / f"{file.filePath.stem}-converted")
 
         self.mapID = properties.pop("mapID", -1)
         self.customMapID = properties.pop("customMapID", -1)
@@ -35,11 +37,16 @@ class ConversionManager:
         self.augments = [Script(self.baseDir, self.conversionDir, augProperties, []) for augProperties in properties.pop("augment", [])]
 
         self.mapManager = MapManager(mapDir)
+        self.fileLoaded = True
 
-    def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = False, forceRetrieve: bool = False, zip: bool = False) -> bool:
+    def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = False, forceRetrieve: bool = False) -> tuple[bool, dict]:
+        if not self.fileLoaded:
+            Logger.error("No file loaded for conversion, exiting...")
+            return False, {}
+
         if self.output.filePath.exists() and not overwrite:
             Logger.info(f"{self.output.filePath} already exists, exiting...")
-            return True
+            return True, {}
         
         # Get columns and create mappings
         Logger.info("Getting column mappings")
@@ -48,7 +55,7 @@ class ConversionManager:
         maps = self.mapManager.loadMaps(self.mapID, self.customMapID, None, forceRetrieve)
         if not maps:
             Logger.error("Unable to retrieve any maps")
-            return False
+            return False, {}
 
         remapper = Remapper(maps, self.location, self.preserveDwC, self.prefixUnmapped)
         translationTable = remapper.buildTable(columns, self.skipRemap)
@@ -58,7 +65,7 @@ class ConversionManager:
                 for event, firstCol, matchingCols in translationTable.getNonUnique():
                     for col in matchingCols:
                         Logger.info(f"Found mapping for column '{col}' that matches initial mapping '{firstCol}' under event '{event.value}'")
-                return False
+                return False, {}
             
             translationTable.forceUnique()
         
@@ -68,8 +75,11 @@ class ConversionManager:
             cleanedName = event.value.lower().replace(" ", "_")
             writers[event] = BigFileWriter(self.output.filePath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
-        totalRows = 0
         Logger.info("Processing chunks for conversion")
+
+        totalRows = 0
+        startTime = time.perf_counter()
+
         chunks = cmn.chunkGenerator(self.file.filePath, self.chunkSize, self.file.separator, self.file.firstRow, self.file.encoding)
         for idx, df in enumerate(chunks, start=1):
             if verbose:
@@ -92,14 +102,17 @@ class ConversionManager:
         for writer in writers.values():
             writer.oneFile()
 
-        with open(self.output.filePath / self.recordsFile, "w") as fp:
-            fp.write(str(totalRows))
-
-        if zip:
-            Logger.info(f"Zipping {self.output.filePath}")
-            zp.compress(self.output.filePath)
+        metadata = {
+            "output": self.output.filePath.name,
+            "success": True,
+            "duration": time.perf_counter() - startTime,
+            "timestamp": datetime.now().isoformat(),
+            "columns": len(columns),
+            "unmappedColumns": len(translationTable.getUnmapped()),
+            "rows": totalRows
+        }
         
-        return True
+        return True, metadata
 
     def applyAugments(self, df: pd.DataFrame) -> pd.DataFrame:
         for augment in self.augments:
