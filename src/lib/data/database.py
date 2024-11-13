@@ -51,10 +51,8 @@ class BasicDB:
         # System Managers
         self.downloadManager = DownloadManager(self.databaseDir, self.downloadDir, self.authFile)
         self.processingManager = ProcessingManager(self.databaseDir, self.processingDir)
-        self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, location, database, subsection)
+        self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, self.datasetID, location, database, subsection)
         self.metadataManager = MetadataManager(self.subsectionDir)
-        self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, location, self.datasetID)
-        self.timeManager = TimeManager(self.databaseDir)
 
         # Report extra config options
         self._reportLeftovers(config)
@@ -163,14 +161,13 @@ class BasicDB:
         except KeyboardInterrupt:
             Logger.info(f"Process ended early when attempting to execute step '{step.name}' for {self}")
 
-class CrawlDB(BasicDB):
     def package(self) -> None:
         renamedFilePath = self.metadataManager.metadataPath.rename(self.conversionManager.output.filePath / self.metadataManager.metadataPath.name)
         outputPath = zp.compress(self.conversionManager.output.filePath, self.dataDir)
         renamedFilePath.rename(self.metadataManager.metadataPath)
         Logger.info(f"Successfully zipped converted data source file to {outputPath}")
 
-class CrawlDB(Database):
+class CrawlDB(BasicDB):
 
     retrieveType = Retrieve.CRAWL
 

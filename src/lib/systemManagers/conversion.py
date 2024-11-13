@@ -12,8 +12,7 @@ import time
 from datetime import datetime
 
 class ConversionManager:
-    def __init__(self, baseDir: Path, converionDir: Path, location: str, database: str, subsection: str):
-    def __init__(self, baseDir: Path, converionDir: Path, location: str, datasetID: str):
+    def __init__(self, baseDir: Path, converionDir: Path, datasetID: str, location: str, database: str, subsection: str):
         self.baseDir = baseDir
         self.conversionDir = converionDir
         self.location = location
