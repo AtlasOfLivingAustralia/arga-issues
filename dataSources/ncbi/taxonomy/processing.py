@@ -2,18 +2,19 @@ from pathlib import Path
 import pandas as pd
 from enum import Enum
 from lib.tools.logger import Logger
+from lib.tools.progressBar import SteppableProgressBar
 
-class DumpFiles(Enum):
+class DumpFile(Enum):
     NODES = "nodes.dmp"
     NAMES = "names.dmp"
-    DIVISIONS = "divisions.dmp"
+    DIVISION = "division.dmp"
     GENETIC_CODES = "gencode.dmp"
     DELETED_NODES = "delnodes.dmp"
     MERGED_NODES = "merged.dmp"
     CITATIONS = "citations.dmp"
 
 headings = {
-    DumpFiles.NODES: [
+    DumpFile.NODES: [
         "tax_id",
         "parent_tax_id",
         "rank",
@@ -28,33 +29,33 @@ headings = {
         "hidden_subtree_root_flag",
         "comments"
     ],
-    DumpFiles.NAMES: [
+    DumpFile.NAMES: [
         "tax_id",
         "name_txt",
         "unique_name",
         "name_class"
     ],
-    DumpFiles.DIVISIONS: [
+    DumpFile.DIVISION: [
         "division_id",
         "division_cde",
         "division_name",
         "comments"
     ],
-    DumpFiles.GENETIC_CODES: [
+    DumpFile.GENETIC_CODES: [
         "genetic_code_id",
         "abbreviation",
         "name",
         "cde",
         "starts"
     ],
-    DumpFiles.DELETED_NODES: [
+    DumpFile.DELETED_NODES: [
         "tax_id"
     ],
-    DumpFiles.MERGED_NODES: [
+    DumpFile.MERGED_NODES: [
         "old_tax_id",
         "new_tax_id",
     ],
-    DumpFiles.CITATIONS: [
+    DumpFile.CITATIONS: [
         "cit_id",
         "cit_key",
         "pubmed_id",
@@ -65,109 +66,116 @@ headings = {
     ]
 }
 
-class TaxonNode:
-    def __init__(self, id: int):
-        self.id = id
-        self.parent = None
-        self.rank = "Unknown"
+class Node:
+    __slots__ = headings[DumpFile.NODES]
 
-        self.name = ""
-        self.taxInfo = {}
-    
-    def setParent(self, parent: 'TaxonNode') -> None:
-        if self.id != parent.id:
-            self.parent = parent
+    inheritedAttrs = {
+        "inherited_div_flag": "division_id",
+        "inherited_GC_flag": "genetic_code_id",
+        "inherited_MGC_flag": "mitochondrial_genetic_code_id",
+    }
 
-    def setRank(self, rank: str) -> None:
-        self.rank = rank
+    hiddenAttrs = [
+        "GenBank_hidden_flag",
+        "hidden_subtree_root_flag"
+    ]
 
-    def setName(self, name: str) -> None:
-        self.name = name
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.hiddenAttrs or k in self.inheritedAttrs:
+                v = bool(int(v))
 
-    def getTaxInfo(self, includeOwn: bool = False) -> dict[str, str]:
-        info = {}
-        if self.parent is not None:
-            info = self.parent.getTaxInfo(True)
+            setattr(self, k, v)
 
-        if includeOwn:
-            info[self.rank] = self.name
+    def resolveInherit(self, nodes: dict[int, 'Node']) -> None:
+        for flagAttr, valueAttr in self.inheritedAttrs.items():
+            if getattr(self, flagAttr):
+                parentNode = nodes[self.parent_tax_id]
+                parentNode.resolveInherit(nodes)
+                setattr(self, flagAttr, False)
+                setattr(self, valueAttr, getattr(parentNode, valueAttr))
 
-        return info.copy()
+    def package(self) -> dict:
+        return {attr: getattr(self, attr) for attr in self.__slots__ if attr not in self.inheritedAttrs and attr not in self.hiddenAttrs}
 
-class TaxonTree:
-    def __init__(self):
-        self.nodes: dict[int, TaxonNode] = {}
-        self.taxonRanks = [
-            "kingdom",
-            "phylum",
-            "class",
-            "order",
-            "family",
-            "subfamily",
-            "genus",
-            "subgenus",
-            "species"
-        ]
+def resolveInheritance(data: pd.DataFrame) -> pd.DataFrame:
+    nodes: dict[str, Node] = {}
+    nodeProgress = SteppableProgressBar(50, len(data), "Creating Nodes")
+    for _, row in data.iterrows():
+        node = Node(**row.to_dict())
+        nodes[node.tax_id] = node
+        nodeProgress.update()
 
-    def exists(self, taxID: int) -> bool:
-        return taxID in self.nodes
+    records = []
+    recordProgress = SteppableProgressBar(50, len(nodes), "Resolving Inheritance")
+    for node in nodes.values():
+        node.resolveInherit(nodes)
+        records.append(node.package())
+        recordProgress.update()
 
-    def addNode(self, taxID: int, parentTaxID: int, rank: str) -> None:
-        if parentTaxID not in self.nodes:
-            self.nodes[parentTaxID] = TaxonNode(parentTaxID)
+    return pd.DataFrame.from_records(records)
 
-        if taxID not in self.nodes:
-            self.nodes[taxID] = TaxonNode(taxID)
+def flattenNames(df: pd.DataFrame) -> pd.DataFrame:
+    data = {}
+    flattenProgress = SteppableProgressBar(50, len(df), "Flattening Names")
+    for _, row in df.iterrows():
+        taxID = row["tax_id"]
+        text = row["name_txt"]
+        nameClass = row["name_class"]
 
-        self.nodes[taxID].setParent(self.nodes[parentTaxID])
-        self.nodes[taxID].setRank(rank)
+        if taxID not in data:
+            data[taxID] = {"tax_id": taxID}
 
-    def getNode(self, taxID: int) -> TaxonNode:
-        return self.nodes[taxID]
+        data[taxID][nameClass] = text
+        
+        flattenProgress.update()
 
-    def getTaxonomy(self, taxID: int) -> dict[str, str]:
-        return self.nodes[taxID].getTaxInfo()
-
-    def toDataframe(self) -> pd.DataFrame:
-        dataDict = {}
-        for taxID, node in self.nodes.items():
-            taxInfo = node.getTaxInfo(True)
-            dataDict[taxID] = {"name": node.name, "parentTaxonID": int(node.parent.id) if node.parent is not None else None}
-            dataDict[taxID] |= {key: value for key, value in taxInfo.items() if key in self.taxonRanks}
-
-        df = pd.DataFrame.from_dict(dataDict, orient='index')
-        df["parentTaxonID"] = df["parentTaxonID"].apply(lambda x: str(x).replace(".0", "")) # Ints still saving with 0, need this hack
-        df.index.name = "taxonID"
-        return df
-    
-def splitLine(line: str) -> list[str]:
-    return [element.strip('\t') for element in line.rstrip('|\n').split('|')]
+    return pd.DataFrame.from_dict(data, orient="index")
 
 def parse(dumpFolder: Path, outputFile: Path) -> None:
-    # Build taxon tree
-    Logger.info("Building taxonomy tree from nodes")
-    tree = TaxonTree()
 
-    with open(dumpFolder / DumpFiles.NODES.value) as fp:
-        line = fp.readline()
-        while "|" in line:
-            taxID, parentTaxID, rank, *_ = splitLine(line) # Ignore values beyond first 3
-            tree.addNode(int(taxID), int(parentTaxID), rank)
-            
-            line = fp.readline()
+    def loadDF(dumpFile: DumpFile) -> pd.DataFrame:
+        with open(dumpFolder / dumpFile.value) as fp:
+            records = [line.strip("\t|\n").split("\t|\t") for line in fp.readlines()]
 
-    # Adding names to nodes
-    Logger.info("Adding names to nodes")
-    with open(dumpFolder / DumpFiles.NAMES.value) as fp:
-        line = fp.readline()
-        while "|" in line:
-            taxID, name, _, nameClass = splitLine(line)
-            if nameClass == "scientific name":
-                node = tree.getNode(int(taxID))
-                node.setName(name)
+        return pd.DataFrame.from_records(records, columns=headings[dumpFile])
 
-            line = fp.readline()
+    df = loadDF(DumpFile.NODES)
+    df = resolveInheritance(df)
 
-    Logger.info("Compiling tree to dataframe and writing to file")
-    df = tree.toDataframe()
-    df.to_csv(outputFile)
+    # df = df[["tax_id", "parent_tax_id", "rank"]]
+
+    names = loadDF(DumpFile.NAMES)
+    names = flattenNames(names)
+
+    df = df.merge(names, "left", on="tax_id")
+
+    divisions = loadDF(DumpFile.DIVISION)
+    divisions = divisions.drop(["comments"], axis=1)
+    df = df.merge(divisions, "left", on="division_id")
+
+    divisionMap = {
+        "INV": "ICZN",
+        "BCT": "",
+        "MAM": "ICZN",
+        "PHG": "",
+        "PLN": "ICN",
+        "PRI": "ICZN",
+        "ROD": "ICZN",
+        "SYN": "",
+        "UNA": "",
+        "VRL": "",
+        "VRT": "ICZN",
+        "ENV": "ICN",
+    }
+
+    df["nomenclatural_code"] = df["division_cde"].apply(lambda x: divisionMap[x])
+
+    df["taxonomic_status"] = ""
+    df["nomenclatural_act"] = "names usage"
+    df["ARGA_curated"] = False
+    df["present_on_ARGA_backbone"] = False
+
+    df = df.drop(["in-part"], axis=1)
+    df = df.rename({col: col.replace(" ", "_") for col in df.columns}, axis=1)
+    df.to_csv(outputFile, index=False)
