@@ -29,7 +29,7 @@ def download(url: str, filePath: Path, chunkSize: int = 1024*1024, verbose: bool
         progressBar = ProgressBar(50, "Downloading")
 
     try:
-        requests.head(url)
+        requests.head(url, auth=auth, headers=headers)
     except requests.exceptions.InvalidSchema as e:
         Logger.error(f"Schema error: {e}")
         return False

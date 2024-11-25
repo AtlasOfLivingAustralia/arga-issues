@@ -1,0 +1,35 @@
+{
+    "retrieveType": "url",
+    "datasetID": "ARGA:TL:0001022",
+    "download": {
+        "files": [
+            {
+                "url": "https://files.worldfloraonline.org/files/WFO_Backbone/_WFOCompleteBackbone/WFO_Backbone.zip",
+                "name": "WFO_Backbone.zip"
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": ".../tools/zipping.py",
+                "function": "extract",
+                "args": [
+                    "{INPATH}",
+                    "{OUTDIR}"
+                ],
+                "output": "{INSTEM}"
+            },
+            {
+                "path": "./processing.py",
+                "function": "cleanup",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "wfo.csv"
+            }
+        ]
+    },
+    "conversion": {}
+}
