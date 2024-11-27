@@ -18,14 +18,15 @@ class Retrieve(Enum):
     CRAWL   = "crawl"
     SCRIPT  = "script"
 
-class Database:
+class BasicDB:
 
     retrieveType = Retrieve.URL
 
-    def __init__(self, location: str, database: str, subsection: str, config: dict):
+    def __init__(self, location: str, database: str, subsection: str, datasetID: str, config: dict):
         self.location = location
         self.database = database
         self.subsection = subsection
+        self.datasetID = datasetID
 
         # Auth
         self.authFile: str = config.pop("auth", "")
@@ -50,7 +51,7 @@ class Database:
         # System Managers
         self.downloadManager = DownloadManager(self.databaseDir, self.downloadDir, self.authFile)
         self.processingManager = ProcessingManager(self.databaseDir, self.processingDir)
-        self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, location, database, subsection)
+        self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, self.datasetID, location, database, subsection)
         self.metadataManager = MetadataManager(self.subsectionDir)
 
         # Report extra config options
@@ -166,7 +167,7 @@ class Database:
         renamedFilePath.rename(self.metadataManager.metadataPath)
         Logger.info(f"Successfully zipped converted data source file to {outputPath}")
 
-class CrawlDB(Database):
+class CrawlDB(BasicDB):
 
     retrieveType = Retrieve.CRAWL
 
@@ -216,7 +217,7 @@ class CrawlDB(Database):
         folderName = urlParts[-2]
         return f"{folderName}_{fileName}"
 
-class ScriptDB(Database):
+class ScriptDB(BasicDB):
 
     retrieveType = Retrieve.SCRIPT
 
