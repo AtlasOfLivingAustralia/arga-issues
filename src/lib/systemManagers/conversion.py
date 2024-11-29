@@ -92,7 +92,8 @@ class ConversionManager:
 
             df = self.fillNA.apply(df)
             df = self.applyAugments(df)
-            df["datasetID"] = self.datasetID
+            df[(Event.COLLECTION, "dataset_id")] = self.datasetID
+            df[(Event.COLLECTION, "entity_id")] = df[(Event.COLLECTION, "dataset_id")] + df[(Event.COLLECTION, "scientific_name")]
 
             for eventColumn in df.columns.levels[0]:
                 writers[eventColumn].writeDF(df[eventColumn])
