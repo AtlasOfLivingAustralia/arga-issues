@@ -216,7 +216,7 @@ class BigFileWriter:
         # Create empty file with columns
         pd.DataFrame(columns=self.globalColumns).to_csv(self.outputFile, mode="a", sep=delim, index=False)
 
-        progress = SteppableProgressBar(50, len(self.writtenFiles), "Writing")
+        progress = SteppableProgressBar(len(self.writtenFiles), processName="Writing")
         for file in self.writtenFiles:
             progress.update()
 
@@ -231,7 +231,7 @@ class BigFileWriter:
     def _oneParquet(self, removeOld: bool = True):
         schema = pa.schema([(column, pa.string()) for column in self.globalColumns])
         with pq.ParquetWriter(self.outputFile, schema=schema) as writer:
-            progress = SteppableProgressBar(50, len(self.writtenFiles), "Writing")
+            progress = SteppableProgressBar(len(self.writtenFiles), processName="Writing")
             for file in self.writtenFiles:
                 progress.update()
                 

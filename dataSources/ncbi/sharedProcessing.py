@@ -44,7 +44,7 @@ def enrichStats(summaryFile: File, outputPath: Path, apiKeyPath: Path = None):
         "non_coding_gene_count": "non_coding_gene_count"
     }
 
-    progress = ProgressBar(50)
+    progress = ProgressBar()
     totalRecords = len(df)
 
     recordsPerSubsection = 30000

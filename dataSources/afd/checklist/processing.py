@@ -197,7 +197,7 @@ def enrich(filePath: Path, outputFilePath: Path) -> None:
         uniqueSeries = subDF["taxon_id"].unique()
         uniqueSeries = [item for item in uniqueSeries if item not in subfileNames]
         
-        bar = SteppableProgressBar(50, len(uniqueSeries), f"{rank} Progress")
+        bar = SteppableProgressBar(len(uniqueSeries), processName=f"{rank} Progress")
         for taxonID in uniqueSeries:
             bar.update()
 
