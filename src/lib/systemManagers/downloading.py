@@ -33,7 +33,7 @@ class _ScriptDownload(_Download):
     def __init__(self, baseDir: Path, downloadDir: Path, scriptInfo: dict):
         self.script = Script(baseDir, downloadDir, scriptInfo, [])      
 
-        super().__init__(self.script.output, self.script.outputProperties)
+        super().__init__(self.script.output.filePath, self.script.outputProperties)
 
     def retrieve(self, overwrite: bool, verbose: bool) -> bool:
         return self.script.run(overwrite, verbose)
@@ -77,7 +77,7 @@ class DownloadManager:
             success = download.retrieve(overwrite, verbose)
 
             metadata["files"].append({
-                "output": download.file.filePath.name,
+                "output": download.file.filePath,
                 "success": success,
                 "duration": time.perf_counter() - downloadStart,
                 "timestamp": datetime.now().isoformat()
