@@ -1,5 +1,9 @@
+defaultBarLength = 50
+defaultProcessName = "Progress"
+defaultDecimalPlaces = 2
+
 class ProgressBar:
-    def __init__(self, barLength: int, processName: str = "Progress", decimalPlaces: float = 2):
+    def __init__(self, barLength: int = defaultBarLength, processName: str = defaultProcessName, decimalPlaces: float = defaultDecimalPlaces):
         self.barLength = barLength
         self.processName = processName
         self.decimalPlaces = decimalPlaces
@@ -26,7 +30,7 @@ class ProgressBar:
         return len(output)
 
 class UpdatableProgressBar(ProgressBar):
-    def __init__(self, barLength: int, taskCount: int, processName: str = "Progress", newlineOnComplete: bool = True, decimalPlaces: int = 2):
+    def __init__(self, taskCount: int, barLength: int = defaultBarLength, processName: str = defaultProcessName, newlineOnComplete: bool = True, decimalPlaces: int = defaultDecimalPlaces):
         self.taskCount = taskCount
         self.newlineOnComplete = newlineOnComplete
 
@@ -49,15 +53,18 @@ class UpdatableProgressBar(ProgressBar):
         return outputLen
 
 class SteppableProgressBar(UpdatableProgressBar):
-    def __init__(self, barLength: int, taskCount: int, processName: str = "Progress", newlineOnComplete: bool = True, decimalPlaces: int = 2, initialRender: bool = False):
-        super().__init__(barLength, taskCount, processName, newlineOnComplete, decimalPlaces)
+    def __init__(self, taskCount: int, barLength: int = defaultBarLength, callsPerUpdate: int = 1, processName: str = defaultProcessName, newlineOnComplete: bool = True, decimalPlaces: int = defaultDecimalPlaces, initialRender: bool = True):
+        super().__init__(taskCount, barLength, processName, newlineOnComplete, decimalPlaces)
+
+        self._callsPerUpdate = callsPerUpdate
+        self._atTask = 0
 
         if initialRender:
-            self._atTask = -1
+            self._atTask -= 1
             self.update()
-        else:
-            self._atTask = 0
 
     def update(self, extraInfo: str = "") -> int:
         self._atTask += 1
-        return super().update(self._atTask, extraInfo)
+        if self._atTask % self._callsPerUpdate == 0:
+            return super().update(self._atTask, extraInfo)
+        return 0
