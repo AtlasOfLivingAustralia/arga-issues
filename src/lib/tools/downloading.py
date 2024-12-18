@@ -26,7 +26,8 @@ def download(url: str, filePath: Path, chunkSize: int = 1024*1024, verbose: bool
     
     if verbose:
         Logger.info(f"Downloading from {url} to file {filePath.absolute()}")
-        progressBar = ProgressBar(50, "Downloading")
+        progressBar = ProgressBar(processName="Downloading")
+        
 
     try:
         requests.head(url, auth=auth, headers=headers)

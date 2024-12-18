@@ -1,6 +1,6 @@
-defaultBarLength = 50
-defaultProcessName = "Progress"
-defaultDecimalPlaces = 2
+defaultBarLength: int = 50
+defaultProcessName: str = "Progress"
+defaultDecimalPlaces: int = 2
 
 class ProgressBar:
     def __init__(self, barLength: int = defaultBarLength, processName: str = defaultProcessName, decimalPlaces: float = defaultDecimalPlaces):
