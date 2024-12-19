@@ -6,6 +6,7 @@ from lib.tools.progressBar import SteppableProgressBar
 import json
 import traceback
 import time
+import concurrent.futures as cf
 
 def getMetadata(filePath: Path, outputFile: Path):
     metadataFolder = outputFile.parent / "metadata"
@@ -15,7 +16,7 @@ def getMetadata(filePath: Path, outputFile: Path):
     # session = requests.Session()
 
     # ids = df[df["URL"].notna()]
-    # progress = SteppableProgressBar(50, len(ids), "Scraping")
+    # progress = SteppableProgressBar(len(ids), callsPerUpdate=10, processName="Scraping")
 
     # for _, row in ids.iterrows():
     #     url = row["URL"]
@@ -35,35 +36,44 @@ def getMetadata(filePath: Path, outputFile: Path):
     parsedFolder = outputFile.parent / "parsedMetadata"
     parsedFolder.mkdir(exist_ok=True)
 
+    tempFolder = outputFile.parent / "temp"
+    tempFolder.mkdir(exist_ok=True)
+
     records = []
-    progress = SteppableProgressBar(50, len(list(metadataFolder.glob("*.txt"))), "Parsing")
+    progress = SteppableProgressBar(len(list(metadataFolder.glob("*.txt"))), callsPerUpdate=10, processName="Parsing")
+    
+    # with cf.ProcessPoolExecutor(max_workers=5) as executor:
+    #     futures = (executor.submit(processFile, file, parsedFolder if file.name.startswith("G") else tempFolder) for file in metadataFolder.iterdir())
+
+    #     for future in cf.as_completed(futures):
+    #         record = future.result()
+    #         records.append(record)
+    #         progress.update()
+
     for file in metadataFolder.iterdir():
-        newFilePath = parsedFolder / f"{file.stem}.json"
-
-        if not newFilePath.exists():
-            with open(file, encoding="utf-8") as fp:
-                data = fp.read()
-
-            try:
-                record = (parseGenus if file.stem.startswith("G") else parseSpecies)(file.stem, data)
-            except:
-                print(f"\nError with {file}")
-                print(traceback.format_exc())
-                return
-
-            with open(newFilePath, "w") as fp:
-                json.dump(record, fp, indent=4)
-
-        else:
-            with open(newFilePath) as fp:
-                record = json.load(fp)
-            pass
-
+        record = processFile(file, parsedFolder if file.name.startswith("G") else tempFolder)
         records.append(record)
         progress.update()
 
     df2 = pd.DataFrame.from_records(records)
     print(df.columns, df2.columns)
+
+def processFile(file: Path, outputFolder: Path) -> dict:
+    outputFilePath = outputFolder / f"{file.stem}.json"
+
+    if outputFilePath.exists():
+        with open(outputFilePath) as fp:
+            return json.load(fp)
+        
+    with open(file, encoding="utf-8") as fp:
+        data = fp.read()
+
+    record = (parseGenus if file.stem.startswith("G") else parseSpecies)(file.stem, data)
+
+    with open(outputFilePath, "w") as fp:
+        json.dump(record, fp, indent=4)
+
+    return record
 
 def parseGenus(id: str, data: str) -> dict:
     record = {"id": id}
@@ -119,7 +129,6 @@ def parseGenus(id: str, data: str) -> dict:
     return record
 
 def parseSpecies(id: str, data: str) -> dict:
-    return {}
     record = {"id": id}
 
     if "•" in data:
@@ -203,25 +212,37 @@ def parseSpecies(id: str, data: str) -> dict:
     record["otherTypes"] = otherTypes
 
     references, currentStatus = backHalf.split("Current status: Valid as ")
-    currentStatus, family, otherFields = currentStatus.rstrip(". ").split(". ", 2)
+    currentStatus, otherFields = currentStatus.rstrip(". ").split(". ", 1)
     record["currentValidName"] = currentStatus
 
-    if family.find(":") == family.find(": "): # Determine if first colon is for another field, meaning no family
-        record["family"] = record["subfamily"] = ""
-        otherFields = family + otherFields
-    else:
-        family = family.split(":")
-        family += ["" for _ in range(2 - len(family))]
-        record["family"], record["subfamily"] = family
+    # if ":" not in family:
+    #     record["family"] = family
+    #     record["subfamily"] = ""
+    # elif family.find(":") == family.find(": "): # Determine if first colon is for another field, meaning no family
+    #     record["family"] = record["subfamily"] = ""
+    #     otherFields = f"{family}. {otherFields}"
+    # else:
+    #     family = family.split(":")
+    #     family += ["" for _ in range(2 - len(family))]
+    #     
 
-    print(otherFields)
-    for field in otherFields.split(". "):
-        if ":" not in field:
+    validLabels = (
+        "Distribution",
+        "Habitat"
+    )
+
+    for idx, field in enumerate(otherFields.split(". ")):
+        if ":" not in field or label not in validLabels:
+            if idx == 0:
+                if ":" not in field:
+                    record["family"] = field
+                    record["subfamily"] = ""
+                else:
+                    record["family"], record["subfamily"] = field.split(":")
+
             continue
 
         label, value = field.split(":", 1)
         record[label.lower().strip()] = value.strip(". ")
-
-    time.sleep(1)
 
     return record
