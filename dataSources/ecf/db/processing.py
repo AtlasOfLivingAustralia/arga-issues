@@ -4,8 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 from lib.tools.progressBar import SteppableProgressBar
 import json
-import traceback
-import time
 import concurrent.futures as cf
 
 def getMetadata(filePath: Path, outputFile: Path):
@@ -13,10 +11,10 @@ def getMetadata(filePath: Path, outputFile: Path):
     metadataFolder.mkdir(exist_ok=True)
 
     df = pd.read_csv(filePath, sep="\t")
-    # session = requests.Session()
+    session = requests.Session()
 
-    # ids = df[df["URL"].notna()]
-    # progress = SteppableProgressBar(len(ids), callsPerUpdate=10, processName="Scraping")
+    ids = df[df["URL"].notna()]
+    progress = SteppableProgressBar(len(ids), callsPerUpdate=10, processName="Scraping")
 
     # for _, row in ids.iterrows():
     #     url = row["URL"]
@@ -36,14 +34,11 @@ def getMetadata(filePath: Path, outputFile: Path):
     parsedFolder = outputFile.parent / "parsedMetadata"
     parsedFolder.mkdir(exist_ok=True)
 
-    tempFolder = outputFile.parent / "temp"
-    tempFolder.mkdir(exist_ok=True)
-
     records = []
     progress = SteppableProgressBar(len(list(metadataFolder.glob("*.txt"))), callsPerUpdate=10, processName="Parsing")
     
     # with cf.ProcessPoolExecutor(max_workers=5) as executor:
-    #     futures = (executor.submit(processFile, file, parsedFolder if file.name.startswith("G") else tempFolder) for file in metadataFolder.iterdir())
+    #     futures = (executor.submit(processFile, file, parsedFolder) for file in metadataFolder.iterdir())
 
     #     for future in cf.as_completed(futures):
     #         record = future.result()
@@ -51,12 +46,13 @@ def getMetadata(filePath: Path, outputFile: Path):
     #         progress.update()
 
     for file in metadataFolder.iterdir():
-        record = processFile(file, parsedFolder if file.name.startswith("G") else tempFolder)
+        record = processFile(file, parsedFolder)
         records.append(record)
         progress.update()
 
     df2 = pd.DataFrame.from_records(records)
-    print(df.columns, df2.columns)
+    df = df.merge(df2, "left", left_on="ID", right_on="id")
+    df.to_csv(outputFile, index=False)
 
 def processFile(file: Path, outputFolder: Path) -> dict:
     outputFilePath = outputFolder / f"{file.stem}.json"
@@ -97,16 +93,26 @@ def parseGenus(id: str, data: str) -> dict:
     nextAuthorEnd = authorsPage.find("]")
     while nextAuthorEnd > 0:
         authors.append(authorsPage[:nextAuthorEnd+1].strip(" &"))
-        authorInfo = authorsPage[nextAuthorEnd+1:]
-        nextAuthorEnd = authorsPage.find("]", nextAuthorEnd+1)
+        authorsPage = authorsPage[nextAuthorEnd+1:]
+        nextAuthorEnd = authorsPage.find("]")
 
     record["author"] = " & ".join(authors)
     record["simpleAuthor"] = " & ".join(author.split("[")[0].strip() for author in authors)
-    record["in"] = authorInfo.strip(" in")
 
-    yearPage = authorsPage.strip().split(":", 1)
-    yearPage += ["" for _ in range(2 - len(yearPage))]
-    record["year"], record["page"] = yearPage
+    if ":" not in authorsPage:
+        inYear = authorsPage
+        page = ""
+    else:
+        inYear, page = authorsPage.split(":", 1)
+
+    record["page"] = page.strip()
+    
+    inYear = inYear.strip()
+    if " " not in inYear:
+        record["in"] = ""
+        record["year"] = inYear
+    else:
+        record["in"], record["year"] = inYear.lstrip(" in").rsplit(" ", 1)
 
     typeInfo = typeInfo.strip(" .").split(". ", 2)
     typeInfo += ["" for _ in range(3 - len(typeInfo))]
@@ -215,34 +221,25 @@ def parseSpecies(id: str, data: str) -> dict:
     currentStatus, otherFields = currentStatus.rstrip(". ").split(". ", 1)
     record["currentValidName"] = currentStatus
 
-    # if ":" not in family:
-    #     record["family"] = family
-    #     record["subfamily"] = ""
-    # elif family.find(":") == family.find(": "): # Determine if first colon is for another field, meaning no family
-    #     record["family"] = record["subfamily"] = ""
-    #     otherFields = f"{family}. {otherFields}"
-    # else:
-    #     family = family.split(":")
-    #     family += ["" for _ in range(2 - len(family))]
-    #     
-
     validLabels = (
         "Distribution",
         "Habitat"
     )
 
     for idx, field in enumerate(otherFields.split(". ")):
-        if ":" not in field or label not in validLabels:
+        if ":" not in field:
             if idx == 0:
-                if ":" not in field:
-                    record["family"] = field
-                    record["subfamily"] = ""
-                else:
-                    record["family"], record["subfamily"] = field.split(":")
-
+                record["family"] = field
+                record["subfamily"] = ""
             continue
 
-        label, value = field.split(":", 1)
-        record[label.lower().strip()] = value.strip(". ")
+        label, value = [item.strip(". ") for item in field.split(":", 1)]
+        if label not in validLabels:
+            if idx == 0:
+                record["family"] = label
+                record["subfamily"] = value
+            continue
+
+        record[label.lower()] = value
 
     return record
