@@ -22,6 +22,15 @@
                     "{OUTPATH}"
                 ],
                 "output": "ecf.csv"
+            },
+            {
+                "path": "./processing.py",
+                "function": "combine",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "combinedECF.csv"
             }
         ]
     },

@@ -243,3 +243,25 @@ def parseSpecies(id: str, data: str) -> dict:
         record[label.lower()] = value
 
     return record
+
+def combine(filePath: Path, outputFilePath: Path):
+    otherFiles = outputFilePath.parent / "otherFiles"
+
+    df = pd.read_csv(filePath, low_memory=False)
+
+    def loadCSV(fileName: str) -> pd.DataFrame:
+        df = pd.read_csv(otherFiles / fileName, sep="\t")
+        newColumns = {column: column.replace(" ", "_") for column in df.columns}
+        df.rename(newColumns)
+        return df
+    
+    status = loadCSV("Species_all_status.txt")
+    references = loadCSV("References_all.txt")
+    speciesReference = loadCSV("CAS_SPC-CAS_REF_NO.txt")
+
+    status = status.merge(speciesReference, "left", "CAS_SPC")
+    status = status.merge(references, "left", "CAS_REF_NO")
+    status["CAS_SPC"] = status["CAS_SPC"].apply(lambda x: f"S{x}")
+
+    df = df.merge(status, "left", left_on="ID", right_on="CAS_SPC", suffixes=("_scraped", "_provided"))
+    df.to_csv(outputFilePath, index=False)
