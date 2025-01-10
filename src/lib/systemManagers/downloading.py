@@ -77,7 +77,7 @@ class DownloadManager:
             success = download.retrieve(overwrite, verbose)
 
             metadata["files"].append({
-                "output": download.file.filePath,
+                "output": download.file.filePath.name,
                 "success": success,
                 "duration": time.perf_counter() - downloadStart,
                 "timestamp": datetime.now().isoformat()

@@ -15,12 +15,16 @@ class MetadataManager:
         self._load()
         
     def _load(self) -> None:
-        if not self.metadataPath.exists():
-            self.data = {}
-            return
-        
-        with open(self.metadataPath) as fp:
-            self.data = json.load(fp)
+        if self.metadataPath.exists():       
+            try:
+                with open(self.metadataPath) as fp:
+                    self.data = json.load(fp)
+                    return
+                
+            except json.JSONDecodeError:
+                self.metadataPath.unlink()
+
+        self.data = {}
 
     def _save(self) -> None:
         with open(self.metadataPath, "w") as fp:
