@@ -16,5 +16,11 @@
             "./token.json"
         ],
         "output": "{SUBSECTION}.csv"
+    },
+    "update": {
+        "type": "weekly",
+        "day": "sunday",
+        "time": 9,
+        "repeat": 2
     }
 }
