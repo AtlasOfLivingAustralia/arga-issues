@@ -24,7 +24,7 @@ if __name__ == "__main__":
         if not args.all:
             continue
 
-        for database in location.getDatabaseList():
+        for database in location.getDatabases():
             print(f"{2*' '}- {database}")
         print("*" * 40)
 
