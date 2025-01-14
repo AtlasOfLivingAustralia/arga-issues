@@ -164,11 +164,12 @@ class BasicDB:
         except KeyboardInterrupt:
             Logger.info(f"Process ended early when attempting to execute step '{step.name}' for {self}")
 
-    def package(self) -> None:
+    def package(self) -> Path:
         renamedFilePath = self.metadataManager.metadataPath.rename(self.conversionManager.output.filePath / self.metadataManager.metadataPath.name)
         outputPath = zp.compress(self.conversionManager.output.filePath, self.dataDir)
         renamedFilePath.rename(self.metadataManager.metadataPath)
         Logger.info(f"Successfully zipped converted data source file to {outputPath}")
+        return outputPath
 
     def checkUpdateReady(self) -> bool:
         lastUpdate = self.metadataManager.getLastDownloadUpdate()

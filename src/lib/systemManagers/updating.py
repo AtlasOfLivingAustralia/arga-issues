@@ -32,9 +32,9 @@ class _WeeklyUpdate(_Update):
 
     def updateReady(self, lastUpdate: datetime) -> bool:
         today = datetime.today()
-        delta = today - lastUpdate 
+        delta = today - lastUpdate
 
-        return (delta.days > ((7 * (self.repat - 1)) + 1)) and (today.weekday() == self.dayInt)
+        return (delta.days > ((7 * (self.repeat - 1)) + 1)) and (today.weekday() == self.dayInt)
     
 class _MonthlyUpdate(_Update):
     def __init__(self, properties: dict):
@@ -61,7 +61,7 @@ class UpdateManager:
         if updaterType not in self.updaters:
             raise Exception(f"Unknown update type: {updaterType}")
 
-        self.update: _Update = self.updaters[updaterType]
+        self.update: _Update = self.updaters[updaterType](updateConfig)
         
     def isUpdateReady(self, lastUpdate: datetime | None) -> bool:
         if lastUpdate is None:

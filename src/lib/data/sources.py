@@ -80,7 +80,7 @@ class Database:
     def _loadConfig(self) -> dict | None:
         configPath = self.databasePath / self.configFile
         if not configPath.exists():
-            Logger.error(f"No config file found for database '{self.databaseName}'")
+            Logger.error(f"No config file found for database '{self.locationName}-{self.databaseName}'")
             return None
         
         with open(configPath) as fp:
@@ -113,7 +113,7 @@ class Database:
         
         retrieveType = databaseConfig.pop("retrieveType", None)
         if retrieveType is None:
-            Logger.error(f"No retrieve type specified for database '{self.databaseName}'")
+            Logger.error(f"No retrieve type specified for database '{self.locationName}-{self.databaseName}'")
             return []
         
         retrieveType = Retrieve(retrieveType)
@@ -144,9 +144,9 @@ class Database:
 
             datasetID = config.pop("datasetID", None)
             if datasetID is None:
-                error = f"No datasetID specified for database '{self.databaseName}'"
+                error = f"No datasetID specified for database '{self.locationName}-{self.databaseName}'"
                 if subsectionName:
-                    error += f" with subsection '{subsectionName}"
+                    error += f" with subsection '{subsectionName}'"
 
                 Logger.error(error)
                 continue
@@ -157,7 +157,7 @@ class Database:
         for subsectionName, configData in configs.items():
             datasetID, config = configData
             try:
-                Logger.info(f"Creating database: {self.locationName}-{self.databaseName}{f'-{subsectionName}' if subsectionName else ''}")
+                Logger.info(f"Creating database '{self.locationName}-{self.databaseName}{f'-{subsectionName}' if subsectionName else ''}'")
                 dbs.append(dbType(self.locationName, self.databaseName, subsectionName, datasetID, config))
             except AttributeError:
                 continue

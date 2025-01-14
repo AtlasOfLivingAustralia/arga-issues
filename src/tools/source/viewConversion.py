@@ -20,7 +20,7 @@ if __name__ == '__main__':
         dwcFile = source.conversionManager.output
 
         if not dwcFile.filePath.exists():
-            print(f"DwC file {dwcFile.filePath} does not exist, have you run dwcCreate.py?")
+            print(f"DwC file {dwcFile.filePath} does not exist, have you run convert.py?")
             continue
 
         df = next(dwcFile.loadDataFrameIterator(args.entries))
