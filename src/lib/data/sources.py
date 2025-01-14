@@ -140,7 +140,7 @@ class Database:
         # Derive configs for each subsection and check for dataset ID
         configs = {}
         for subsectionName, subsectionProperties in loadSubsections.items():
-            config = databaseConfig if not subsectionName else self._translateSubsection(config, subsectionName, subsectionProperties)
+            config = databaseConfig if not subsectionName else self._translateSubsection(databaseConfig, subsectionName, subsectionProperties)
 
             datasetID = config.pop("datasetID", None)
             if datasetID is None:
@@ -157,6 +157,7 @@ class Database:
         for subsectionName, configData in configs.items():
             datasetID, config = configData
             try:
+                Logger.info(f"Creating database: {self.locationName}-{self.databaseName}{f'-{subsectionName}' if subsectionName else ''}")
                 dbs.append(dbType(self.locationName, self.databaseName, subsectionName, datasetID, config))
             except AttributeError:
                 continue

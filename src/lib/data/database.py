@@ -6,6 +6,7 @@ from lib.systemManagers.downloading import DownloadManager
 from lib.systemManagers.processing import ProcessingManager
 from lib.systemManagers.conversion import ConversionManager
 from lib.systemManagers.metadata import MetadataManager
+from lib.systemManagers.updating import UpdateManager
 
 from lib.processing.stages import Step
 
@@ -35,6 +36,7 @@ class BasicDB:
         self.downloadConfig: dict = config.pop("download", None)
         self.processingConfig: dict = config.pop("processing", {})
         self.conversionConfig: dict = config.pop("conversion", {})
+        self.updateConfig: dict = config.pop("update", {})
 
         if self.downloadConfig is None:
             raise Exception("No download config specified as required") from AttributeError
@@ -53,6 +55,7 @@ class BasicDB:
         self.processingManager = ProcessingManager(self.databaseDir, self.processingDir)
         self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, self.datasetID, location, database, subsection)
         self.metadataManager = MetadataManager(self.subsectionDir)
+        self.updateManager = UpdateManager(self.updateConfig)
 
         # Report extra config options
         self._reportLeftovers(config)
@@ -166,6 +169,10 @@ class BasicDB:
         outputPath = zp.compress(self.conversionManager.output.filePath, self.dataDir)
         renamedFilePath.rename(self.metadataManager.metadataPath)
         Logger.info(f"Successfully zipped converted data source file to {outputPath}")
+
+    def checkUpdateReady(self) -> bool:
+        lastUpdate = self.metadataManager.getLastDownloadUpdate()
+        return self.updateManager.isUpdateReady(lastUpdate)
 
 class CrawlDB(BasicDB):
 
