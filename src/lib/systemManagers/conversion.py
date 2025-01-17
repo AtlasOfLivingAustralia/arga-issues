@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 import lib.commonFuncs as cmn
 from lib.tools.bigFileWriter import BigFileWriter
-from lib.processing.mapping import Remapper, Event, MapManager
+from lib.processing.mapping import Remapper, Event
 from lib.processing.stages import File, StackedFile
 from lib.processing.scripts import Script
 from lib.tools.logger import Logger
@@ -27,7 +27,7 @@ class ConversionManager:
 
         self.mapID = properties.pop("mapID", -1)
         self.customMapID = properties.pop("customMapID", -1)
-        # self.customMapPath = self.parser.parseArg(properties.pop("customMapPath", None), [])
+        self.customMapPath = properties.pop("customMapPath", None)
 
         self.chunkSize = properties.pop("chunkSize", 1024)
         self.setNA = properties.pop("setNA", [])
@@ -37,10 +37,10 @@ class ConversionManager:
         self.prefixUnmapped = properties.pop("prefixUnmapped", True)
         self.augments = [Script(self.baseDir, self.conversionDir, augProperties, []) for augProperties in properties.pop("augment", [])]
 
-        self.mapManager = MapManager(mapDir)
+        self.remapper = Remapper(mapDir, self.mapID, self.customMapID, self.customMapPath, self.location, self.preserveDwC, self.prefixUnmapped)
         self.fileLoaded = True
 
-    def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = False, forceRetrieve: bool = False) -> tuple[bool, dict]:
+    def convert(self, overwrite: bool = False, verbose: bool = True, ignoreRemapErrors: bool = True, forceRetrieve: bool = False) -> tuple[bool, dict]:
         if not self.fileLoaded:
             Logger.error("No file loaded for conversion, exiting...")
             return False, {}
@@ -53,26 +53,22 @@ class ConversionManager:
         Logger.info("Getting column mappings")
         columns = cmn.getColumns(self.file.filePath, self.file.separator, self.file.firstRow)
 
-        maps = self.mapManager.loadMaps(self.mapID, self.customMapID, None, forceRetrieve)
-        if not maps:
-            Logger.error("Unable to retrieve any maps")
+        success = self.remapper.buildTable(columns, self.skipRemap, forceRetrieve)
+        if not success:
             return False, {}
-
-        remapper = Remapper(maps, self.location, self.preserveDwC, self.prefixUnmapped)
-        translationTable = remapper.buildTable(columns, self.skipRemap)
         
-        if not translationTable.allUniqueColumns(): # If there are non unique columns
+        if not self.remapper.table.allUniqueColumns(): # If there are non unique columns
             if not ignoreRemapErrors:
-                for event, firstCol, matchingCols in translationTable.getNonUnique():
+                for event, firstCol, matchingCols in self.remapper.table.getNonUnique():
                     for col in matchingCols:
-                        Logger.info(f"Found mapping for column '{col}' that matches initial mapping '{firstCol}' under event '{event.value}'")
+                        Logger.warning(f"Found mapping for column '{col}' that matches initial mapping '{firstCol}' under event '{event.value}'")
                 return False, {}
             
-            translationTable.forceUnique()
+            self.remapper.table.forceUnique()
         
         Logger.info("Resolving events")
         writers: dict[str, BigFileWriter] = {}
-        for event in translationTable.getEventCategories():
+        for event in self.remapper.table.getEventCategories():
             cleanedName = event.value.lower().replace(" ", "_")
             writers[event] = BigFileWriter(self.output.filePath / f"{cleanedName}.csv", f"{cleanedName}_chunks")
 
@@ -86,7 +82,7 @@ class ConversionManager:
             if verbose:
                 print(f"At chunk: {idx}", end='\r')
 
-            df = remapper.applyTranslation(df, translationTable) # Returns a multi-index dataframe
+            df = self.remapper.applyTranslation(df) # Returns a multi-index dataframe
             for na in self.setNA:
                 df = df.replace(na, np.NaN)
 
@@ -111,7 +107,7 @@ class ConversionManager:
             "duration": time.perf_counter() - startTime,
             "timestamp": datetime.now().isoformat(),
             "columns": len(columns),
-            "unmappedColumns": len(translationTable.getUnmapped()),
+            "unmappedColumns": len(self.remapper.table.getUnmapped()),
             "rows": totalRows
         }
         

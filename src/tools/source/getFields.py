@@ -2,7 +2,7 @@ import pandas as pd
 import json
 from lib.data.argParser import ArgParser
 from lib.processing.stages import File, Step
-from lib.processing.mapping import Remapper, MapManager
+from lib.processing.mapping import Remapper
 import random
 from lib.tools.logger import Logger
 
@@ -66,13 +66,7 @@ if __name__ == '__main__':
         random.seed(seed)
 
         mapID, customMapID, customMapPath = source.systemManager.dwcProcessor.getMappingProperties()
-        mapManager = MapManager(source.getBaseDir())
-        maps = mapManager.loadMaps(mapID, customMapID, customMapPath, True)
-        if not maps:
-            Logger.error("No valid map files found")
-            exit()
-
-        remapper = Remapper(maps, source.location)
+        remapper = Remapper(source.getBaseDir(), mapID, customMapID, customMapPath, source.location)
 
         columns = stageFile.getColumns()
         translationTable = remapper.buildTable(columns)

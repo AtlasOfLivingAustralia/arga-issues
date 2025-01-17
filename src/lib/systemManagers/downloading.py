@@ -31,7 +31,7 @@ class _URLDownload(_Download):
 
 class _ScriptDownload(_Download):
     def __init__(self, baseDir: Path, downloadDir: Path, scriptInfo: dict):
-        self.script = Script(baseDir, downloadDir, scriptInfo, [])      
+        self.script = Script(baseDir, downloadDir, dict(scriptInfo), [])      
 
         super().__init__(self.script.output.filePath, self.script.outputProperties)
 

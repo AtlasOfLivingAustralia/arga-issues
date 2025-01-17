@@ -60,6 +60,9 @@ class BasicDB:
         # Report extra config options
         self._reportLeftovers(config)
 
+        # Preparation Stage
+        self._prepStage = -1
+
     def __str__(self):
         return f"{self.location}-{self.database}{'-' + self.subsection if self.subsection else ''}"
 
@@ -116,7 +119,10 @@ class BasicDB:
         if step not in callbacks:
             raise Exception(f"Uknown step to prepare: {step}")
 
-        for stepType, callback in callbacks.items():
+        for idx, (stepType, callback) in enumerate(callbacks.items()):
+            if idx <= self._prepStage:
+                continue
+
             Logger.info(f"Preparing {self} step '{stepType.name}' with flags: overwrite={overwrite} | verbose={verbose}")
             try:
                 callback(overwrite if step == stepType else False, verbose)
@@ -124,6 +130,7 @@ class BasicDB:
                 Logger.error(f"Error preparing step: {stepType.name} - {e}")
                 return False
             
+            self._prepStage = idx
             if step == stepType:
                 break
             
