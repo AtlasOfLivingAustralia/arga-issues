@@ -1,12 +1,12 @@
 {
     "retrieveType": "script",
-    "subsections": [
-        "kamilaroi",
-        "noongar",
-        "southeastarnhemland",
-        "mangrovewatch",
-        "weeds-australia"
-    ],
+    "subsections": {
+        "kamilaroi": {},
+        "noongar": {},
+        "southeastarnhemland": {},
+        "mangrovewatch": {},
+        "weeds-australia": {}
+    },
     "download": {
         "path": "sourceProcessing/ala.py",
         "function": "collect",
@@ -16,5 +16,11 @@
             "./token.json"
         ],
         "output": "{SUBSECTION}.csv"
+    },
+    "update": {
+        "type": "weekly",
+        "day": "sunday",
+        "time": 9,
+        "repeat": 2
     }
 }

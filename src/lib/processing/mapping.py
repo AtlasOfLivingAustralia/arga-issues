@@ -182,17 +182,62 @@ class TranslationTable:
                 self._translationTable[column].remove(mapping)
 
 class Remapper:
-    def __init__(self, maps: list[Map], prefix: str, preserveDwC: bool = False, prefixUnmapped: bool = True):
-        self.maps = maps
+    def __init__(self, baseDir: Path, mapID: int, customMapID: int, customMapPath: Path, prefix: str, preserveDwC: bool = False, prefixUnmapped: bool = True):
+        self.baseDir = baseDir
+        self.localMapPath = baseDir / "map.json"
+        self.mapID = mapID
+        self.customMapID = customMapID
+        self.customMapPath = customMapPath
         self.prefix = prefix
         self.preserveDwc = preserveDwC
         self.prefixUnmapped = prefixUnmapped
 
-    def buildTable(self, columns: list[str], skipRemap: list[str] = []) -> TranslationTable:
-        table = TranslationTable()
+        self.table = None
 
+    def _loadMaps(self, forceRetrieve: bool = False) -> list[Map]:
+        maps = []
+
+        dwcMap = Map.fromFile(self.localMapPath)
+        if not dwcMap.hasMappings() or forceRetrieve:
+            dwcMap = Map.fromSheets(self.mapID)
+
+            if dwcMap.hasMappings():
+                Logger.info("Added sheets map")
+                maps.append(dwcMap)
+                dwcMap.saveToFile(self.localMapPath)
+        else:
+            Logger.info("Added local map")
+            maps.append(dwcMap)
+        
+        if self.customMapPath is not None:
+            customMap = Map.fromFile(self.customMapPath)
+
+            if not customMap.hasMappings():
+                if self.customMapID is not None:
+                    customMap = Map.fromSheets(self.customMapID)
+
+                    if customMap.hasMappings():
+                        Logger.info("Added sheets custom map")
+                        maps.append(customMap)
+
+                        if self.customMapPath is not None:
+                            customMap.saveToFile(self.customMapPath)
+            else:
+                Logger.info("Added local custom map")
+                maps.append(customMap)
+
+        return maps
+
+    def buildTable(self, columns: list[str], skipRemap: list[str] = [], forceRetrieve: bool = False) -> bool:
         def buildUnmapped(column: str) -> MappedColumn:
             return MappedColumn(Event.UNMAPPED, f"{self.prefix}_{column}" if self.prefixUnmapped else column)
+
+        maps = self._loadMaps(forceRetrieve)
+        if not maps:
+            Logger.error("Unable to retrieve any maps")
+            return False
+        
+        table = TranslationTable()
 
         for column in columns:
             if column in skipRemap:
@@ -200,7 +245,7 @@ class Remapper:
                 continue
  
             # Apply mapping
-            for map in self.maps:
+            for map in maps:
                 for value in map.getValues(column):
                     if not value:
                         continue
@@ -216,13 +261,16 @@ class Remapper:
             if not table.hasColumn(column):
                 table.addTranslation(column, buildUnmapped(column))
 
-        return table
+        self.table = table
+        return True
 
-    def applyTranslation(self, df: pd.DataFrame, translationTable: TranslationTable) -> pd.DataFrame:
+    def applyTranslation(self, df: pd.DataFrame) -> pd.DataFrame:
         eventColumns = {}
+        if self.table is None:
+            raise Exception("No table defined, please call buildTable before this method.")
 
         for column in df.columns:
-            for mappedColumn in translationTable.getTranslation(column):
+            for mappedColumn in self.table.getTranslation(column):
                 if mappedColumn.event not in eventColumns:
                     eventColumns[mappedColumn.event] = {}
 
@@ -233,42 +281,3 @@ class Remapper:
             eventColumns[eventName] = subDF.rename(colMap, axis=1)
 
         return pd.concat(eventColumns.values(), keys=eventColumns.keys(), axis=1)
-
-class MapManager:
-    def __init__(self, baseDir: Path):
-        self.baseDir = baseDir
-        self.localMapPath = baseDir / "map.json"
-
-    def loadMaps(self, mapID: int = None, customMapID: int = None, customMapPath: Path = None, forceRetrieve: bool = False) -> list[Map]:
-        maps = []
-
-        dwcMap = Map.fromFile(self.localMapPath)
-        if not dwcMap.hasMappings() or forceRetrieve:
-            dwcMap = Map.fromSheets(mapID)
-
-            if dwcMap.hasMappings():
-                Logger.info("Added sheets map")
-                maps.append(dwcMap)
-                dwcMap.saveToFile(self.localMapPath)
-        else:
-            Logger.info("Added local map")
-            maps.append(dwcMap)
-        
-        if customMapPath is not None:
-            customMap = Map.fromFile(customMapPath)
-
-            if not customMap.hasMappings():
-                if customMapID is not None:
-                    customMap = Map.fromSheets(customMapID)
-
-                    if customMap.hasMappings():
-                        Logger.info("Added sheets custom map")
-                        maps.append(customMap)
-
-                        if customMapPath is not None:
-                            customMap.saveToFile(customMapPath)
-            else:
-                Logger.info("Added local custom map")
-                maps.append(customMap)
-
-        return maps

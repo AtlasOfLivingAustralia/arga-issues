@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from lib.processing.stages import Step
 from lib.tools.logger import Logger
+from datetime import datetime
 
 class MetadataManager:
     _stepKeys = {
@@ -40,3 +41,10 @@ class MetadataManager:
         self._save()
 
         Logger.info(f"Updated {key} metadata and saved to file")
+
+    def getLastDownloadUpdate(self) -> datetime | None:
+        subsectionData = self.data.get(self._stepKeys[Step.DOWNLOAD], None)
+        if subsectionData is None:
+            return None
+        
+        return min(datetime.fromisoformat(item["timestamp"]) for item in subsectionData["files"])

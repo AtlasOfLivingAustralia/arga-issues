@@ -12,5 +12,11 @@
     },
     "conversion": {
         "mapID": 84855374
+    },
+    "update": {
+        "type": "weekly",
+        "day": "sunday",
+        "time": 9,
+        "repeat": 2
     }
 }
