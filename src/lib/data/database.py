@@ -103,10 +103,10 @@ class BasicDB:
     
     def _prepareConversion(self, overwrite: bool, verbose: bool) -> None:
         filesToConvert = self.processingManager.getLatestNodeFiles()
+        
         if len(filesToConvert) != 1:
-            Logger.error(f"Unable to prepare conversion, there should be 1 but there is {len(filesToConvert)}")
-            return
-
+            raise Exception(f"Unable to prepare conversion, there should be 1 but there is {len(filesToConvert)}")
+        
         self.conversionManager.loadFile(filesToConvert[0], self.conversionConfig, self.databaseDir)
 
     def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> bool:

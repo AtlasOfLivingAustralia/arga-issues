@@ -45,6 +45,10 @@ class ConversionManager:
             Logger.error("No file loaded for conversion, exiting...")
             return False, {}
 
+        if self.datasetID is None:
+            Logger.error("No datasetID provided which is required for conversion, exiting...")
+            return False, {}
+
         if self.output.filePath.exists() and not overwrite:
             Logger.info(f"{self.output.filePath} already exists, exiting...")
             return True, {}

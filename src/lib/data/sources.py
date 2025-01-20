@@ -147,9 +147,9 @@ class Database:
                 error = f"No datasetID specified for database '{self.locationName}-{self.databaseName}'"
                 if subsectionName:
                     error += f" with subsection '{subsectionName}'"
+                error += f" - Conversion process will not work."
 
-                Logger.error(error)
-                continue
+                Logger.warning(error)
 
             configs[subsectionName] = (datasetID, config)
         
