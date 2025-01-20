@@ -55,8 +55,8 @@ if __name__ == '__main__':
             outputDir.mkdir()
 
         extension = "tsv" if args.tsv else "json"
-        source._prepare(Step.CONVERSION)
-        stageFile = source.processingManager.getLatestNodes()[0] # Should be singular stage file before DwC
+        source._prepare(Step.CONVERSION, False, True)
+        stageFile = source.processingManager.getLatestNodeFiles()[0] # Should be singular stage file before DwC
 
         if not stageFile.filePath.exists():
             print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
@@ -65,11 +65,11 @@ if __name__ == '__main__':
         seed = args.seed if args.seed >= 0 else random.randrange(2**32 - 1) # Max value for pandas seed
         random.seed(seed)
 
-        mapID, customMapID, customMapPath = source.systemManager.dwcProcessor.getMappingProperties()
-        remapper = Remapper(source.getBaseDir(), mapID, customMapID, customMapPath, source.location)
 
         columns = stageFile.getColumns()
-        translationTable = remapper.buildTable(columns)
+        mappingSuccess = source.conversionManager.remapper.buildTable(columns)
+        if not mappingSuccess:
+            Logger.warning("Unable to build translation table, output will not contain mappings")
 
         valueType = "fields" if args.uniques else "records"
         Logger.info(f"Collecting {valueType}...")
@@ -80,7 +80,11 @@ if __name__ == '__main__':
             values = _collectRecords(stageFile, args.entries, args.chunksize, seed, args.firstrow, args.rows)
 
         output = outputDir / f"{valueType}_{args.chunksize}_{seed}.{extension}"
-        data = {column: {"Maps to": [{"Event": mappedColumn.event.value, "Column": mappedColumn.colName} for mappedColumn in translationTable.getTranslation(column)], "Values": values[column]} for column in columns}
+
+        if mappingSuccess:
+            data = {column: {"Maps to": [{"Event": mappedColumn.event.value, "Column": mappedColumn.colName} for mappedColumn in source.conversionManager.remapper.table.getTranslation(column)], "Values": values[column]} for column in columns}
+        else:
+            data = {column: {"Maps to": "N/A", "Values": values[column]} for column in columns}
 
         Logger.info(f"Writing to file {output}")
         if args.tsv:
