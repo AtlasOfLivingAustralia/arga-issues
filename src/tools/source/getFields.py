@@ -23,7 +23,7 @@ def _collectFields(stageFile: File, entryLimit: int, chunkSize: int, seed: int, 
 def _collectRecords(stageFile: File, entryLimit: int, chunkSize: int, seed: int, offset: int = 0, rows: int = None) -> dict[str, pd.Series]:
     for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize, offset, rows), start=1):
         print(f"Scanning chunk: {idx}", end='\r')
-        sample = chunk.sample(n=entryLimit, random_state=seed)
+        sample = chunk.sample(n=min(len(chunk), entryLimit), random_state=seed)
 
         if idx == 1:
             df = sample
