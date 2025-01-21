@@ -9,5 +9,18 @@
         ],
         "output": "iucn.csv"
     },
+    "processing": {
+        "final": [
+            {
+                "path": "./processing.py",
+                "function": "reduce",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "refinedIUCN.csv"
+            }
+        ]
+    },
     "conversion": {}
 }

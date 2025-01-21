@@ -86,3 +86,23 @@ def retrieve(apiKeyPath: Path, outputFilePath: Path):
 
     writer.oneFile(False)
     print()
+
+def reduce(filePath: Path, outputFilePath: Path) -> None:
+    def filter(field: str) -> bool:
+        if not isinstance(field, str) or not (field.startswith("[") and field.endswith("]")):
+            return False
+        
+        validValues = [
+            "Antarctic",
+            "Australasian",
+            "Oceanian",
+            "Indomalayan"
+        ]
+
+        values = field.strip("[']").split("' '")
+        return any(value in validValues for value in values)
+
+    df = pd.read_csv(filePath, low_memory=False)
+    df = df[df["biogeographical_realms"].apply(lambda x: filter(x))]
+    df = dff.removeSpaces(df)
+    df.to_csv(outputFilePath, index=False)
