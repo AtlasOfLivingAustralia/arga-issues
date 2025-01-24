@@ -34,5 +34,11 @@
     "conversion": {
         "mapID": 240630744,
         "chunkSize": 65536
+    },
+    "update": {
+        "type": "weekly",
+        "day": "sunday",
+        "time": 9,
+        "repeat": 2
     }
 }

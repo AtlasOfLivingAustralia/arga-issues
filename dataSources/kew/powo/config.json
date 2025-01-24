@@ -1,0 +1,41 @@
+{
+    "retrieveType": "url",
+    "datasetID": "ARGA:TL:0001021",
+    "download": {
+        "files": [
+            {
+                "url": "https://sftp.kew.org/pub/data-repositories/WCVP/wcvp_dwca.zip",
+                "name": "wcvp_dwca.zip"
+            }
+        ]
+    },
+    "processing": {
+        "final": [
+            {
+                "path": ".../tools/zipping.py",
+                "function": "extract",
+                "args": [
+                    "{INPATH}",
+                    "{OUTDIR}"
+                ],
+                "output": "{INSTEM}"
+            },
+            {
+                "path": "./processing.py",
+                "function": "combine",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "powo.csv"
+            }
+        ]
+    },
+    "conversion": {},
+    "update": {
+        "type": "weekly",
+        "day": "sunday",
+        "time": 9,
+        "repeat": 2
+    }
+}

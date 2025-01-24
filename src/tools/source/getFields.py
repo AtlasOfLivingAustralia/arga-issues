@@ -2,9 +2,10 @@ import pandas as pd
 import json
 from lib.data.argParser import ArgParser
 from lib.processing.stages import File, Step
-from lib.processing.mapping import Remapper, MapManager
+from lib.processing.mapping import Remapper
 import random
 from lib.tools.logger import Logger
+import lib.dataframeFuncs as dff
 
 def _collectFields(stageFile: File, entryLimit: int, chunkSize: int, seed: int, offset: int = 0, rows: int = None) -> dict[str, pd.Series]:
     for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize, offset, rows), start=1):
@@ -23,7 +24,7 @@ def _collectFields(stageFile: File, entryLimit: int, chunkSize: int, seed: int, 
 def _collectRecords(stageFile: File, entryLimit: int, chunkSize: int, seed: int, offset: int = 0, rows: int = None) -> dict[str, pd.Series]:
     for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize, offset, rows), start=1):
         print(f"Scanning chunk: {idx}", end='\r')
-        sample = chunk.sample(n=entryLimit, random_state=seed)
+        sample = chunk.sample(n=min(len(chunk), entryLimit), random_state=seed)
 
         if idx == 1:
             df = sample
@@ -55,8 +56,8 @@ if __name__ == '__main__':
             outputDir.mkdir()
 
         extension = "tsv" if args.tsv else "json"
-        source._prepare(Step.CONVERSION)
-        stageFile = source.processingManager.getLatestNodes()[0] # Should be singular stage file before DwC
+        source._prepare(Step.CONVERSION, False, True)
+        stageFile = source.processingManager.getLatestNodeFiles()[0] # Should be singular stage file before DwC
 
         if not stageFile.filePath.exists():
             print(f"File {stageFile.filePath} does not exist, have you run preDwCCreate.py yet?")
@@ -65,17 +66,11 @@ if __name__ == '__main__':
         seed = args.seed if args.seed >= 0 else random.randrange(2**32 - 1) # Max value for pandas seed
         random.seed(seed)
 
-        mapID, customMapID, customMapPath = source.systemManager.dwcProcessor.getMappingProperties()
-        mapManager = MapManager(source.getBaseDir())
-        maps = mapManager.loadMaps(mapID, customMapID, customMapPath, True)
-        if not maps:
-            Logger.error("No valid map files found")
-            exit()
-
-        remapper = Remapper(maps, source.location)
 
         columns = stageFile.getColumns()
-        translationTable = remapper.buildTable(columns)
+        mappingSuccess = source.conversionManager.remapper.buildTable(columns)
+        if not mappingSuccess:
+            Logger.warning("Unable to build translation table, output will not contain mappings")
 
         valueType = "fields" if args.uniques else "records"
         Logger.info(f"Collecting {valueType}...")
@@ -86,12 +81,17 @@ if __name__ == '__main__':
             values = _collectRecords(stageFile, args.entries, args.chunksize, seed, args.firstrow, args.rows)
 
         output = outputDir / f"{valueType}_{args.chunksize}_{seed}.{extension}"
-        data = {column: {"Maps to": [{"Event": mappedColumn.event.value, "Column": mappedColumn.colName} for mappedColumn in translationTable.getTranslation(column)], "Values": values[column]} for column in columns}
+
+        if mappingSuccess:
+            data = {column: {"Maps to": [{"Event": mappedColumn.event.value, "Column": mappedColumn.colName} for mappedColumn in source.conversionManager.remapper.table.getTranslation(column)], "Values": values[column]} for column in columns}
+        else:
+            data = {column: {"Maps to": "N/A", "Values": values[column]} for column in columns}
 
         Logger.info(f"Writing to file {output}")
         if args.tsv:
             dfData = {k: v["Values"] + ["" for _ in range(entryLimit - len(v["Values"]))] for k, v in data.items()}
             df = pd.DataFrame.from_dict(dfData)
+            df = dff.removeSpaces(df)
             df.index += 1 # Increment index so output is 1-indexed numbers
             df.to_csv(output, sep="\t", index_label="Example #")
         else:

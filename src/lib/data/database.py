@@ -6,6 +6,7 @@ from lib.systemManagers.downloading import DownloadManager
 from lib.systemManagers.processing import ProcessingManager
 from lib.systemManagers.conversion import ConversionManager
 from lib.systemManagers.metadata import MetadataManager
+from lib.systemManagers.updating import UpdateManager
 
 from lib.processing.stages import Step
 
@@ -35,6 +36,7 @@ class BasicDB:
         self.downloadConfig: dict = config.pop("download", None)
         self.processingConfig: dict = config.pop("processing", {})
         self.conversionConfig: dict = config.pop("conversion", {})
+        self.updateConfig: dict = config.pop("update", {})
 
         if self.downloadConfig is None:
             raise Exception("No download config specified as required") from AttributeError
@@ -53,9 +55,13 @@ class BasicDB:
         self.processingManager = ProcessingManager(self.databaseDir, self.processingDir)
         self.conversionManager = ConversionManager(self.databaseDir, self.convertedDir, self.datasetID, location, database, subsection)
         self.metadataManager = MetadataManager(self.subsectionDir)
+        self.updateManager = UpdateManager(self.updateConfig)
 
         # Report extra config options
         self._reportLeftovers(config)
+
+        # Preparation Stage
+        self._prepStage = -1
 
     def __str__(self):
         return f"{self.location}-{self.database}{'-' + self.subsection if self.subsection else ''}"
@@ -97,10 +103,10 @@ class BasicDB:
     
     def _prepareConversion(self, overwrite: bool, verbose: bool) -> None:
         filesToConvert = self.processingManager.getLatestNodeFiles()
+        
         if len(filesToConvert) != 1:
-            Logger.error(f"Unable to prepare conversion, there should be 1 but there is {len(filesToConvert)}")
-            return
-
+            raise Exception(f"Unable to prepare conversion, there should be 1 but there is {len(filesToConvert)}")
+        
         self.conversionManager.loadFile(filesToConvert[0], self.conversionConfig, self.databaseDir)
 
     def _prepare(self, step: Step, overwrite: bool, verbose: bool) -> bool:
@@ -113,7 +119,10 @@ class BasicDB:
         if step not in callbacks:
             raise Exception(f"Uknown step to prepare: {step}")
 
-        for stepType, callback in callbacks.items():
+        for idx, (stepType, callback) in enumerate(callbacks.items()):
+            if idx <= self._prepStage:
+                continue
+
             Logger.info(f"Preparing {self} step '{stepType.name}' with flags: overwrite={overwrite} | verbose={verbose}")
             try:
                 callback(overwrite if step == stepType else False, verbose)
@@ -121,6 +130,7 @@ class BasicDB:
                 Logger.error(f"Error preparing step: {stepType.name} - {e}")
                 return False
             
+            self._prepStage = idx
             if step == stepType:
                 break
             
@@ -161,11 +171,16 @@ class BasicDB:
         except KeyboardInterrupt:
             Logger.info(f"Process ended early when attempting to execute step '{step.name}' for {self}")
 
-    def package(self) -> None:
+    def package(self) -> Path:
         renamedFilePath = self.metadataManager.metadataPath.rename(self.conversionManager.output.filePath / self.metadataManager.metadataPath.name)
         outputPath = zp.compress(self.conversionManager.output.filePath, self.dataDir)
         renamedFilePath.rename(self.metadataManager.metadataPath)
         Logger.info(f"Successfully zipped converted data source file to {outputPath}")
+        return outputPath
+
+    def checkUpdateReady(self) -> bool:
+        lastUpdate = self.metadataManager.getLastDownloadUpdate()
+        return self.updateManager.isUpdateReady(lastUpdate)
 
 class CrawlDB(BasicDB):
 

@@ -1,0 +1,26 @@
+{
+    "retrieveType": "script",
+    "download": {
+        "path": "./processing.py",
+        "function": "retrieve",
+        "args": [
+            "./apiKey.txt",
+            "{OUTPATH}"
+        ],
+        "output": "iucn.csv"
+    },
+    "processing": {
+        "final": [
+            {
+                "path": "./processing.py",
+                "function": "reduce",
+                "args": [
+                    "{INPATH}",
+                    "{OUTPATH}"
+                ],
+                "output": "refinedIUCN.csv"
+            }
+        ]
+    },
+    "conversion": {}
+}
