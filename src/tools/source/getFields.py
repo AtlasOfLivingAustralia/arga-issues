@@ -5,6 +5,7 @@ from lib.processing.stages import File, Step
 from lib.processing.mapping import Remapper
 import random
 from lib.tools.logger import Logger
+import lib.dataframeFuncs as dff
 
 def _collectFields(stageFile: File, entryLimit: int, chunkSize: int, seed: int, offset: int = 0, rows: int = None) -> dict[str, pd.Series]:
     for idx, chunk in enumerate(stageFile.loadDataFrameIterator(chunkSize, offset, rows), start=1):
@@ -90,6 +91,7 @@ if __name__ == '__main__':
         if args.tsv:
             dfData = {k: v["Values"] + ["" for _ in range(entryLimit - len(v["Values"]))] for k, v in data.items()}
             df = pd.DataFrame.from_dict(dfData)
+            df = dff.removeSpaces(df)
             df.index += 1 # Increment index so output is 1-indexed numbers
             df.to_csv(output, sep="\t", index_label="Example #")
         else:
